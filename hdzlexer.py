@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-import token_types as tt
+import hdztokentypes as tt
 from hdzerrors import raise_error
 
 
@@ -14,7 +14,7 @@ def is_valid_keyword_content(char: str) -> bool:
 
 
 def search_for_keyword(potential_keyword: str) -> Token:
-    if potential_keyword != tt.identifier and potential_keyword in tt.all_token_types:
+    if potential_keyword in tt.all_token_types:
         return Token(type=potential_keyword, value=None)
     else:
         return Token(type=tt.identifier, value=potential_keyword)
@@ -26,12 +26,12 @@ class Tokenizer:
         self.current_char: str | None = None
         self.index: int = -1
         self.line_index: int = 1
-        self.column_index: int = 0
+        self.column_index: int = -1
         self.advance()
     
     def advance(self):
         self.index += 1
-        self.column_index = self.index
+        self.column_index += 1
         self.current_char = self.file_content[self.index] if self.index < len(self.file_content) else None
 
     def tokenize(self):
@@ -52,17 +52,17 @@ class Tokenizer:
             elif char.isnumeric(): #makes numbers, ints only for now
                 buffer += char
                 self.advance()
-                while self.current_char.isnumeric() or self.current_char == ".":
+                while self.current_char.isnumeric():  # or self.current_char == ".":
                     buffer += self.current_char
                     self.advance()
-                type_of_number = tt.integer if "." not in buffer else tt.floating_number
+                type_of_number = tt.integer  # if "." not in buffer else tt.floating_number
                 tokens.append(Token(type=type_of_number, value=buffer))
                 buffer = ""
 
             elif char == "\n":
                 tokens.append(Token(type=tt.end_line))
                 self.line_index += 1
-                self.column_index = 0
+                self.column_index = -1
                 self.advance()
             elif char == " ":
                 self.advance()
@@ -71,6 +71,9 @@ class Tokenizer:
                 self.advance()
             elif char == ")":
                 tokens.append(Token(type=tt.right_paren))
+                self.advance()
+            elif char == "=":
+                tokens.append(Token(type=tt.equals))
                 self.advance()
             else:
                 raise_error("Syntax", "char not included in the lexer", 

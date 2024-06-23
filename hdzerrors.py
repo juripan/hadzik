@@ -1,4 +1,4 @@
-
+#TODO: remake this so it doesn't always ask for the file maybe make this a mixin
 def find_line(text: str, index: int) -> str:
     text = text.splitlines()
     return text[index - 1]

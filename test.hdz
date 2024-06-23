@@ -1,2 +1,4 @@
-vychod(78)
-vychod(12)
+naj ahoj = 8
+naj abc = ahoj
+naj s = 12
+vychod(abc)

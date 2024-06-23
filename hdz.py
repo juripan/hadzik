@@ -13,7 +13,7 @@ with open("./" + filename, "r") as f:
 
 print(tokens := Tokenizer(content).tokenize())
 print(parse_tree := Parser(tokens, content).parse_program())
-print(final_asm := Generator(parse_tree).generate())
+print(final_asm := Generator(parse_tree, content).generate_program())
 
 cropped_filename = filename[:4]
 

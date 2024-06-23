@@ -1,27 +1,27 @@
-EXIT = "exit"
-RETURN = "return"
-PRINT = "print"
-IDENT = "identifier"
+left_paren = "left_paren"
+right_paren = "right_paren"
+end_line = "end_ln"
 
-INT = "int"
-FLOAT = "float"
-STRING = "string"
+exit_ = "vychod" # names of keywords must be what is used in the hadzik syntax
+let = "naj"
 
-LEFT_PAREN = "left_paren"
-RIGHT_PAREN = "right_paren"
-LEFT_CURLY = "left_curly"
-RIGHT_CURLY = "right_curly"
-LEFT_SQUARE_PAREN = "left_square_paren"
-RIGHT_SQUARE_PAREN = "right_square_paren"
-DASH = "dash"
-NEW_LINE = "new_line"
+identifier = "ident"
+integer = "int"
+floating_number = "float"
 
-PLUS = "plus"
-MINUS = "minus"
-STAR = "star"
-SLASH = "slash"
-EQUALS = "equals"
+plus = "+"
+minus = "-"
+star = "*"
+slash = "/"
+equals = "="
 
-BIN_OP = (
-    PLUS, MINUS, STAR, SLASH
+all_token_types = (
+    left_paren, right_paren, end_line, 
+    exit_, let, 
+    identifier, integer, floating_number,
+    plus, minus, star, slash
+)
+
+bin_op = (
+    plus, minus, star, slash
 )
