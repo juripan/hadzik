@@ -116,7 +116,6 @@ class Parser:
         expr = self.parse_expr(self.current_token)
         if expr is None:
             raise_error("Syntax", "Invalid expression", self.file, self.row_index)
-        self.next_token()
         let_stmt.expr = expr
         return let_stmt
 
@@ -143,7 +142,7 @@ class Parser:
         program: NodeProgram = NodeProgram(stmts=[])
         while self.current_token is not None:
             if self.current_token.type == tt.end_line:
-                self.row_index += 1 #TODO: fix the line tracking for errors, skips newlines for some reason
+                self.row_index += 1
                 self.next_token()
             elif self.current_token.type == tt.exit_:
                 program.stmts.append(self.parse_exit())
