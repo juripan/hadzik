@@ -76,6 +76,9 @@ class Tokenizer(ErrorHandler):
             elif char == "=":
                 tokens.append(Token(type=tt.equals))
                 self.advance()
+            elif char == "+":
+                tokens.append(Token(type=tt.plus))
+                self.advance()
             else:
                 self.raise_error("Syntax", "char not included in the lexer")
         return tokens

@@ -1,5 +1,4 @@
-naj n = 3
-naj abc = n
 naj s = 12
+naj as = 24 + 1 + 11 + s
 
-vychod(s)
+vychod(as)

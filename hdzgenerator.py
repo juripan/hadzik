@@ -27,20 +27,32 @@ class Generator(ErrorHandler):
         self.output.append("    pop " + register + "\n")
         self.stack_size -= 1
 
+    def generate_term(self, term: prs.NodeTerm) -> None:
+        if isinstance(term.var, prs.NodeTermInt):
+            self.output.append("    ; integer eval\n    mov rax, " + term.var.int_lit.value + "\n")
+            self.push("rax")
+        elif isinstance(term.var, prs.NodeTermIdent):
+            if term.var.ident.value not in self.variables.keys():
+                self.raise_error("Value", f"variable was not declared: {term.var.ident.value}",
+                                 ignores_whitespace=True)
+            location = self.variables[term.var.ident.value]
+            self.output.append("    ; identifier eval\n")
+            self.push(f"QWORD [rsp + {(self.stack_size - location - 1) * 8}]") # QWORD 64 bits (word = 16 bits)
+
     def generate_expression(self, expression: prs.NodeExpr) -> None:
         """
         generates an expression and pushes it on top of the stack
         """
-        if isinstance(expression.var, prs.NodeExprInt):
-            self.output.append("    ; integer eval\n    mov rax, " + expression.var.int_lit.value + "\n")
+        if isinstance(expression.var, prs.NodeTerm):
+            self.generate_term(expression.var)
+        elif isinstance(expression.var, prs.NodeBinExpr):
+            self.output.append("    ; adding\n")
+            self.generate_expression(expression.var.var.lhs)
+            self.generate_expression(expression.var.var.rhs)
+            self.pop("rax")
+            self.pop("rbx")
+            self.output.append("    add rax, rbx\n")
             self.push("rax")
-        elif isinstance(expression.var, prs.NodeExprIdent):
-            if expression.var.ident.value not in self.variables.keys():
-                self.raise_error("Value", f"variable was not declared: {expression.var.ident.value}",
-                                 ignores_whitespace=True)
-            location = self.variables[expression.var.ident.value]
-            self.output.append("    ; identifier eval\n")
-            self.push(f"QWORD [rsp + {(self.stack_size - location - 1) * 8}]") # QWORD 64 bits (word = 16 bits)
 
     def generate_statement(self, statement) -> None:
         if isinstance(statement, prs.NodeStmtExit):

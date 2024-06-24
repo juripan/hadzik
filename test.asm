@@ -1,12 +1,33 @@
 global _start
 _start:
     ; integer eval
-    mov rax, 3
+    mov rax, 12
+    push rax
+    ; adding
+    ; integer eval
+    mov rax, 24
+    push rax
+    ; adding
+    ; integer eval
+    mov rax, 1
+    push rax
+    ; adding
+    ; integer eval
+    mov rax, 11
     push rax
     ; identifier eval
-    push QWORD [rsp + 0]
-    ; integer eval
-    mov rax, 12
+    push QWORD [rsp + 24]
+    pop rax
+    pop rbx
+    add rax, rbx
+    push rax
+    pop rax
+    pop rbx
+    add rax, rbx
+    push rax
+    pop rax
+    pop rbx
+    add rax, rbx
     push rax
     ; identifier eval
     push QWORD [rsp + 0]

@@ -1,8 +1,21 @@
-program -> [stmt]*
+[Program] -> [Stmt]*
 
-[stmt] -> {
-    vychod([expr])
-    naj ident = [expr]
+[Stmt] -> {
+    vychod([Expr])
+    naj ident = [Expr]
 }
 
-[expr] -> int | ident
+[Expr] -> {
+    [Term]
+    [BinExpr]
+}
+
+[BinExpr] -> {
+    [Expr] * [Expr] prec = 1
+    [Expr] + [Expr] prec = 0
+}
+
+[Term] -> {
+    int
+    ident
+}

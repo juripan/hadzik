@@ -11,7 +11,7 @@ filename: str = sys.argv[1]
 with open("./" + filename, "r") as f:
     content: str = f.read()
 
-print(tokens := Tokenizer(content).tokenize())
+tokens = Tokenizer(content).tokenize()
 print(parse_tree := Parser(tokens, content).parse_program())
 print(final_asm := Generator(parse_tree, content).generate_program())
 

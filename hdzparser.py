@@ -5,13 +5,18 @@ from hdzerrors import ErrorHandler
 
 
 @dataclass(slots=True)
-class NodeExprIdent:
-    ident: Token #tt.identifier | tt.integer
+class NodeTermIdent:
+    ident: Token
 
 
 @dataclass(slots=True)
-class NodeExprInt:
-    int_lit: Token #tt.integer
+class NodeTermInt:
+    int_lit: Token
+
+
+@dataclass(slots=True)
+class NodeTerm:
+    var: NodeTermIdent | NodeTermInt
 
 
 @dataclass(slots=True)
@@ -25,37 +30,25 @@ class NodeExpr:
 
 
 @dataclass(slots=True)
-class BinExprAdd:
+class NodeBinExprAdd:
     lhs: NodeExpr
     rhs: NodeExpr
 
 
 @dataclass(slots=True)
-class BinExprSub:
-    lhs: NodeExpr
-    rhs: NodeExpr
-
-
-@dataclass(slots=True)
-class BinExprMulti:
-    lhs: NodeExpr
-    rhs: NodeExpr
-
-
-@dataclass(slots=True)
-class BinExprDiv:
+class NodeBinExprMulti:
     lhs: NodeExpr
     rhs: NodeExpr
 
 
 @dataclass(slots=True)
 class NodeBinExpr:
-    var: BinExprAdd | BinExprSub | BinExprMulti | BinExprDiv
+    var: NodeBinExprAdd | NodeBinExprMulti
 
 
 @dataclass(slots=True)
 class NodeExpr:
-    var: NodeExprInt | NodeExprIdent
+    var: NodeTerm | NodeBinExpr
 
 
 @dataclass(slots=True)
@@ -85,18 +78,37 @@ class Parser(ErrorHandler):
         self.index += 1
         self.current_token = self.all_tokens[self.index] if self.index < len(self.all_tokens) else None
 
-    def look_ahead(self, offset: int = 0) -> Token | None:
-        return self.all_tokens[self.index + offset]
+    def get_token_at(self, offset: int = 0) -> Token | None:
+        return self.all_tokens[self.index + offset] if self.index + offset < len(self.all_tokens) else None
 
-    def parse_expr(self, token: Token) -> NodeExpr | None:
-        if token.type in (tt.floating_number, tt.integer):
-            if self.look_ahead(1).type not in tt.bin_op:
+    def parse_term(self) -> NodeTerm | None:
+        if self.current_token.type in (tt.floating_number, tt.integer):
+            int_lit = self.current_token
+            return NodeTerm(var=NodeTermInt(int_lit))
+        elif self.current_token.type == tt.identifier:
+            ident = self.current_token
+            return NodeTerm(var=NodeTermIdent(ident))
+        else:
+            return None
+
+    def parse_expr(self) -> NodeExpr | None:
+        term = self.parse_term()
+
+        if term:
+            if self.get_token_at(1).type in tt.bin_op:
+                parsed_lhs = NodeExpr(term)
                 self.next_token()
-                return NodeExpr(var=NodeExprInt(int_lit=token))
-            # TODO: handle binary expressions here
-        elif token.type == tt.identifier:
-            self.next_token()
-            return NodeExpr(NodeExprIdent(ident=token))
+
+                if self.current_token is None or self.current_token.type not in (tt.plus, tt.plus):
+                    self.raise_error("Value", f"Unsupported type operator: {self.current_token.type}")
+                self.next_token()
+                
+                parsed_rhs = self.parse_expr()
+                if parsed_rhs is None:
+                    self.raise_error("Value", "expected expression")
+                return NodeExpr(var=NodeBinExpr(var=NodeBinExprAdd(parsed_lhs, parsed_rhs)))
+            else:
+                return NodeExpr(var=term)
         else:
             return None
 
@@ -112,10 +124,16 @@ class Parser(ErrorHandler):
             self.raise_error("Syntax", "Expected '='")
         self.next_token()
 
-        expr = self.parse_expr(self.current_token)
+        expr = self.parse_expr()
         if expr is None:
             self.raise_error("Syntax", "Invalid expression")
         let_stmt.expr = expr
+        self.next_token()
+        print(self.current_token)
+
+        if self.current_token.type != tt.end_line:
+            self.raise_error("Syntax", "Expected endline")
+
         return let_stmt
 
     def parse_exit(self) -> NodeStmtExit:
@@ -125,16 +143,21 @@ class Parser(ErrorHandler):
             self.raise_error("Syntax", "Expected '('")
         self.next_token()
 
-        expr = self.parse_expr(self.current_token)
+        expr = self.parse_expr()
         
         if expr is None:
             self.raise_error("Syntax", "Invalid expression")
-        
+        self.next_token()
+
         exit_stmt = NodeStmtExit(expr=expr)
 
         if self.current_token and self.current_token.type != tt.right_paren:
             self.raise_error("Syntax", "Expected ')'")
         self.next_token()
+        
+        if self.current_token.type != tt.end_line:
+            self.raise_error("Syntax", "Expected endline")
+
         return exit_stmt
 
     def parse_program(self) -> NodeProgram:
