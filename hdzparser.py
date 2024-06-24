@@ -129,9 +129,8 @@ class Parser(ErrorHandler):
             self.raise_error("Syntax", "Invalid expression")
         let_stmt.expr = expr
         self.next_token()
-        print(self.current_token)
 
-        if self.current_token.type != tt.end_line:
+        if self.current_token is None or self.current_token.type != tt.end_line:
             self.raise_error("Syntax", "Expected endline")
 
         return let_stmt
@@ -155,7 +154,7 @@ class Parser(ErrorHandler):
             self.raise_error("Syntax", "Expected ')'")
         self.next_token()
         
-        if self.current_token.type != tt.end_line:
+        if self.current_token is None or self.current_token.type != tt.end_line:
             self.raise_error("Syntax", "Expected endline")
 
         return exit_stmt
