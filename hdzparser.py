@@ -1,69 +1,69 @@
 from dataclasses import dataclass
 from hdzlexer import Token
 import hdztokentypes as tt
-from hdzerrors import raise_error
+from hdzerrors import ErrorHandler
 
 
-@dataclass
+@dataclass(slots=True)
 class NodeExprIdent:
     ident: Token #tt.identifier | tt.integer
 
 
-@dataclass
+@dataclass(slots=True)
 class NodeExprInt:
     int_lit: Token #tt.integer
 
 
-@dataclass
+@dataclass(slots=True)
 class NodeBinExpr:
     pass
 
 
-@dataclass
+@dataclass(slots=True)
 class NodeExpr:
     pass
 
 
-@dataclass
+@dataclass(slots=True)
 class BinExprAdd:
     lhs: NodeExpr
     rhs: NodeExpr
 
 
-@dataclass
+@dataclass(slots=True)
 class BinExprSub:
     lhs: NodeExpr
     rhs: NodeExpr
 
 
-@dataclass
+@dataclass(slots=True)
 class BinExprMulti:
     lhs: NodeExpr
     rhs: NodeExpr
 
 
-@dataclass
+@dataclass(slots=True)
 class BinExprDiv:
     lhs: NodeExpr
     rhs: NodeExpr
 
 
-@dataclass
+@dataclass(slots=True)
 class NodeBinExpr:
     var: BinExprAdd | BinExprSub | BinExprMulti | BinExprDiv
 
 
-@dataclass
+@dataclass(slots=True)
 class NodeExpr:
     var: NodeExprInt | NodeExprIdent
 
 
-@dataclass
+@dataclass(slots=True)
 class NodeStmtExit:
     expr: NodeExpr
 
 
-@dataclass
+@dataclass(slots=True)
 class NodeStmtLet:
     ident: Token  # tt.ident
     expr: NodeExpr
@@ -74,11 +74,10 @@ class NodeProgram:
     stmts: list[NodeStmtLet | NodeStmtExit]
 
 
-class Parser:
-    def __init__(self, tokens, file):
+class Parser(ErrorHandler):
+    def __init__(self, tokens, file_content):
+        super().__init__(file_content)
         self.index: int = 0
-        self.row_index: int = 1
-        self.file: str = file
         self.all_tokens: list = tokens
         self.current_token: Token = self.all_tokens[self.index]
 
@@ -105,17 +104,17 @@ class Parser:
         self.next_token()
         let_stmt: NodeStmtLet
         if self.current_token.type != tt.identifier:
-            raise_error("Syntax", "Expected identifier", self.file, self.row_index)
+            self.raise_error("Syntax", "Expected identifier")
         let_stmt = NodeStmtLet(ident=self.current_token, expr=None)
         self.next_token()
 
         if self.current_token.type != tt.equals:
-            raise_error("Syntax", "Expected '='", self.file, self.row_index)
+            self.raise_error("Syntax", "Expected '='")
         self.next_token()
 
         expr = self.parse_expr(self.current_token)
         if expr is None:
-            raise_error("Syntax", "Invalid expression", self.file, self.row_index)
+            self.raise_error("Syntax", "Invalid expression")
         let_stmt.expr = expr
         return let_stmt
 
@@ -123,18 +122,18 @@ class Parser:
         self.next_token() # removes exit token
         exit_stmt: NodeStmtExit
         if self.current_token.type != tt.left_paren:
-            raise_error("Syntax", "Expected '('", self.file, self.row_index)
+            self.raise_error("Syntax", "Expected '('")
         self.next_token()
 
         expr = self.parse_expr(self.current_token)
         
         if expr is None:
-            raise_error("Syntax", "Invalid expression", self.file, self.row_index)
+            self.raise_error("Syntax", "Invalid expression")
         
         exit_stmt = NodeStmtExit(expr=expr)
 
         if self.current_token and self.current_token.type != tt.right_paren:
-            raise_error("Syntax", "Expected ')'", self.file, self.row_index)
+            self.raise_error("Syntax", "Expected ')'")
         self.next_token()
         return exit_stmt
 
@@ -142,12 +141,12 @@ class Parser:
         program: NodeProgram = NodeProgram(stmts=[])
         while self.current_token is not None:
             if self.current_token.type == tt.end_line:
-                self.row_index += 1
+                self.line_number += 1
                 self.next_token()
             elif self.current_token.type == tt.exit_:
                 program.stmts.append(self.parse_exit())
             elif self.current_token.type == tt.let:
                 program.stmts.append(self.parse_let())
             else:
-                raise_error("Parsing", "cannot parse program correctly", self.file, self.row_index)
+                self.raise_error("Parsing", "cannot parse program correctly")
         return program

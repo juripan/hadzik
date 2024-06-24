@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import hdztokentypes as tt
-from hdzerrors import raise_error
+from hdzerrors import ErrorHandler
 
 
 @dataclass(slots=True)
@@ -10,6 +10,9 @@ class Token:
 
 
 def is_valid_keyword_content(char: str) -> bool:
+    """
+    used for checking the remaining character in an identifier / keyword
+    """
     return char.isalpha() or char.isdigit() or char == "_"
 
 
@@ -20,18 +23,16 @@ def search_for_keyword(potential_keyword: str) -> Token:
         return Token(type=tt.identifier, value=potential_keyword)
 
 
-class Tokenizer:
+class Tokenizer(ErrorHandler):
     def __init__(self, file_content: str) -> None:
-        self.file_content = file_content
+        super().__init__(file_content)
         self.current_char: str | None = None
         self.index: int = -1
-        self.line_index: int = 1
-        self.column_index: int = -1
         self.advance()
     
     def advance(self):
         self.index += 1
-        self.column_index += 1
+        self.column_number += 1
         self.current_char = self.file_content[self.index] if self.index < len(self.file_content) else None
 
     def tokenize(self):
@@ -61,8 +62,8 @@ class Tokenizer:
 
             elif char == "\n":
                 tokens.append(Token(type=tt.end_line))
-                self.line_index += 1
-                self.column_index = -1
+                self.line_number += 1
+                self.column_number = -1
                 self.advance()
             elif char == " ":
                 self.advance()
@@ -76,6 +77,5 @@ class Tokenizer:
                 tokens.append(Token(type=tt.equals))
                 self.advance()
             else:
-                raise_error("Syntax", "char not included in the lexer", 
-                            self.file_content, self.line_index, self.column_index)
+                self.raise_error("Syntax", "char not included in the lexer")
         return tokens
