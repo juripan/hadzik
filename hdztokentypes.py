@@ -22,6 +22,10 @@ all_token_types = (
     plus, minus, star, slash
 )
 
-bin_op = (
-    plus, minus, star, slash
-)
+def get_prec_level(token_type: str) -> int | None:
+    if token_type == plus or token_type == minus:
+        return 0
+    elif token_type == star or token_type == slash:
+        return 1
+    else:
+        return None

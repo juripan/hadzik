@@ -2,7 +2,7 @@ from hdzlexer import Token
 from hdzerrors import ErrorHandler
 import hdzparser as prs
 import hdztokentypes as tt
-
+#TODO: maybe use numpy arrays instead of python lists, maybe
 
 class Generator(ErrorHandler):
     def __init__(self, program: prs.NodeProgram, file_content: str) -> None:
@@ -33,11 +33,49 @@ class Generator(ErrorHandler):
             self.push("rax")
         elif isinstance(term.var, prs.NodeTermIdent):
             if term.var.ident.value not in self.variables.keys():
-                self.raise_error("Value", f"variable was not declared: {term.var.ident.value}",
-                                 ignores_whitespace=True)
+                self.raise_error("Value", f"variable was not declared: {term.var.ident.value}", ignores_whitespace=True)
             location = self.variables[term.var.ident.value]
             self.output.append("    ; identifier eval\n")
             self.push(f"QWORD [rsp + {(self.stack_size - location - 1) * 8}]") # QWORD 64 bits (word = 16 bits)
+        elif isinstance(term.var, prs.NodeTermParen):
+            self.generate_expression(term.var.expr)
+    
+    def generate_binary_expression(self, bin_expr: prs.NodeBinExpr):
+        if isinstance(bin_expr.var, prs.NodeBinExprAdd):
+            self.generate_expression(bin_expr.var.rhs)
+            self.generate_expression(bin_expr.var.lhs)
+            self.output.append("    ; adding\n")
+            self.pop("rax")
+            self.pop("rbx")
+            self.output.append("    add rax, rbx\n")
+            self.push("rax")
+        elif isinstance(bin_expr.var, prs.NodeBinExprMulti):
+            self.generate_expression(bin_expr.var.rhs)
+            self.generate_expression(bin_expr.var.lhs)
+            self.output.append("    ; multiplying\n")
+            self.pop("rax")
+            self.pop("rbx")
+            self.output.append("    mul rbx\n")
+            self.push("rax")
+        elif isinstance(bin_expr.var, prs.NodeBinExprSub):
+            self.generate_expression(bin_expr.var.rhs)
+            self.generate_expression(bin_expr.var.lhs)
+            self.output.append("    ; subtracting\n")
+            self.pop("rax")
+            self.pop("rbx")
+            self.output.append("    sub rax, rbx\n")
+            self.push("rax")
+        elif isinstance(bin_expr.var, prs.NodeBinExprDiv):
+            self.generate_expression(bin_expr.var.rhs)
+            self.generate_expression(bin_expr.var.lhs)
+            self.output.append("    ; dividing\n")
+            self.pop("rax")
+            self.pop("rbx")
+            self.output.append("    div rbx\n")
+            self.push("rax")
+        else:
+            self.raise_error("Generator", "failed to parse binary expression",
+                             ignores_whitespace=True)
 
     def generate_expression(self, expression: prs.NodeExpr) -> None:
         """
@@ -46,13 +84,7 @@ class Generator(ErrorHandler):
         if isinstance(expression.var, prs.NodeTerm):
             self.generate_term(expression.var)
         elif isinstance(expression.var, prs.NodeBinExpr):
-            self.output.append("    ; adding\n")
-            self.generate_expression(expression.var.var.lhs)
-            self.generate_expression(expression.var.var.rhs)
-            self.pop("rax")
-            self.pop("rbx")
-            self.output.append("    add rax, rbx\n")
-            self.push("rax")
+            self.generate_binary_expression(expression.var)
 
     def generate_statement(self, statement) -> None:
         if isinstance(statement, prs.NodeStmtExit):

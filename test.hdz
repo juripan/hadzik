@@ -1,4 +1,4 @@
-naj s = 12
-naj as = 24 + 1 + 11 + s
+naj a = (8 + 3) * (3 + 3) / 3
+naj b = (4 + a) * 2
 
-vychod(as)
+vychod(b)

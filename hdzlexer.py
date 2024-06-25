@@ -17,6 +17,9 @@ def is_valid_keyword_content(char: str) -> bool:
 
 
 def search_for_keyword(potential_keyword: str) -> Token:
+    """
+    sees if a keyword is in the tokens list, otherwise makes an identifier
+    """
     if potential_keyword in tt.all_token_types:
         return Token(type=potential_keyword, value=None)
     else:
@@ -78,6 +81,15 @@ class Tokenizer(ErrorHandler):
                 self.advance()
             elif char == "+":
                 tokens.append(Token(type=tt.plus))
+                self.advance()
+            elif char == "-":
+                tokens.append(Token(type=tt.minus))
+                self.advance()
+            elif char == "*":
+                tokens.append(Token(type=tt.star))
+                self.advance()
+            elif char == "/":
+                tokens.append(Token(type=tt.slash))
                 self.advance()
             else:
                 self.raise_error("Syntax", "char not included in the lexer")
