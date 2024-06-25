@@ -1,5 +1,6 @@
 naj a = (8 + 3)
-naj b = (0-8) * (0-3)  // negative numbers can only be declared this way
+naj b = (0-8) * (0-3)  // negative numbers can only be declared this way, for now at least
+
 
 vychod(b)
 vychod(a)

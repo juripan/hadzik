@@ -88,6 +88,7 @@ class Parser(ErrorHandler):
     def __init__(self, tokens, file_content):
         super().__init__(file_content)
         self.index: int = -1
+        self.column_number = -1 # -1 means that theres no column number tracked
         self.all_tokens: list = tokens
         self.current_token: Token = None
         self.next_token()
@@ -212,6 +213,7 @@ class Parser(ErrorHandler):
         while self.current_token is not None:
             if self.current_token.type == tt.end_line:
                 self.line_number += 1
+                program.stmts.append(None)
                 self.next_token()
             elif self.current_token.type == tt.exit_:
                 program.stmts.append(self.parse_exit())

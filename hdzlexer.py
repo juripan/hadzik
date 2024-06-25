@@ -73,7 +73,7 @@ class Tokenizer(ErrorHandler):
                 self.advance()
                 tokens.append(Token(type=tt.end_line))
                 self.line_number += 1
-                self.column_number = 0
+                self.column_number = 1
             elif char == " ":
                 self.advance()
             elif char == "(":
