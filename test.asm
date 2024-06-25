@@ -4,20 +4,6 @@ _start:
     mov rax, 3
     push rax
     ; integer eval
-    mov rax, 3
-    push rax
-    ; integer eval
-    mov rax, 3
-    push rax
-    ; adding
-    pop rax
-    pop rbx
-    add rax, rbx
-    push rax
-    ; integer eval
-    mov rax, 3
-    push rax
-    ; integer eval
     mov rax, 8
     push rax
     ; adding
@@ -25,28 +11,27 @@ _start:
     pop rbx
     add rax, rbx
     push rax
-    ; multiplying
-    pop rax
-    pop rbx
-    mul rbx
-    push rax
-    ; dividing
-    pop rax
-    pop rbx
-    div rbx
+    ; integer eval
+    mov rax, 3
     push rax
     ; integer eval
-    mov rax, 2
+    mov rax, 0
     push rax
-    ; identifier eval
-    push QWORD [rsp + 8]
-    ; integer eval
-    mov rax, 4
-    push rax
-    ; adding
+    ; subtracting
     pop rax
     pop rbx
-    add rax, rbx
+    sub rax, rbx
+    push rax
+    ; integer eval
+    mov rax, 8
+    push rax
+    ; integer eval
+    mov rax, 0
+    push rax
+    ; subtracting
+    pop rax
+    pop rbx
+    sub rax, rbx
     push rax
     ; multiplying
     pop rax
@@ -55,6 +40,12 @@ _start:
     push rax
     ; identifier eval
     push QWORD [rsp + 0]
+    ; manual exit (vychod)
+    mov rax, 60
+    pop rdi
+    syscall
+    ; identifier eval
+    push QWORD [rsp + 8]
     ; manual exit (vychod)
     mov rax, 60
     pop rdi

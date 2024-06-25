@@ -38,6 +38,12 @@ class Tokenizer(ErrorHandler):
         self.column_number += 1
         self.current_char = self.file_content[self.index] if self.index < len(self.file_content) else None
 
+    def look_ahead(self,step: int = 1) -> str | None:
+        """
+        looks ahead step characters from the current characters
+        """
+        return self.file_content[self.index + step] if self.index + step < len(self.file_content) else None
+
     def tokenize(self):
         tokens: list[Token] = []
         while self.current_char is not None:
@@ -64,33 +70,37 @@ class Tokenizer(ErrorHandler):
                 buffer = ""
 
             elif char == "\n":
+                self.advance()
                 tokens.append(Token(type=tt.end_line))
                 self.line_number += 1
-                self.column_number = -1
-                self.advance()
+                self.column_number = 0
             elif char == " ":
                 self.advance()
             elif char == "(":
+                self.advance()
                 tokens.append(Token(type=tt.left_paren))
-                self.advance()
             elif char == ")":
+                self.advance()
                 tokens.append(Token(type=tt.right_paren))
-                self.advance()
             elif char == "=":
+                self.advance()
                 tokens.append(Token(type=tt.equals))
-                self.advance()
             elif char == "+":
+                self.advance()
                 tokens.append(Token(type=tt.plus))
-                self.advance()
             elif char == "-":
+                self.advance()
                 tokens.append(Token(type=tt.minus))
-                self.advance()
             elif char == "*":
+                self.advance()
                 tokens.append(Token(type=tt.star))
+            elif char == "/" and self.look_ahead() == "/":
                 self.advance()
+                while self.current_char != "\n":
+                    self.advance()
             elif char == "/":
-                tokens.append(Token(type=tt.slash))
                 self.advance()
+                tokens.append(Token(type=tt.slash))
             else:
                 self.raise_error("Syntax", "char not included in the lexer")
         return tokens

@@ -181,9 +181,8 @@ class Parser(ErrorHandler):
         if expr is None:
             self.raise_error("Syntax", "Invalid expression")
 
-        print("end", self.current_token, self.index)
         if self.current_token is None or self.current_token.type != tt.end_line:
-            self.raise_error("Syntax", "Expected endline (let)")
+            self.raise_error("Syntax", "Expected endline")
 
         return NodeStmtLet(ident, expr)
 
@@ -204,14 +203,13 @@ class Parser(ErrorHandler):
         self.next_token()
         
         if self.current_token is None or self.current_token.type != tt.end_line:
-            self.raise_error("Syntax", "Expected endline (exit)")
+            self.raise_error("Syntax", "Expected endline")
 
         return NodeStmtExit(expr=expr)
 
     def parse_program(self) -> NodeProgram:
         program: NodeProgram = NodeProgram(stmts=[])
         while self.current_token is not None:
-            print("start", self.current_token, self.index)
             if self.current_token.type == tt.end_line:
                 self.line_number += 1
                 self.next_token()

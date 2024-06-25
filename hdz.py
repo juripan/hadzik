@@ -12,6 +12,7 @@ with open("./" + filename, "r") as f:
     content: str = f.read()
 
 tokens = Tokenizer(content).tokenize()
+print(tokens)
 print(parse_tree := Parser(tokens, content).parse_program())
 print(final_asm := Generator(parse_tree, content).generate_program())
 
