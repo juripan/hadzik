@@ -7,7 +7,7 @@ class ErrorHandler:
 
     def find_line(self) -> str:
         file_content = self.file_content.splitlines()
-        return file_content[self.line_number - 1]
+        return file_content[self.line_number - 1] if self.line_number - 1 < len(file_content) else file_content[-1]
 
     def raise_error(self, type: str, details: str) -> None:
         wrong_line = self.find_line()

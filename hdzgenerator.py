@@ -1,6 +1,7 @@
 from hdzerrors import ErrorHandler
 import hdzparser as prs
-#TODO: maybe use numpy arrays instead of python lists, maybe
+from collections import OrderedDict
+
 
 class Generator(ErrorHandler):
     def __init__(self, program: prs.NodeProgram, file_content: str) -> None:
@@ -11,7 +12,9 @@ class Generator(ErrorHandler):
         self.column_number = -1
         
         self.stack_size: int = 0 # uses whole 64bit integers as size (until more datatypes are added)
-        self.variables: dict = {}
+        self.variables: OrderedDict = OrderedDict()
+        self.scopes: list[int] = []
+        self.label_count: int = 0
     
     def push(self, register: str):
         """
@@ -27,6 +30,21 @@ class Generator(ErrorHandler):
         self.output.append("    pop " + register + "\n")
         self.stack_size -= 1
 
+    def create_label(self) -> str:
+        return "label" + str(self.label_count)
+
+    def begin_scope(self):
+        self.scopes.append(len(self.variables))
+
+    def end_scope(self):
+        pop_count: int = len(self.variables) - self.scopes[-1]
+
+        self.output.append("    ; scope end\n    add rsp, " + str(pop_count * 8) + "\n")
+        self.stack_size -= pop_count
+        for _ in range(pop_count):
+            self.variables.popitem()
+        del self.scopes[-1]
+
     def generate_term(self, term: prs.NodeTerm) -> None:
         if isinstance(term.var, prs.NodeTermInt):
             self.output.append("    ; integer eval\n    mov rax, " + term.var.int_lit.value + "\n")
@@ -40,7 +58,7 @@ class Generator(ErrorHandler):
         elif isinstance(term.var, prs.NodeTermParen):
             self.generate_expression(term.var.expr)
     
-    def generate_binary_expression(self, bin_expr: prs.NodeBinExpr):
+    def generate_binary_expression(self, bin_expr: prs.NodeBinExpr) -> None:
         if isinstance(bin_expr.var, prs.NodeBinExprAdd):
             self.generate_expression(bin_expr.var.rhs)
             self.generate_expression(bin_expr.var.lhs)
@@ -85,6 +103,12 @@ class Generator(ErrorHandler):
         elif isinstance(expression.var, prs.NodeBinExpr):
             self.generate_binary_expression(expression.var)
 
+    def generate_scope(self, scope: prs.NodeScope) -> None:
+        self.begin_scope()
+        for stmt in scope.stmts:
+            self.generate_statement(stmt)
+        self.end_scope()
+
     def generate_statement(self, statement) -> None:
         if isinstance(statement, prs.NodeStmtExit):
             self.generate_expression(statement.expr)
@@ -99,10 +123,22 @@ class Generator(ErrorHandler):
             self.variables.update({statement.ident.value : self.stack_size})
             self.generate_expression(statement.expr)
         
-        elif statement is None: # just used for tracking line numbers
+        elif isinstance(statement, prs.NodeScope):
+            self.generate_scope(statement)
+        
+        elif isinstance(statement, prs.NodeStmtIf):
+            self.generate_expression(statement.expr)
+            self.pop("rax")
+            label = self.create_label()
+            self.output.append("test rax, rax\n")
+            self.output.append("    jz " + label + "\n")
+            self.generate_scope(statement.scope)
+            self.output.append(label + ":\n")
+
+        elif statement == "new_line": # just used for tracking line numbers
             self.line_number += 1
 
-    def generate_program(self) -> str: 
+    def generate_program(self) -> str:
         self.output.append("global _start\n_start:\n")
         for stmt in self.main_program.stmts:
             self.generate_statement(stmt)

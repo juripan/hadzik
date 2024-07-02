@@ -3,7 +3,11 @@
 [Stmt] -> {
     vychod([Expr])
     naj ident = [Expr]
+    [Scope]
+    kec [Expr] [Scope]
 }
+
+[Scope] -> {[Stmt]*}
 
 [Expr] -> {
     [Term]

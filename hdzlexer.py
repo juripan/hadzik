@@ -82,6 +82,12 @@ class Tokenizer(ErrorHandler):
             elif char == ")":
                 self.advance()
                 tokens.append(Token(type=tt.right_paren))
+            elif char == "{":
+                self.advance()
+                tokens.append(Token(type=tt.left_curly))
+            elif char == "}":
+                self.advance()
+                tokens.append(Token(type=tt.right_curly))
             elif char == "=":
                 self.advance()
                 tokens.append(Token(type=tt.equals))

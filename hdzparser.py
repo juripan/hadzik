@@ -79,9 +79,22 @@ class NodeStmtLet:
     expr: NodeExpr
 
 
+class NodeScope:
+    pass
+
+@dataclass(slots=True)
+class NodeStmtIf:
+    expr: NodeExpr
+    scope: NodeScope
+
+
+@dataclass(slots=True)
+class NodeScope: #TODO: make a separate node for statements
+    stmts: list[NodeStmtLet | NodeStmtExit | NodeScope | NodeStmtIf]
+
 @dataclass(slots=True)
 class NodeProgram:
-    stmts: list[NodeStmtLet | NodeStmtExit]
+    stmts: list[NodeStmtLet | NodeStmtExit | NodeScope | NodeStmtIf]
 
 
 class Parser(ErrorHandler):
@@ -208,17 +221,50 @@ class Parser(ErrorHandler):
 
         return NodeStmtExit(expr=expr)
 
+    def parse_scope(self) -> NodeScope:
+        self.next_token()  # left curly
+
+        scope = NodeScope(stmts=[])
+        while stmt := self.parse_statement():
+            scope.stmts.append(stmt)
+            if self.current_token and self.current_token.type == tt.right_curly:
+                self.next_token() # right curly
+                break
+        else:
+            self.raise_error("Syntax", "expected '}'")
+        return scope
+
+    def parse_if(self) -> NodeStmtIf:
+        self.next_token()
+
+        expr = self.parse_expr()
+        if expr is None:
+            self.raise_error("Value", "not able to evaluate expression")
+        
+        scope = self.parse_scope()
+        return NodeStmtIf(expr, scope)
+
+    def parse_statement(self) -> NodeStmtExit | NodeStmtLet | NodeScope | str | None:
+        if self.current_token is None:
+            return None
+        if self.current_token.type == tt.end_line:
+            self.line_number += 1
+            statement = "new_line"
+            self.next_token()
+        elif self.current_token.type == tt.exit_:
+            statement = self.parse_exit()
+        elif self.current_token.type == tt.let:
+            statement = self.parse_let()
+        elif self.current_token.type == tt.left_curly:
+            statement = self.parse_scope()
+        elif self.current_token.type == tt.if_:
+            statement = self.parse_if()
+        else:
+            self.raise_error("Parsing", "cannot parse program correctly")
+        return statement
+
     def parse_program(self) -> NodeProgram:
         program: NodeProgram = NodeProgram(stmts=[])
         while self.current_token is not None:
-            if self.current_token.type == tt.end_line:
-                self.line_number += 1
-                program.stmts.append(None)
-                self.next_token()
-            elif self.current_token.type == tt.exit_:
-                program.stmts.append(self.parse_exit())
-            elif self.current_token.type == tt.let:
-                program.stmts.append(self.parse_let())
-            else:
-                self.raise_error("Parsing", "cannot parse program correctly")
+            program.stmts.append(self.parse_statement())
         return program
