@@ -1,6 +1,10 @@
-naj a = (8 + 3)
-naj b = (0-8) * (0-3)  // negative numbers can only be declared this way, for now at least
+naj y = 0
+kec 1 { // 0 is false, 1 is true
+    y = 1
+} ikec 1 { 
+    y = 14
+} inac {
+    y = 12
+}
 
-
-vychod(b)
-vychod(a)
+vychod(y)

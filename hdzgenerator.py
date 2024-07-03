@@ -31,6 +31,7 @@ class Generator(ErrorHandler):
         self.stack_size -= 1
 
     def create_label(self) -> str:
+        self.label_count += 1
         return "label" + str(self.label_count)
 
     def begin_scope(self):
@@ -109,6 +110,22 @@ class Generator(ErrorHandler):
             self.generate_statement(stmt)
         self.end_scope()
 
+    def generate_if_predicate(self, pred: prs.NodeIfPred, end_label: str) -> None:
+        if isinstance(pred.var, prs.NodeIfPredElif):
+            self.generate_expression(pred.var.expr)
+            self.pop("rax")
+            label = self.create_label()
+            self.output.append("    test rax, rax\n")
+            self.output.append("    jz " + label + "\n")
+            self.generate_scope(pred.var.scope)
+            self.output.append("    jmp " + end_label + "\n")
+            self.output.append(label + ":\n")
+            if pred.var.pred is not None:
+                self.generate_if_predicate(pred.var.pred, end_label)
+
+        elif isinstance(pred.var, prs.NodeIfPredElse):
+            self.generate_scope(pred.var.scope)
+
     def generate_statement(self, statement) -> None:
         if isinstance(statement, prs.NodeStmtExit):
             self.generate_expression(statement.expr)
@@ -130,10 +147,26 @@ class Generator(ErrorHandler):
             self.generate_expression(statement.expr)
             self.pop("rax")
             label = self.create_label()
-            self.output.append("test rax, rax\n")
+            self.output.append("    test rax, rax\n")
             self.output.append("    jz " + label + "\n")
             self.generate_scope(statement.scope)
-            self.output.append(label + ":\n")
+            if statement.ifpred is not None:
+                end_label = self.create_label()
+                self.output.append("    jmp " + end_label + "\n")
+                self.output.append(label + ":\n")
+                self.generate_if_predicate(statement.ifpred, end_label)
+                self.output.append(end_label + ":\n")
+            else:
+                self.output.append(label + ":\n")
+
+        elif isinstance(statement, prs.NodeStmtAssign):
+            if statement.ident.value not in self.variables.keys():
+                self.raise_error("Value", "undeclared identifier: " + statement.ident.value)
+            
+            expr = self.generate_expression(statement.expr)
+            self.pop("rax")
+            self.output.append(f"    mov [rsp + {(self.stack_size - self.variables[statement.ident.value] - 1) * 8}], rax\n")
+
 
         elif statement == "new_line": # just used for tracking line numbers
             self.line_number += 1

@@ -1,3 +1,4 @@
+#TODO: fix the end lines acting weird while parsing, with if statements, scopes, etc.
 from dataclasses import dataclass
 from hdzlexer import Token
 import hdztokentypes as tt
@@ -82,10 +83,38 @@ class NodeStmtLet:
 class NodeScope:
     pass
 
+class NodeIfPred:
+    pass
+
+
+@dataclass(slots=True)
+class NodeIfPredElse:
+    scope: NodeScope
+
+
+@dataclass(slots=True)
+class NodeIfPredElif:
+    expr: NodeExpr
+    scope: NodeScope
+    pred: NodeIfPred
+
+
+@dataclass(slots=True)
+class NodeIfPred:
+    var: NodeIfPredElif | NodeIfPredElse
+
+
 @dataclass(slots=True)
 class NodeStmtIf:
     expr: NodeExpr
     scope: NodeScope
+    ifpred: NodeIfPred | None
+
+
+@dataclass(slots=True)
+class NodeStmtAssign:
+    ident: Token
+    expr: NodeExpr
 
 
 @dataclass(slots=True)
@@ -94,7 +123,7 @@ class NodeScope: #TODO: make a separate node for statements
 
 @dataclass(slots=True)
 class NodeProgram:
-    stmts: list[NodeStmtLet | NodeStmtExit | NodeScope | NodeStmtIf]
+    stmts: list[NodeStmtLet | NodeStmtExit | NodeScope | NodeStmtIf | NodeStmtAssign]
 
 
 class Parser(ErrorHandler):
@@ -222,6 +251,8 @@ class Parser(ErrorHandler):
         return NodeStmtExit(expr=expr)
 
     def parse_scope(self) -> NodeScope:
+        if self.current_token is None or self.current_token.type != tt.left_curly:
+            self.raise_error("Syntax", "expected '{'")
         self.next_token()  # left curly
 
         scope = NodeScope(stmts=[])
@@ -232,7 +263,33 @@ class Parser(ErrorHandler):
                 break
         else:
             self.raise_error("Syntax", "expected '}'")
+        
+        if self.current_token.type == tt.end_line:
+            self.next_token()
+
         return scope
+
+    def parse_ifpred(self) -> NodeIfPred | None:
+        if self.current_token.type == tt.elif_:
+            self.next_token()
+            
+            expr = self.parse_expr()
+            if expr is None:
+                self.raise_error("Value", "not able to evaluate expression")
+            
+            scope = self.parse_scope()
+
+            ifpred = self.parse_ifpred()
+
+            return NodeIfPred(NodeIfPredElif(expr, scope, ifpred))
+        elif self.current_token.type == tt.else_:
+            self.next_token()
+            
+            scope = self.parse_scope()
+
+            return NodeIfPred(NodeIfPredElse(scope))
+        else:
+            return None
 
     def parse_if(self) -> NodeStmtIf:
         self.next_token()
@@ -242,9 +299,11 @@ class Parser(ErrorHandler):
             self.raise_error("Value", "not able to evaluate expression")
         
         scope = self.parse_scope()
-        return NodeStmtIf(expr, scope)
 
-    def parse_statement(self) -> NodeStmtExit | NodeStmtLet | NodeScope | str | None:
+        ifpred = self.parse_ifpred()
+        return NodeStmtIf(expr, scope, ifpred)
+
+    def parse_statement(self) -> NodeStmtExit | NodeStmtLet | NodeScope | NodeStmtAssign | str | None:
         if self.current_token is None:
             return None
         if self.current_token.type == tt.end_line:
@@ -259,6 +318,16 @@ class Parser(ErrorHandler):
             statement = self.parse_scope()
         elif self.current_token.type == tt.if_:
             statement = self.parse_if()
+        elif self.current_token.type == tt.identifier and self.get_token_at(1) is not None and self.get_token_at(1).type == tt.equals:
+            ident = self.current_token
+            self.next_token()
+            self.next_token()
+
+            expr = self.parse_expr()
+            if expr is None:
+                self.raise_error("Value", "expected expression")
+            
+            return NodeStmtAssign(ident, expr)
         else:
             self.raise_error("Parsing", "cannot parse program correctly")
         return statement

@@ -1,51 +1,53 @@
 global _start
 _start:
     ; integer eval
-    mov rax, 3
-    push rax
-    ; integer eval
-    mov rax, 8
-    push rax
-    ; adding
-    pop rax
-    pop rbx
-    add rax, rbx
-    push rax
-    ; integer eval
-    mov rax, 3
+    mov rax, 0
     push rax
     ; integer eval
     mov rax, 0
     push rax
-    ; subtracting
     pop rax
-    pop rbx
-    sub rax, rbx
-    push rax
+    test rax, rax
+    jz label1
     ; integer eval
-    mov rax, 8
+    mov rax, 1
     push rax
+    pop rax
+    mov [rsp + 0], rax
+    ; scope end
+    add rsp, 0
+    jmp label2
+label1:
     ; integer eval
     mov rax, 0
     push rax
-    ; subtracting
     pop rax
-    pop rbx
-    sub rax, rbx
+    test rax, rax
+    jz label3
+    ; integer eval
+    mov rax, 14
     push rax
-    ; multiplying
     pop rax
-    pop rbx
-    mul rbx
+    mov [rsp + 0], rax
+    ; scope end
+    add rsp, 0
+    jmp label2
+label3:
+    ; integer eval
+    mov rax, 12
     push rax
+    pop rax
+    mov [rsp + 0], rax
+    ; scope end
+    add rsp, 0
+label2:
+    ; integer eval
+    mov rax, 55
+    push rax
+    pop rax
+    mov [rsp + 0], rax
     ; identifier eval
     push QWORD [rsp + 0]
-    ; manual exit (vychod)
-    mov rax, 60
-    pop rdi
-    syscall
-    ; identifier eval
-    push QWORD [rsp + 8]
     ; manual exit (vychod)
     mov rax, 60
     pop rdi

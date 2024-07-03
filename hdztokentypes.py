@@ -7,6 +7,8 @@ end_line = "end_ln"
 
 exit_ = "vychod" # names of keywords must be what is used in the hadzik syntax
 if_ = "kec"
+elif_ = "ikec"
+else_ = "inac"
 let = "naj"
 
 identifier = "ident"
@@ -22,7 +24,7 @@ equals = "="
 all_token_types = (
     left_paren, right_paren, left_curly, right_curly,
     end_line, 
-    exit_, let, if_,
+    exit_, let, if_, elif_, else_,
     identifier, integer, floating_number,
     plus, minus, star, slash
 )
