@@ -60,8 +60,13 @@ class NodeBinExprMulti:
 
 
 @dataclass(slots=True)
+class NodeBinExprComp:
+    lhs: NodeExpr
+    rhs: NodeExpr
+
+@dataclass(slots=True)
 class NodeBinExpr:
-    var: NodeBinExprAdd | NodeBinExprMulti | NodeBinExprSub | NodeBinExprDiv
+    var: NodeBinExprAdd | NodeBinExprMulti | NodeBinExprSub | NodeBinExprDiv | NodeBinExprComp
 
 
 @dataclass(slots=True)
@@ -203,6 +208,10 @@ class Parser(ErrorHandler):
                 expr_lhs2.var = expr_lhs.var
                 div = NodeBinExprDiv(lhs=expr_lhs2, rhs=expr_rhs)
                 expr.var = div
+            elif op.type == tt.comparison:
+                expr_lhs2.var = expr_lhs.var
+                comp = NodeBinExprComp(lhs=expr_lhs2, rhs=expr_rhs)
+                expr.var = comp
             else:
                 assert False # unreachable
             expr_lhs.var = expr

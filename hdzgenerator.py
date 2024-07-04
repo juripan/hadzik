@@ -40,7 +40,7 @@ class Generator(ErrorHandler):
     def end_scope(self):
         pop_count: int = len(self.variables) - self.scopes[-1]
 
-        self.output.append("    ; scope end\n    add rsp, " + str(pop_count * 8) + "\n")
+        self.output.append("    add rsp, " + str(pop_count * 8) + "\n")
         self.stack_size -= pop_count
         for _ in range(pop_count):
             self.variables.popitem()
@@ -48,13 +48,12 @@ class Generator(ErrorHandler):
 
     def generate_term(self, term: prs.NodeTerm) -> None:
         if isinstance(term.var, prs.NodeTermInt):
-            self.output.append("    ; integer eval\n    mov rax, " + term.var.int_lit.value + "\n")
+            self.output.append("    mov rax, " + term.var.int_lit.value + "\n")
             self.push("rax")
         elif isinstance(term.var, prs.NodeTermIdent):
             if term.var.ident.value not in self.variables.keys():
                 self.raise_error("Value", f"variable was not declared: {term.var.ident.value}")
             location = self.variables[term.var.ident.value]
-            self.output.append("    ; identifier eval\n")
             self.push(f"QWORD [rsp + {(self.stack_size - location - 1) * 8}]") # QWORD 64 bits (word = 16 bits)
         elif isinstance(term.var, prs.NodeTermParen):
             self.generate_expression(term.var.expr)
@@ -63,7 +62,6 @@ class Generator(ErrorHandler):
         if isinstance(bin_expr.var, prs.NodeBinExprAdd):
             self.generate_expression(bin_expr.var.rhs)
             self.generate_expression(bin_expr.var.lhs)
-            self.output.append("    ; adding\n")
             self.pop("rax")
             self.pop("rbx")
             self.output.append("    add rax, rbx\n")
@@ -71,7 +69,6 @@ class Generator(ErrorHandler):
         elif isinstance(bin_expr.var, prs.NodeBinExprMulti):
             self.generate_expression(bin_expr.var.rhs)
             self.generate_expression(bin_expr.var.lhs)
-            self.output.append("    ; multiplying\n")
             self.pop("rax")
             self.pop("rbx")
             self.output.append("    mul rbx\n")
@@ -79,7 +76,6 @@ class Generator(ErrorHandler):
         elif isinstance(bin_expr.var, prs.NodeBinExprSub):
             self.generate_expression(bin_expr.var.rhs)
             self.generate_expression(bin_expr.var.lhs)
-            self.output.append("    ; subtracting\n")
             self.pop("rax")
             self.pop("rbx")
             self.output.append("    sub rax, rbx\n")
@@ -87,11 +83,13 @@ class Generator(ErrorHandler):
         elif isinstance(bin_expr.var, prs.NodeBinExprDiv):
             self.generate_expression(bin_expr.var.rhs)
             self.generate_expression(bin_expr.var.lhs)
-            self.output.append("    ; dividing\n")
             self.pop("rax")
             self.pop("rbx")
             self.output.append("    div rbx\n")
             self.push("rax")
+        elif isinstance(bin_expr.var, prs.NodeBinExprComp):
+            self.generate_expression(bin_expr.var.rhs)
+            self.generate_expression(bin_expr.var.lhs)
         else:
             self.raise_error("Generator", "failed to parse binary expression")
 
@@ -113,10 +111,20 @@ class Generator(ErrorHandler):
     def generate_if_predicate(self, pred: prs.NodeIfPred, end_label: str) -> None:
         if isinstance(pred.var, prs.NodeIfPredElif):
             self.generate_expression(pred.var.expr)
-            self.pop("rax")
             label = self.create_label()
-            self.output.append("    test rax, rax\n")
-            self.output.append("    jz " + label + "\n")
+
+            if isinstance(pred.var.expr.var.var, prs.NodeBinExprComp):
+                self.pop("rax")
+                self.pop("rbx")
+                self.output.append("    cmp rax, rbx\n")
+                if_comparison: str = "jne "
+            else:
+                print(pred.var.expr.var.var)
+                self.pop("rax")
+                self.output.append("    test rax, rax\n")
+                if_comparison: str = "jz "
+            
+            self.output.append("    " + if_comparison + label + "\n")
             self.generate_scope(pred.var.scope)
             self.output.append("    jmp " + end_label + "\n")
             self.output.append(label + ":\n")
@@ -145,11 +153,21 @@ class Generator(ErrorHandler):
         
         elif isinstance(statement, prs.NodeStmtIf):
             self.generate_expression(statement.expr)
-            self.pop("rax")
             label = self.create_label()
-            self.output.append("    test rax, rax\n")
-            self.output.append("    jz " + label + "\n")
+
+            if isinstance(statement.expr.var.var, prs.NodeBinExprComp):
+                self.pop("rax")
+                self.pop("rbx")
+                self.output.append("    cmp rax, rbx\n")
+                if_comparison: str = "jne "
+            else:
+                self.pop("rax")
+                self.output.append("    test rax, rax\n")
+                if_comparison: str = "jz "
+
+            self.output.append("    " + if_comparison + label + "\n")
             self.generate_scope(statement.scope)
+            
             if statement.ifpred is not None:
                 end_label = self.create_label()
                 self.output.append("    jmp " + end_label + "\n")

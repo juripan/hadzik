@@ -21,18 +21,22 @@ star = "*"
 slash = "/"
 equals = "="
 
+comparison = "=="
+
 all_token_types = (
     left_paren, right_paren, left_curly, right_curly,
     end_line, 
     exit_, let, if_, elif_, else_,
     identifier, integer, floating_number,
-    plus, minus, star, slash
+    plus, minus, star, slash, equals, comparison
 )
 
 def get_prec_level(token_type: str) -> int | None:
-    if token_type == plus or token_type == minus:
+    if token_type == comparison:
         return 0
-    elif token_type == star or token_type == slash:
+    elif token_type == plus or token_type == minus:
         return 1
+    elif token_type == star or token_type == slash:
+        return 2
     else:
         return None

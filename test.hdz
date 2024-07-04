@@ -1,10 +1,12 @@
 naj y = 0
-kec 1 { // 0 is false, 1 is true
-    y = 1
-} ikec 1 { 
+kec 5 == 0 { // comparison works now
+    y = 11
+} ikec (1) {
     y = 14
 } inac {
     y = 12
 }
 
 vychod(y)
+vychod(1 == 12) // this doesn't work as intended
+// also chaining multiple comparisons leads to undefined behavior

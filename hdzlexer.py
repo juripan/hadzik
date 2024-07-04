@@ -90,7 +90,11 @@ class Tokenizer(ErrorHandler):
                 tokens.append(Token(type=tt.right_curly))
             elif char == "=":
                 self.advance()
-                tokens.append(Token(type=tt.equals))
+                if self.current_char == "=":
+                    self.advance()
+                    tokens.append(Token(type=tt.comparison))
+                else:
+                    tokens.append(Token(type=tt.equals))
             elif char == "+":
                 self.advance()
                 tokens.append(Token(type=tt.plus))
@@ -102,7 +106,7 @@ class Tokenizer(ErrorHandler):
                 tokens.append(Token(type=tt.star))
             elif char == "/" and self.look_ahead() == "/":
                 self.advance()
-                while self.current_char != "\n":
+                while self.current_char not in ("\n", None):
                     self.advance()
             elif char == "/":
                 self.advance()
