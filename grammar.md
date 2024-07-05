@@ -18,6 +18,7 @@
 
 [Expr] -> {
     [Term]
+    -[Term]
     [BinExpr]
 }
 

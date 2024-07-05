@@ -2,39 +2,13 @@ global _start
 _start:
     mov rax, 0
     push rax
-    mov rax, 0
-    push rax
-    mov rax, 5
-    push rax
-    pop rax
-    pop rbx
-    cmp rax, rbx
-    jne label1
-    mov rax, 11
-    push rax
-    pop rax
-    mov [rsp + 0], rax
-    add rsp, 0
-    jmp label2
-label1:
+    push QWORD [rsp + -8]
     mov rax, 1
     push rax
     pop rax
-    test rax, rax
-    jz label3
-    mov rax, 14
+    pop rbx
+    add rax, rbx
     push rax
-    pop rax
-    mov [rsp + 0], rax
-    add rsp, 0
-    jmp label2
-label3:
-    mov rax, 12
-    push rax
-    pop rax
-    mov [rsp + 0], rax
-    add rsp, 0
-label2:
     push QWORD [rsp + 0]
     ; manual exit (vychod)
     mov rax, 60

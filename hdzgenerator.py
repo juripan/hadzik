@@ -31,13 +31,27 @@ class Generator(ErrorHandler):
         self.stack_size -= 1
 
     def create_label(self) -> str:
+        """
+        returns a name for a new label based on the amount of labels already created
+        """
         self.label_count += 1
         return "label" + str(self.label_count)
 
-    def begin_scope(self):
+    def begin_scope(self) -> None:
+        """
+        only used in the generate_scope() method,
+        adds the amount of variables to the scopes list 
+        so the end scopes function knows how many variables it should delete
+        """
         self.scopes.append(len(self.variables))
 
-    def end_scope(self):
+    def end_scope(self) -> None:
+        """
+        only used in the generate_scope() method,
+        removes the last scopes variables from memory (by moving the stack pointer),
+        removes itself from the generators list of scopes,
+        removes the aforementioned variables from the generators dictionary
+        """
         pop_count: int = len(self.variables) - self.scopes[-1]
 
         self.output.append("    add rsp, " + str(pop_count * 8) + "\n")
@@ -47,7 +61,12 @@ class Generator(ErrorHandler):
         del self.scopes[-1]
 
     def generate_term(self, term: prs.NodeTerm) -> None:
+        """
+        generates a term, a term being a variable or a number
+        """
         if isinstance(term.var, prs.NodeTermInt):
+            if term.negative:
+                term.var.int_lit.value = "-" + term.var.int_lit.value
             self.output.append("    mov rax, " + term.var.int_lit.value + "\n")
             self.push("rax")
         elif isinstance(term.var, prs.NodeTermIdent):
@@ -55,10 +74,23 @@ class Generator(ErrorHandler):
                 self.raise_error("Value", f"variable was not declared: {term.var.ident.value}")
             location = self.variables[term.var.ident.value]
             self.push(f"QWORD [rsp + {(self.stack_size - location - 1) * 8}]") # QWORD 64 bits (word = 16 bits)
+            if term.negative:
+                self.pop("rbx")
+                self.output.append("    mov rax, -1\n")
+                self.output.append("    mul rbx\n")
+                self.push("rax")
         elif isinstance(term.var, prs.NodeTermParen):
             self.generate_expression(term.var.expr)
+            if term.negative:
+                self.pop("rbx")
+                self.output.append("    mov rax, -1\n")
+                self.output.append("    mul rbx\n")
+                self.push("rax")
     
     def generate_binary_expression(self, bin_expr: prs.NodeBinExpr) -> None:
+        """
+        generates a binary expression that gets pushed on top of the stack
+        """
         if isinstance(bin_expr.var, prs.NodeBinExprAdd):
             self.generate_expression(bin_expr.var.rhs)
             self.generate_expression(bin_expr.var.lhs)
@@ -87,7 +119,9 @@ class Generator(ErrorHandler):
             self.pop("rbx")
             self.output.append("    div rbx\n")
             self.push("rax")
-        elif isinstance(bin_expr.var, prs.NodeBinExprComp):
+        elif isinstance(bin_expr.var, prs.NodeBinExprComp): 
+            #TODO: make this generate a value 
+            #and handle the comparison instead of leaving that to the if statement block
             self.generate_expression(bin_expr.var.rhs)
             self.generate_expression(bin_expr.var.lhs)
         else:
@@ -109,7 +143,11 @@ class Generator(ErrorHandler):
         self.end_scope()
 
     def generate_if_predicate(self, pred: prs.NodeIfPred, end_label: str) -> None:
+        """
+        generates the following statements connected to the if statement if there are any
+        """
         if isinstance(pred.var, prs.NodeIfPredElif):
+            self.output.append("    ;elif\n")
             self.generate_expression(pred.var.expr)
             label = self.create_label()
 
@@ -128,13 +166,19 @@ class Generator(ErrorHandler):
             self.generate_scope(pred.var.scope)
             self.output.append("    jmp " + end_label + "\n")
             self.output.append(label + ":\n")
+            self.output.append("    ;/elif\n")
             if pred.var.pred is not None:
                 self.generate_if_predicate(pred.var.pred, end_label)
 
         elif isinstance(pred.var, prs.NodeIfPredElse):
+            self.output.append("    ;else\n")
             self.generate_scope(pred.var.scope)
+            self.output.append("    ;/else\n")
 
     def generate_statement(self, statement) -> None:
+        """
+        generates a statement based on the node given
+        """
         if isinstance(statement, prs.NodeStmtExit):
             self.generate_expression(statement.expr)
             self.output.append("    ; manual exit (vychod)\n")
@@ -152,6 +196,7 @@ class Generator(ErrorHandler):
             self.generate_scope(statement)
         
         elif isinstance(statement, prs.NodeStmtIf):
+            self.output.append("    ;if block\n")
             self.generate_expression(statement.expr)
             label = self.create_label()
 
@@ -176,20 +221,26 @@ class Generator(ErrorHandler):
                 self.output.append(end_label + ":\n")
             else:
                 self.output.append(label + ":\n")
+            self.output.append("    ;/if block\n")
 
         elif isinstance(statement, prs.NodeStmtAssign):
+            self.output.append("    ;reassigning a variable\n")
             if statement.ident.value not in self.variables.keys():
                 self.raise_error("Value", "undeclared identifier: " + statement.ident.value)
             
-            expr = self.generate_expression(statement.expr)
+            self.generate_expression(statement.expr)
             self.pop("rax")
             self.output.append(f"    mov [rsp + {(self.stack_size - self.variables[statement.ident.value] - 1) * 8}], rax\n")
-
+            self.output.append("    ;/reassigning a variable\n")
 
         elif statement == "new_line": # just used for tracking line numbers
             self.line_number += 1
 
     def generate_program(self) -> str:
+        """
+        generates the whole assembly based on the nodes that are given,
+        returns a string that contains the assembly
+        """
         self.output.append("global _start\n_start:\n")
         for stmt in self.main_program.stmts:
             self.generate_statement(stmt)

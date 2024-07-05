@@ -28,6 +28,7 @@ class NodeTermParen:
 @dataclass(slots=True)
 class NodeTerm:
     var: NodeTermIdent | NodeTermInt | NodeTermParen
+    negative: bool = False
 
 
 @dataclass(slots=True)
@@ -149,10 +150,15 @@ class Parser(ErrorHandler):
 
 
     def parse_term(self) -> NodeTerm | None:
+        negative = False
+        if self.current_token is not None and self.current_token.type == tt.minus:
+            negative = True
+            self.next_token()
+
         if self.current_token is not None and self.current_token.type == tt.integer:
-            return NodeTerm(var=NodeTermInt(int_lit=self.current_token))
+            return NodeTerm(var=NodeTermInt(int_lit=self.current_token), negative=negative)
         elif self.current_token is not None and self.current_token.type == tt.identifier:
-            return NodeTerm(var=NodeTermIdent(ident=self.current_token))
+            return NodeTerm(var=NodeTermIdent(ident=self.current_token), negative=negative)
         elif self.current_token is not None and self.current_token.type == tt.left_paren:
             self.next_token()
             expr = self.parse_expr()
@@ -162,7 +168,7 @@ class Parser(ErrorHandler):
             if self.current_token is None or self.current_token.type != tt.right_paren:
                 self.raise_error("Syntax", "expected ')'")
 
-            return NodeTerm(var=NodeTermParen(expr=expr))
+            return NodeTerm(var=NodeTermParen(expr=expr), negative=negative)
         else:
             return None
 
@@ -230,6 +236,8 @@ class Parser(ErrorHandler):
         self.next_token()
 
         expr = self.parse_expr()
+        if isinstance(expr.var.var, NodeTermIdent) and expr.var.var.ident.value:
+            self.raise_error("Syntax", "Variable not defined")
         if expr is None:
             self.raise_error("Syntax", "Invalid expression")
 

@@ -32,6 +32,10 @@ all_token_types = (
 )
 
 def get_prec_level(token_type: str) -> int | None:
+    """
+    returns the precedence level of the token, 
+    returns None if that token doesn't have a precedence level (token isn't a binary operator)
+    """
     if token_type == comparison:
         return 0
     elif token_type == plus or token_type == minus:

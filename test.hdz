@@ -1,12 +1,6 @@
-naj y = 0
-kec 5 == 0 { // comparison works now
-    y = 11
-} ikec (1) {
-    y = 14
-} inac {
-    y = 12
-}
+naj y = 0 // this doesnt work
+naj x = 1 + x // this still does
 
-vychod(y)
+vychod(x)
 vychod(1 == 12) // this doesn't work as intended
 // also chaining multiple comparisons leads to undefined behavior

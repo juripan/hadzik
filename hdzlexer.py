@@ -34,13 +34,16 @@ class Tokenizer(ErrorHandler):
         self.advance()
     
     def advance(self):
+        """
+        changes the current char to the next one and increments the index and the column number
+        """
         self.index += 1
         self.column_number += 1
         self.current_char = self.file_content[self.index] if self.index < len(self.file_content) else None
 
     def look_ahead(self,step: int = 1) -> str | None:
         """
-        looks ahead step characters from the current characters
+        looks ahead step characters from the current character
         """
         return self.file_content[self.index + step] if self.index + step < len(self.file_content) else None
 
