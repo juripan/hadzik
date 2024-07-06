@@ -1,14 +1,7 @@
-naj y = -12
-naj x = 1 
-naj res = 0
+naj y = 1
 
 // also chaining multiple comparisons leads to undefined behavior a.k.a javascript behavior
 // because ((1 < 12) < 12) -> 1 < 12 -> 1
-kec ((1 < y) aj (y < 12)) {
-    res = 1
-}
-inac {
-    res = 99
-}
 
-vychod(res)
+vychod(y >= 12)
+//TODO: negative number don't work correctly for comparisons

@@ -25,6 +25,8 @@ is_equal = "=="
 is_not_equal = "!="
 larger_than = ">"
 less_than = "<"
+larger_than_or_eq = ">="
+less_than_or_eq = "<="
 
 and_ = "aj"
 or_ = "abo"
@@ -35,7 +37,7 @@ all_token_types = (
     exit_, let, if_, elif_, else_,
     identifier, integer, floating_number,
     plus, minus, star, slash, equals, 
-    is_equal, is_not_equal, larger_than, less_than,
+    is_equal, is_not_equal, larger_than, less_than, larger_than_or_eq, less_than_or_eq,
     and_, or_, 
 )
 
@@ -46,7 +48,7 @@ def get_prec_level(token_type: str) -> int | None:
     """
     if token_type == and_ or token_type == or_:
         return 0
-    elif token_type in (is_equal, is_not_equal, larger_than, less_than):
+    elif token_type in (is_equal, is_not_equal, larger_than, less_than, larger_than_or_eq, less_than_or_eq):
         return 1
     elif token_type == plus or token_type == minus:
         return 2

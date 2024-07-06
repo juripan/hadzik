@@ -223,7 +223,7 @@ class Parser(ErrorHandler):
                 expr_lhs2.var = expr_lhs.var
                 div = NodeBinExprDiv(lhs=expr_lhs2, rhs=expr_rhs)
                 expr.var = div
-            elif op.type in (tt.is_equal, tt.is_not_equal, tt.larger_than, tt.less_than):
+            elif op.type in (tt.is_equal, tt.is_not_equal, tt.larger_than, tt.less_than, tt.larger_than_or_eq, tt.less_than_or_eq):
                 expr_lhs2.var = expr_lhs.var
                 comp = NodeBinExprComp(lhs=expr_lhs2, rhs=expr_rhs, comp_sign=op)
                 expr.var = comp

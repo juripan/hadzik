@@ -107,10 +107,18 @@ class Tokenizer(ErrorHandler):
                     self.raise_error("Syntax", "char not included in the lexer") #TODO: logical NOT implementation goes here
             elif char == ">":
                 self.advance()
-                tokens.append(Token(type=tt.larger_than))
+                if self.current_char == "=":
+                    self.advance()
+                    tokens.append(Token(tt.larger_than_or_eq))
+                else:
+                    tokens.append(Token(type=tt.larger_than))
             elif char == "<":
                 self.advance()
-                tokens.append(Token(type=tt.less_than))
+                if self.current_char == "=":
+                    self.advance()
+                    tokens.append(Token(tt.less_than_or_eq))
+                else:
+                    tokens.append(Token(type=tt.less_than))
             elif char == "+":
                 self.advance()
                 tokens.append(Token(type=tt.plus))
