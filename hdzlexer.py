@@ -98,6 +98,19 @@ class Tokenizer(ErrorHandler):
                     tokens.append(Token(type=tt.is_equal))
                 else:
                     tokens.append(Token(type=tt.equals))
+            elif char == "!":
+                self.advance()
+                if self.current_char == "=":
+                    self.advance()
+                    tokens.append(Token(type=tt.is_not_equal))
+                else:
+                    self.raise_error("Syntax", "char not included in the lexer") #TODO: logical NOT implementation goes here
+            elif char == ">":
+                self.advance()
+                tokens.append(Token(type=tt.larger_than))
+            elif char == "<":
+                self.advance()
+                tokens.append(Token(type=tt.less_than))
             elif char == "+":
                 self.advance()
                 tokens.append(Token(type=tt.plus))

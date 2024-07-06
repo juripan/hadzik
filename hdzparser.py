@@ -62,8 +62,10 @@ class NodeBinExprMulti:
 
 @dataclass(slots=True)
 class NodeBinExprComp:
+    comp_sign: Token
     lhs: NodeExpr
     rhs: NodeExpr
+
 
 @dataclass(slots=True)
 class NodeBinExpr:
@@ -214,9 +216,9 @@ class Parser(ErrorHandler):
                 expr_lhs2.var = expr_lhs.var
                 div = NodeBinExprDiv(lhs=expr_lhs2, rhs=expr_rhs)
                 expr.var = div
-            elif op.type == tt.is_equal:
+            elif op.type in (tt.is_equal, tt.is_not_equal, tt.larger_than, tt.less_than):
                 expr_lhs2.var = expr_lhs.var
-                comp = NodeBinExprComp(lhs=expr_lhs2, rhs=expr_rhs)
+                comp = NodeBinExprComp(lhs=expr_lhs2, rhs=expr_rhs, comp_sign=op)
                 expr.var = comp
             else:
                 assert False # unreachable
@@ -236,7 +238,7 @@ class Parser(ErrorHandler):
         self.next_token()
 
         expr = self.parse_expr()
-        
+
         if expr is None:
             self.raise_error("Syntax", "Invalid expression")
 

@@ -1,6 +1,14 @@
-naj y = y // this doesnt work
-naj x = 1  + x // this doesnt work also
+naj y = 12
+naj x = 1 
+naj res = 0
 
-vychod(x)
-vychod(1 == 12) // this doesn't work as intended
-// also chaining multiple comparisons leads to undefined behavior
+// also chaining multiple comparisons leads to undefined behavior a.k.a javascript behavior
+// because ((1 < 12) < 12) -> 1 < 12 -> 1
+kec 1 < y < 12 {
+    res = 1
+}
+kec x > y {
+    res = 2
+}
+
+vychod(res)

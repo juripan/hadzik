@@ -1,7 +1,7 @@
 from hdzerrors import ErrorHandler
 import hdzparser as prs
 from collections import OrderedDict
-
+import hdztokentypes as tt
 
 class Generator(ErrorHandler):
     def __init__(self, program: prs.NodeProgram, file_content: str) -> None:
@@ -87,6 +87,28 @@ class Generator(ErrorHandler):
                 self.output.append("    mul rbx\n")
                 self.push("rax")
     
+    def generate_comparison(self, comparison: prs.NodeBinExprComp) -> None:
+        """
+        generates a comparison expression, a type of binary expression
+        """
+        self.generate_expression(comparison.rhs)
+        self.generate_expression(comparison.lhs)
+        self.pop("rax")
+        self.pop("rbx")
+        self.output.append("    cmp rax, rbx\n")
+        if comparison.comp_sign.type == tt.is_equal:
+            self.output.append("    sete al\n")
+        elif comparison.comp_sign.type == tt.is_not_equal:
+            self.output.append("    setne al\n")
+        elif comparison.comp_sign.type == tt.larger_than:
+            self.output.append("    seta al\n")
+        elif comparison.comp_sign.type == tt.less_than:
+            self.output.append("    setc al\n")
+        else:
+            self.raise_error("Syntax", "Invalid comparison expression")
+        self.output.append("    movzx rax, al\n")
+        self.push("rax")
+
     def generate_binary_expression(self, bin_expr: prs.NodeBinExpr) -> None:
         """
         generates a binary expression that gets pushed on top of the stack
@@ -120,12 +142,9 @@ class Generator(ErrorHandler):
             self.output.append("    div rbx\n")
             self.push("rax")
         elif isinstance(bin_expr.var, prs.NodeBinExprComp): 
-            #TODO: make this generate a value 
-            #and handle the comparison instead of leaving that to the if statement block
-            self.generate_expression(bin_expr.var.rhs)
-            self.generate_expression(bin_expr.var.lhs)
+            self.generate_comparison(bin_expr.var)
         else:
-            self.raise_error("Generator", "failed to parse binary expression")
+            self.raise_error("Generator", "failed to generate binary expression")
 
     def generate_expression(self, expression: prs.NodeExpr) -> None:
         """
@@ -151,16 +170,9 @@ class Generator(ErrorHandler):
             self.generate_expression(pred.var.expr)
             label = self.create_label()
 
-            if isinstance(pred.var.expr.var.var, prs.NodeBinExprComp):
-                self.pop("rax")
-                self.pop("rbx")
-                self.output.append("    cmp rax, rbx\n")
-                if_comparison: str = "jne "
-            else:
-                print(pred.var.expr.var.var)
-                self.pop("rax")
-                self.output.append("    test rax, rax\n")
-                if_comparison: str = "jz "
+            self.pop("rax")
+            self.output.append("    test rax, rax\n")
+            if_comparison: str = "jz "
             
             self.output.append("    " + if_comparison + label + "\n")
             self.generate_scope(pred.var.scope)
@@ -201,15 +213,9 @@ class Generator(ErrorHandler):
             self.generate_expression(statement.expr)
             label = self.create_label()
 
-            if isinstance(statement.expr.var.var, prs.NodeBinExprComp):
-                self.pop("rax")
-                self.pop("rbx")
-                self.output.append("    cmp rax, rbx\n")
-                if_comparison: str = "jne "
-            else:
-                self.pop("rax")
-                self.output.append("    test rax, rax\n")
-                if_comparison: str = "jz "
+            self.pop("rax")
+            self.output.append("    test rax, rax\n")
+            if_comparison: str = "jz "
 
             self.output.append("    " + if_comparison + label + "\n")
             self.generate_scope(statement.scope)
