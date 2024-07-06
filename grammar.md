@@ -23,14 +23,16 @@
 }
 
 [BinExpr] -> {
-    [Expr] * [Expr] prec = 2
-    [Expr] / [Expr] prec = 2
-    [Expr] + [Expr] prec = 1
-    [Expr] - [Expr] prec = 1
-    [Expr] == [Expr] prec = 0
-    [Expr] != [Expr] prec = 0
-    [Expr] > [Expr] prec = 0
-    [Expr] < [Expr] prec = 0
+    [Expr] * [Expr] prec = 3
+    [Expr] / [Expr] prec = 3
+    [Expr] + [Expr] prec = 2
+    [Expr] - [Expr] prec = 2
+    [Expr] == [Expr] prec = 1
+    [Expr] != [Expr] prec = 1
+    [Expr] > [Expr] prec = 1
+    [Expr] < [Expr] prec = 1
+    [Expr] aj [Expr] prec = 0
+    [Expr] abo [Expr] prec = 0
 }
 
 [Term] -> {

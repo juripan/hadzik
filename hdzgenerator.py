@@ -87,7 +87,7 @@ class Generator(ErrorHandler):
                 self.output.append("    mul rbx\n")
                 self.push("rax")
     
-    def generate_comparison(self, comparison: prs.NodeBinExprComp) -> None:
+    def generate_comparison_expression(self, comparison: prs.NodeBinExprComp) -> None:
         """
         generates a comparison expression, a type of binary expression
         """
@@ -107,6 +107,19 @@ class Generator(ErrorHandler):
         else:
             self.raise_error("Syntax", "Invalid comparison expression")
         self.output.append("    movzx rax, al\n")
+        self.push("rax")
+
+    def generate_logical_expression(self, logic_expr: prs.NodeBinExprLogic) -> None:
+        self.generate_expression(logic_expr.rhs)
+        self.generate_expression(logic_expr.lhs)
+        self.pop("rax")
+        self.pop("rbx")
+        if logic_expr.logical_operator.type == tt.and_:
+            self.output.append("    and rax, rbx\n")
+        elif logic_expr.logical_operator.type == tt.or_:
+            self.output.append("    or rax, rbx\n")
+        else:
+            self.raise_error("Syntax", "Invalid logic expression")
         self.push("rax")
 
     def generate_binary_expression(self, bin_expr: prs.NodeBinExpr) -> None:
@@ -142,7 +155,9 @@ class Generator(ErrorHandler):
             self.output.append("    div rbx\n")
             self.push("rax")
         elif isinstance(bin_expr.var, prs.NodeBinExprComp): 
-            self.generate_comparison(bin_expr.var)
+            self.generate_comparison_expression(bin_expr.var)
+        elif isinstance(bin_expr.var, prs.NodeBinExprLogic):
+            self.generate_logical_expression(bin_expr.var)
         else:
             self.raise_error("Generator", "failed to generate binary expression")
 
