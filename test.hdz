@@ -1,5 +1,5 @@
-naj y = 0 // this doesnt work
-naj x = 1 + x // this still does
+naj y = y // this doesnt work
+naj x = 1  + x // this doesnt work also
 
 vychod(x)
 vychod(1 == 12) // this doesn't work as intended

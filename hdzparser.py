@@ -214,7 +214,7 @@ class Parser(ErrorHandler):
                 expr_lhs2.var = expr_lhs.var
                 div = NodeBinExprDiv(lhs=expr_lhs2, rhs=expr_rhs)
                 expr.var = div
-            elif op.type == tt.comparison:
+            elif op.type == tt.is_equal:
                 expr_lhs2.var = expr_lhs.var
                 comp = NodeBinExprComp(lhs=expr_lhs2, rhs=expr_rhs)
                 expr.var = comp
@@ -236,8 +236,7 @@ class Parser(ErrorHandler):
         self.next_token()
 
         expr = self.parse_expr()
-        if isinstance(expr.var.var, NodeTermIdent) and expr.var.var.ident.value:
-            self.raise_error("Syntax", "Variable not defined")
+        
         if expr is None:
             self.raise_error("Syntax", "Invalid expression")
 

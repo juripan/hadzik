@@ -95,7 +95,7 @@ class Tokenizer(ErrorHandler):
                 self.advance()
                 if self.current_char == "=":
                     self.advance()
-                    tokens.append(Token(type=tt.comparison))
+                    tokens.append(Token(type=tt.is_equal))
                 else:
                     tokens.append(Token(type=tt.equals))
             elif char == "+":

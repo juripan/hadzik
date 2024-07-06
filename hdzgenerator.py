@@ -189,8 +189,9 @@ class Generator(ErrorHandler):
         elif isinstance(statement, prs.NodeStmtLet):
             if statement.ident.value in self.variables.keys():
                 self.raise_error("Syntax", f"variable has been already declared: {statement.ident.value}")
-            self.variables.update({statement.ident.value : self.stack_size})
+            stack_size_buffer = self.stack_size # stack size changes after generating the expression, thats why its saved here
             self.generate_expression(statement.expr)
+            self.variables.update({statement.ident.value : stack_size_buffer})
         
         elif isinstance(statement, prs.NodeScope):
             self.generate_scope(statement)
