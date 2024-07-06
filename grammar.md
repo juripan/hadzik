@@ -28,6 +28,9 @@
     [Expr] + [Expr] prec = 1
     [Expr] - [Expr] prec = 1
     [Expr] == [Expr] prec = 0
+    [Expr] != [Expr] prec = 0
+    [Expr] > [Expr] prec = 0
+    [Expr] < [Expr] prec = 0
 }
 
 [Term] -> {
