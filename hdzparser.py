@@ -26,9 +26,19 @@ class NodeTermParen:
 
 
 @dataclass(slots=True)
+class NodeTermNot:
+    pass
+
+
+@dataclass(slots=True)
 class NodeTerm:
-    var: NodeTermIdent | NodeTermInt | NodeTermParen
+    var: NodeTermIdent | NodeTermInt | NodeTermParen | NodeTermNot
     negative: bool = False
+
+
+@dataclass(slots=True)
+class NodeTermNot:
+    term: NodeTerm
 
 
 @dataclass(slots=True)
@@ -185,6 +195,14 @@ class Parser(ErrorHandler):
                 self.raise_error("Syntax", "expected ')'")
 
             return NodeTerm(var=NodeTermParen(expr=expr), negative=negative)
+        elif self.current_token is not None and self.current_token.type == tt.not_:
+            self.next_token()
+            
+            term = self.parse_term()
+            if term is None:
+                self.raise_error("Value", "Expected term")
+            
+            return NodeTerm(var=NodeTermNot(term=term))
         else:
             return None
 

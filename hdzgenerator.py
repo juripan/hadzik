@@ -87,6 +87,14 @@ class Generator(ErrorHandler):
                 self.output.append("    mov rax, -1\n")
                 self.output.append("    mul rbx\n")
                 self.push("rax")
+        elif isinstance(term.var, prs.NodeTermNot):
+            self.generate_term(term.var.term)
+            self.pop("rbx")
+            self.output.append("    xor eax, eax\n")
+            self.output.append("    test rbx, rbx\n")
+            self.output.append("    sete al\n")
+            self.output.append("    movzx rax, al\n")
+            self.push("rax")
     
     def generate_comparison_expression(self, comparison: prs.NodeBinExprComp) -> None:
         """

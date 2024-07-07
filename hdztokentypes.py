@@ -30,6 +30,7 @@ less_than_or_eq = "<="
 
 and_ = "aj"
 or_ = "abo"
+not_ = "ne"
 
 all_token_types = (
     left_paren, right_paren, left_curly, right_curly,
@@ -38,7 +39,7 @@ all_token_types = (
     identifier, integer, floating_number,
     plus, minus, star, slash, equals, 
     is_equal, is_not_equal, larger_than, less_than, larger_than_or_eq, less_than_or_eq,
-    and_, or_, 
+    and_, or_, not_,
 )
 
 def get_prec_level(token_type: str) -> int | None:

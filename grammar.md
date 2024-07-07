@@ -39,4 +39,5 @@
     int
     ident
     ([Expr])
+    ne [Term]
 }
