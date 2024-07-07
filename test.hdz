@@ -11,7 +11,7 @@ naj a = 12
 kec y == 2 {
     y = (12 + 11) * 2
     vychod(y)
-} ikec 12 >= 11 { //TODO: negative number don't work correctly for comparisons
+} ikec 12 >= 11 {
     y = 89 + 4
 } ikec 11 == 10 + 1 aj 12 * 2 == 24 {
     y = 15 * 6

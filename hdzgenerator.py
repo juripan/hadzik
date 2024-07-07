@@ -102,13 +102,13 @@ class Generator(ErrorHandler):
         elif comparison.comp_sign.type == tt.is_not_equal:
             self.output.append("    setne al\n")
         elif comparison.comp_sign.type == tt.larger_than:
-            self.output.append("    seta al\n")
+            self.output.append("    setg al\n")
         elif comparison.comp_sign.type == tt.less_than:
-            self.output.append("    setc al\n")
+            self.output.append("    setl al\n")
         elif comparison.comp_sign.type == tt.larger_than_or_eq:
             self.output.append("    setge al\n")
         elif comparison.comp_sign.type == tt.less_than_or_eq:
-            self.output.append("    setbe al\n")
+            self.output.append("    setle al\n")
         else:
             self.raise_error("Syntax", "Invalid comparison expression")
         self.output.append("    movzx rax, al\n")

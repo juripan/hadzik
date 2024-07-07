@@ -2,6 +2,12 @@ global _start
 _start:
     mov rax, 1
     push rax
+    mov rax, 1
+    push rax
+    pop rax
+    pop rbx
+    add rax, rbx
+    push rax
     mov rax, 12
     push rax
     add rsp, 0
@@ -45,7 +51,7 @@ _start:
     jmp label2
 label1:
     ;elif
-    mov rax, 55
+    mov rax, 11
     push rax
     mov rax, 12
     push rax
@@ -75,6 +81,62 @@ label1:
 label3:
     ;/elif
     ;elif
+    mov rax, 24
+    push rax
+    mov rax, 2
+    push rax
+    mov rax, 12
+    push rax
+    pop rax
+    pop rbx
+    mul rbx
+    push rax
+    pop rax
+    pop rbx
+    cmp rax, rbx
+    sete al
+    movzx rax, al
+    push rax
+    mov rax, 1
+    push rax
+    mov rax, 10
+    push rax
+    pop rax
+    pop rbx
+    add rax, rbx
+    push rax
+    mov rax, 11
+    push rax
+    pop rax
+    pop rbx
+    cmp rax, rbx
+    sete al
+    movzx rax, al
+    push rax
+    pop rax
+    pop rbx
+    and rax, rbx
+    push rax
+    pop rax
+    test rax, rax
+    jz label4
+    ;reassigning a variable
+    mov rax, 6
+    push rax
+    mov rax, 15
+    push rax
+    pop rax
+    pop rbx
+    mul rbx
+    push rax
+    pop rax
+    mov [rsp + 8], rax
+    ;/reassigning a variable
+    add rsp, 0
+    jmp label2
+label4:
+    ;/elif
+    ;elif
     mov rax, 2
     push rax
     mov rax, 24
@@ -91,7 +153,7 @@ label3:
     sete al
     movzx rax, al
     push rax
-    mov rax, 11
+    mov rax, 1
     push rax
     mov rax, 11
     push rax
@@ -107,7 +169,7 @@ label3:
     push rax
     pop rax
     test rax, rax
-    jz label4
+    jz label5
     ;reassigning a variable
     mov rax, 5
     push rax
@@ -122,7 +184,7 @@ label3:
     ;/reassigning a variable
     add rsp, 0
     jmp label2
-label4:
+label5:
     ;/elif
     ;else
     ;reassigning a variable
