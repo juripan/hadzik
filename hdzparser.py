@@ -133,12 +133,17 @@ class NodeStmtAssign:
 
 
 @dataclass(slots=True)
-class NodeScope: #TODO: make a separate node for statements
-    stmts: list[NodeStmtLet | NodeStmtExit | NodeScope | NodeStmtIf]
+class NodeStmt:
+    stmt_var: NodeStmtLet | NodeStmtExit | NodeScope | NodeStmtIf | NodeStmtAssign
+
+
+@dataclass(slots=True)
+class NodeScope:
+    stmts: list[NodeStmt]
 
 @dataclass(slots=True)
 class NodeProgram:
-    stmts: list[NodeStmtLet | NodeStmtExit | NodeScope | NodeStmtIf | NodeStmtAssign]
+    stmts: list[NodeStmt]
 
 
 class Parser(ErrorHandler):
@@ -151,6 +156,8 @@ class Parser(ErrorHandler):
         self.next_token()
 
     def next_token(self):
+        if self.current_token is not None and self.current_token.type == tt.end_line:
+            self.line_number += 1
         self.index += 1
         self.current_token = self.all_tokens[self.index] if self.index < len(self.all_tokens) else None
 
@@ -253,7 +260,7 @@ class Parser(ErrorHandler):
         if expr is None:
             self.raise_error("Syntax", "Invalid expression")
 
-        if self.current_token is None or self.current_token.type != tt.end_line:
+        if self.current_token is not None and self.current_token.type != tt.end_line:
             self.raise_error("Syntax", "Expected endline")
 
         return NodeStmtLet(ident, expr)
@@ -274,12 +281,15 @@ class Parser(ErrorHandler):
             self.raise_error("Syntax", "Expected ')'")
         self.next_token()
         
-        if self.current_token is None or self.current_token.type != tt.end_line:
+        if self.current_token is not None and self.current_token.type != tt.end_line:
             self.raise_error("Syntax", "Expected endline")
 
         return NodeStmtExit(expr=expr)
 
     def parse_scope(self) -> NodeScope:
+        if self.current_token.type == tt.end_line:
+            self.next_token()
+        
         if self.current_token is None or self.current_token.type != tt.left_curly:
             self.raise_error("Syntax", "expected '{'")
         self.next_token()  # left curly
@@ -332,11 +342,10 @@ class Parser(ErrorHandler):
         ifpred = self.parse_ifpred()
         return NodeStmtIf(expr, scope, ifpred)
 
-    def parse_statement(self) -> NodeStmtExit | NodeStmtLet | NodeScope | NodeStmtAssign | str | None:
+    def parse_statement(self) -> NodeStmt | str | None:
         if self.current_token is None:
             return None
-        if self.current_token.type == tt.end_line:
-            self.line_number += 1
+        elif self.current_token.type == tt.end_line:
             statement = "new_line"
             self.next_token()
         elif self.current_token.type == tt.exit_:
@@ -356,10 +365,13 @@ class Parser(ErrorHandler):
             if expr is None:
                 self.raise_error("Value", "expected expression")
             
-            return NodeStmtAssign(ident, expr)
+            if self.current_token is not None and self.current_token.type != tt.end_line:
+                self.raise_error("Syntax", "Expected endline")
+
+            statement = NodeStmtAssign(ident, expr)
         else:
             self.raise_error("Parsing", "cannot parse program correctly")
-        return statement
+        return NodeStmt(stmt_var=statement)
 
     def parse_program(self) -> NodeProgram:
         program: NodeProgram = NodeProgram(stmts=[])

@@ -1,7 +1,25 @@
-naj y = 1
+naj y = 1 + 1
+naj a = 12
 
-// also chaining multiple comparisons leads to undefined behavior a.k.a javascript behavior
+{
+    //naj a = 15  <- shadowing is not allowed
+}
+
+// also chaining multiple comparisons leads to stupid behavior a.k.a javascript behavior
 // because ((1 < 12) < 12) -> 1 < 12 -> 1
 
-vychod(y >= 12)
-//TODO: negative number don't work correctly for comparisons
+kec y == 2 {
+    y = (12 + 11) * 2
+    vychod(y)
+} ikec 12 >= 11 { //TODO: negative number don't work correctly for comparisons
+    y = 89 + 4
+} ikec 11 == 10 + 1 aj 12 * 2 == 24 {
+    y = 15 * 6
+} ikec 11 == 1 abo 12 == 24 / 2{
+    y = 5 * 5
+}
+inac {
+    y = -18 * -9
+}
+
+vychod(y)

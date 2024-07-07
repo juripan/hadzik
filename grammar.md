@@ -1,4 +1,4 @@
-[Program] -> [Stmt]*
+[Program] -> [Stmt | *\n*]* <- new line for accurate error throwing during code generation
 
 [Stmt] -> {
     vychod([Expr])

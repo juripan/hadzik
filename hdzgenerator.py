@@ -3,6 +3,7 @@ import hdzparser as prs
 from collections import OrderedDict
 import hdztokentypes as tt
 
+
 class Generator(ErrorHandler):
     def __init__(self, program: prs.NodeProgram, file_content: str) -> None:
         super().__init__(file_content)
@@ -206,30 +207,30 @@ class Generator(ErrorHandler):
             self.generate_scope(pred.var.scope)
             self.output.append("    ;/else\n")
 
-    def generate_statement(self, statement) -> None:
+    def generate_statement(self, statement: prs.NodeStmt) -> None:
         """
         generates a statement based on the node given
         """
-        if isinstance(statement, prs.NodeStmtExit):
-            self.generate_expression(statement.expr)
+        if isinstance(statement.stmt_var, prs.NodeStmtExit):
+            self.generate_expression(statement.stmt_var.expr)
             self.output.append("    ; manual exit (vychod)\n")
             self.output.append("    mov rax, 60\n")
             self.pop("rdi") # pop gets the top of the stack, puts it into rdi
             self.output.append("    syscall\n")
 
-        elif isinstance(statement, prs.NodeStmtLet):
-            if statement.ident.value in self.variables.keys():
-                self.raise_error("Syntax", f"variable has been already declared: {statement.ident.value}")
+        elif isinstance(statement.stmt_var, prs.NodeStmtLet):
+            if statement.stmt_var.ident.value in self.variables.keys():
+                self.raise_error("Syntax", f"variable has been already declared: {statement.stmt_var.ident.value}")
             stack_size_buffer = self.stack_size # stack size changes after generating the expression, thats why its saved here
-            self.generate_expression(statement.expr)
-            self.variables.update({statement.ident.value : stack_size_buffer})
+            self.generate_expression(statement.stmt_var.expr)
+            self.variables.update({statement.stmt_var.ident.value : stack_size_buffer})
         
-        elif isinstance(statement, prs.NodeScope):
-            self.generate_scope(statement)
+        elif isinstance(statement.stmt_var, prs.NodeScope):
+            self.generate_scope(statement.stmt_var)
         
-        elif isinstance(statement, prs.NodeStmtIf):
+        elif isinstance(statement.stmt_var, prs.NodeStmtIf):
             self.output.append("    ;if block\n")
-            self.generate_expression(statement.expr)
+            self.generate_expression(statement.stmt_var.expr)
             label = self.create_label()
 
             self.pop("rax")
@@ -237,26 +238,26 @@ class Generator(ErrorHandler):
             if_comparison: str = "jz "
 
             self.output.append("    " + if_comparison + label + "\n")
-            self.generate_scope(statement.scope)
+            self.generate_scope(statement.stmt_var.scope)
             
-            if statement.ifpred is not None:
+            if statement.stmt_var.ifpred is not None:
                 end_label = self.create_label()
                 self.output.append("    jmp " + end_label + "\n")
                 self.output.append(label + ":\n")
-                self.generate_if_predicate(statement.ifpred, end_label)
+                self.generate_if_predicate(statement.stmt_var.ifpred, end_label)
                 self.output.append(end_label + ":\n")
             else:
                 self.output.append(label + ":\n")
             self.output.append("    ;/if block\n")
 
-        elif isinstance(statement, prs.NodeStmtAssign):
+        elif isinstance(statement.stmt_var, prs.NodeStmtAssign):
             self.output.append("    ;reassigning a variable\n")
-            if statement.ident.value not in self.variables.keys():
-                self.raise_error("Value", "undeclared identifier: " + statement.ident.value)
+            if statement.stmt_var.ident.value not in self.variables.keys():
+                self.raise_error("Value", "undeclared identifier: " + statement.stmt_var.ident.value)
             
-            self.generate_expression(statement.expr)
+            self.generate_expression(statement.stmt_var.expr)
             self.pop("rax")
-            self.output.append(f"    mov [rsp + {(self.stack_size - self.variables[statement.ident.value] - 1) * 8}], rax\n")
+            self.output.append(f"    mov [rsp + {(self.stack_size - self.variables[statement.stmt_var.ident.value] - 1) * 8}], rax\n")
             self.output.append("    ;/reassigning a variable\n")
 
         elif statement == "new_line": # just used for tracking line numbers
