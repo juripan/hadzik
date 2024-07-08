@@ -14,8 +14,7 @@ _start:
     ;if block
     mov rax, 2
     push rax
-    mov rax, 1
-    push rax
+    push QWORD [rsp + 16]
     pop rax
     pop rbx
     cmp rax, rbx
@@ -53,20 +52,27 @@ _start:
     jmp label3
 label2:
     ;else
+    ;while loop
+label5:
+    mov rax, 5
+    push rax
+    push QWORD [rsp + 16]
+    pop rax
+    pop rbx
+    cmp rax, rbx
+    setl al
+    movzx rax, al
+    push rax
+    pop rax
+    test rax, rax
+    jz label4
     ;reassigning a variable
-    mov rax, 2
+    mov rax, 1
     push rax
-    mov rax, 11
-    push rax
-    mov rax, 12
-    push rax
+    push QWORD [rsp + 16]
     pop rax
     pop rbx
     add rax, rbx
-    push rax
-    pop rax
-    pop rbx
-    mul rbx
     push rax
     pop rax
     mov [rsp + 8], rax
@@ -77,11 +83,15 @@ label2:
     pop rdi
     syscall
     add rsp, 0
+    jmp label5
+label4:
+    ;/while loop
+    add rsp, 0
     ;/else
 label3:
     ;/if block
     add rsp, 0
-    jmp label4
+    jmp label6
 label1:
     ;elif
     mov rax, -11
@@ -96,7 +106,7 @@ label1:
     push rax
     pop rax
     test rax, rax
-    jz label5
+    jz label7
     ;reassigning a variable
     mov rax, 4
     push rax
@@ -110,8 +120,8 @@ label1:
     mov [rsp + 8], rax
     ;/reassigning a variable
     add rsp, 0
-    jmp label4
-label5:
+    jmp label6
+label7:
     ;/elif
     ;elif
     mov rax, 24
@@ -152,7 +162,7 @@ label5:
     push rax
     pop rax
     test rax, rax
-    jz label6
+    jz label8
     ;reassigning a variable
     mov rax, 6
     push rax
@@ -166,8 +176,8 @@ label5:
     mov [rsp + 8], rax
     ;/reassigning a variable
     add rsp, 0
-    jmp label4
-label6:
+    jmp label6
+label8:
     ;/elif
     ;elif
     mov rax, 2
@@ -202,7 +212,7 @@ label6:
     push rax
     pop rax
     test rax, rax
-    jz label7
+    jz label9
     ;reassigning a variable
     mov rax, 5
     push rax
@@ -216,8 +226,8 @@ label6:
     mov [rsp + 8], rax
     ;/reassigning a variable
     add rsp, 0
-    jmp label4
-label7:
+    jmp label6
+label9:
     ;/elif
     ;else
     ;reassigning a variable
@@ -234,7 +244,7 @@ label7:
     ;/reassigning a variable
     add rsp, 0
     ;/else
-label4:
+label6:
     ;/if block
     push QWORD [rsp + 8]
     ; manual exit (vychod)

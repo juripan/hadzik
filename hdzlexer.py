@@ -104,7 +104,7 @@ class Tokenizer(ErrorHandler):
                     self.advance()
                     tokens.append(Token(type=tt.is_not_equal))
                 else:
-                    self.raise_error("Syntax", "char not included in the lexer") #TODO: logical NOT implementation goes here
+                    self.raise_error("Syntax", "token not included in the lexer")
             elif char == ">":
                 self.advance()
                 if self.current_char == "=":

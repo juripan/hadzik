@@ -268,6 +268,22 @@ class Generator(ErrorHandler):
             self.output.append(f"    mov [rsp + {(self.stack_size - self.variables[statement.stmt_var.ident.value] - 1) * 8}], rax\n")
             self.output.append("    ;/reassigning a variable\n")
 
+        elif isinstance(statement.stmt_var, prs.NodeStmtWhile):
+            self.output.append("    ;while loop\n")
+            end_label = self.create_label()
+            reset_label = self.create_label()
+
+            self.output.append(reset_label  + ":\n")
+            self.generate_expression(statement.stmt_var.expr)
+            self.pop("rax")
+            self.output.append("    test rax, rax\n")
+            self.output.append(f"    jz {end_label}\n")
+
+            self.generate_scope(statement.stmt_var.scope)
+            self.output.append("    jmp " + reset_label + "\n")
+            self.output.append(end_label  + ":\n")
+            self.output.append("    ;/while loop\n")
+
         elif statement == "new_line": # just used for tracking line numbers
             self.line_number += 1
 

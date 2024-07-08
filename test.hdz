@@ -8,11 +8,13 @@ naj a = 12
 // also chaining multiple comparisons leads to stupid behavior a.k.a javascript behavior
 // because ((1 < 12) < 12) -> 1 < 12 -> 1
 
-kec 1 == 2 {
+kec y == 2 {
     kec ne (a == 12) {
         vychod(y)
     } inac {
-        y = (12 + 11) * 2
+        kim y < 5{
+            y = y + 1
+        }
         vychod(y)
     }
 } ikec -12 >= -11 {

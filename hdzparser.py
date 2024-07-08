@@ -143,8 +143,14 @@ class NodeStmtAssign:
 
 
 @dataclass(slots=True)
+class NodeStmtWhile:
+    expr: NodeExpr
+    scope: NodeScope
+
+
+@dataclass(slots=True)
 class NodeStmt:
-    stmt_var: NodeStmtLet | NodeStmtExit | NodeScope | NodeStmtIf | NodeStmtAssign
+    stmt_var: NodeStmtLet | NodeStmtExit | NodeScope | NodeStmtIf | NodeStmtAssign | NodeStmtWhile
 
 
 @dataclass(slots=True)
@@ -353,12 +359,22 @@ class Parser(ErrorHandler):
 
         expr = self.parse_expr()
         if expr is None:
-            self.raise_error("Value", "not able to evaluate expression")
+            self.raise_error("Value", "not able to parse expression")
         
         scope = self.parse_scope()
 
         ifpred = self.parse_ifpred()
         return NodeStmtIf(expr, scope, ifpred)
+
+    def parse_while(self) -> NodeStmtWhile:
+        self.next_token()
+
+        expr = self.parse_expr()
+        if expr is None:
+            self.raise_error("Value", "not able to parse expression")
+
+        scope = self.parse_scope()
+        return NodeStmtWhile(expr=expr, scope=scope)
 
     def parse_statement(self) -> NodeStmt | str | None:
         if self.current_token is None:
@@ -387,6 +403,8 @@ class Parser(ErrorHandler):
                 self.raise_error("Syntax", "Expected endline")
 
             statement = NodeStmtAssign(ident, expr)
+        elif self.current_token.type == tt.while_:
+            statement = self.parse_while()
         else:
             self.raise_error("Parsing", "cannot parse program correctly")
         return NodeStmt(stmt_var=statement)
