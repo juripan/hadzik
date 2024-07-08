@@ -77,15 +77,17 @@ label5:
     pop rax
     mov [rsp + 8], rax
     ;/reassigning a variable
+    ; break 
+    jmp label4
+    add rsp, 0
+    jmp label5
+label4:
+    ;/while loop
     push QWORD [rsp + 8]
     ; manual exit (vychod)
     mov rax, 60
     pop rdi
     syscall
-    add rsp, 0
-    jmp label5
-label4:
-    ;/while loop
     add rsp, 0
     ;/else
 label3:

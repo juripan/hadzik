@@ -7,6 +7,7 @@
     [Scope]
     kec [Expr] [Scope] [IfPred]
     kim [Expr] [Scope]
+    konec <- only inside a loop
 }
 
 [Scope] -> {[Stmt]*}

@@ -11,6 +11,7 @@ elif_ = "ikec"
 else_ = "inac"
 let = "naj"
 while_ = "kim"
+break_ = "konec"
 
 identifier = "ident"
 integer = "int"
@@ -36,7 +37,7 @@ not_ = "ne"
 all_token_types = (
     left_paren, right_paren, left_curly, right_curly,
     end_line, 
-    exit_, let, if_, elif_, else_, while_,
+    exit_, let, if_, elif_, else_, while_, break_,
     identifier, integer, floating_number,
     plus, minus, star, slash, equals, 
     is_equal, is_not_equal, larger_than, less_than, larger_than_or_eq, less_than_or_eq,

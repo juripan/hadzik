@@ -16,6 +16,7 @@ class Generator(ErrorHandler):
         self.variables: OrderedDict = OrderedDict()
         self.scopes: list[int] = []
         self.label_count: int = 0
+        self.loop_end_label: str = None
     
     def push(self, register: str):
         """
@@ -200,9 +201,8 @@ class Generator(ErrorHandler):
 
             self.pop("rax")
             self.output.append("    test rax, rax\n")
-            if_comparison: str = "jz "
             
-            self.output.append("    " + if_comparison + label + "\n")
+            self.output.append("    jz " + label + "\n")
             self.generate_scope(pred.var.scope)
             self.output.append("    jmp " + end_label + "\n")
             self.output.append(label + ":\n")
@@ -215,7 +215,7 @@ class Generator(ErrorHandler):
             self.generate_scope(pred.var.scope)
             self.output.append("    ;/else\n")
 
-    def generate_statement(self, statement: prs.NodeStmt) -> None:
+    def generate_statement(self, statement: prs.NodeStmt, curr_end_label: str = None) -> None:
         """
         generates a statement based on the node given
         """
@@ -243,9 +243,8 @@ class Generator(ErrorHandler):
 
             self.pop("rax")
             self.output.append("    test rax, rax\n")
-            if_comparison: str = "jz "
 
-            self.output.append("    " + if_comparison + label + "\n")
+            self.output.append("    jz " + label + "\n")
             self.generate_scope(statement.stmt_var.scope)
             
             if statement.stmt_var.ifpred is not None:
@@ -272,6 +271,7 @@ class Generator(ErrorHandler):
             self.output.append("    ;while loop\n")
             end_label = self.create_label()
             reset_label = self.create_label()
+            self.loop_end_label = end_label
 
             self.output.append(reset_label  + ":\n")
             self.generate_expression(statement.stmt_var.expr)
@@ -283,8 +283,16 @@ class Generator(ErrorHandler):
             self.output.append("    jmp " + reset_label + "\n")
             self.output.append(end_label  + ":\n")
             self.output.append("    ;/while loop\n")
+            self.loop_end_label = None
+        
+        elif isinstance(statement.stmt_var, prs.NodeStmtBreak):
+            if self.loop_end_label:
+                self.output.append("    ; break \n")
+                self.output.append("    jmp " + self.loop_end_label + "\n")
+            else:
+                self.raise_error("Syntax", "cant break out of a loop when not inside one")
 
-        elif statement == "new_line": # just used for tracking line numbers
+        elif statement.stmt_var == "new_line": # just used for tracking line numbers TODO: fix line number tracking in generator
             self.line_number += 1
 
     def generate_program(self) -> str:

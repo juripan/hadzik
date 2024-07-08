@@ -149,8 +149,13 @@ class NodeStmtWhile:
 
 
 @dataclass(slots=True)
+class NodeStmtBreak:
+    pass
+
+
+@dataclass(slots=True)
 class NodeStmt:
-    stmt_var: NodeStmtLet | NodeStmtExit | NodeScope | NodeStmtIf | NodeStmtAssign | NodeStmtWhile
+    stmt_var: NodeStmtLet | NodeStmtExit | NodeScope | NodeStmtIf | NodeStmtAssign | NodeStmtWhile | NodeStmtBreak
 
 
 @dataclass(slots=True)
@@ -376,7 +381,7 @@ class Parser(ErrorHandler):
         scope = self.parse_scope()
         return NodeStmtWhile(expr=expr, scope=scope)
 
-    def parse_statement(self) -> NodeStmt | str | None:
+    def parse_statement(self) -> NodeStmt | None:
         if self.current_token is None:
             return None
         elif self.current_token.type == tt.end_line:
@@ -405,6 +410,9 @@ class Parser(ErrorHandler):
             statement = NodeStmtAssign(ident, expr)
         elif self.current_token.type == tt.while_:
             statement = self.parse_while()
+        elif self.current_token.type == tt.break_:
+            self.next_token()
+            statement = NodeStmtBreak()
         else:
             self.raise_error("Parsing", "cannot parse program correctly")
         return NodeStmt(stmt_var=statement)

@@ -14,6 +14,7 @@ kec y == 2 {
     } inac {
         kim y < 5{
             y = y + 1
+            konec
         }
         vychod(y)
     }
