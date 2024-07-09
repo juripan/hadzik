@@ -71,7 +71,27 @@ class Tokenizer(ErrorHandler):
                 type_of_number = tt.integer  # if "." not in buffer else tt.floating_number
                 tokens.append(Token(type=type_of_number, value=buffer))
                 buffer = ""
-
+            
+            elif char == "=" and self.look_ahead() == "=":
+                self.advance()
+                self.advance()
+                tokens.append(Token(type=tt.is_equal))
+            elif char == "!" and self.look_ahead() == "=":
+                self.advance()
+                self.advance()
+                tokens.append(Token(type=tt.is_not_equal))
+            elif char == ">" and self.look_ahead() == "=":
+                self.advance()
+                self.advance()
+                tokens.append(Token(type=tt.larger_than_or_eq))
+            elif char == "<" and self.look_ahead() == "=":
+                self.advance()
+                self.advance()
+                tokens.append(Token(type=tt.less_than_or_eq))
+            elif char == "/" and self.look_ahead() == "/":
+                self.advance()
+                while self.current_char not in ("\n", None):
+                    self.advance()
             elif char == "\n":
                 self.advance()
                 tokens.append(Token(type=tt.end_line))
@@ -93,32 +113,13 @@ class Tokenizer(ErrorHandler):
                 tokens.append(Token(type=tt.right_curly))
             elif char == "=":
                 self.advance()
-                if self.current_char == "=":
-                    self.advance()
-                    tokens.append(Token(type=tt.is_equal))
-                else:
-                    tokens.append(Token(type=tt.equals))
-            elif char == "!":
-                self.advance()
-                if self.current_char == "=":
-                    self.advance()
-                    tokens.append(Token(type=tt.is_not_equal))
-                else:
-                    self.raise_error("Syntax", "token not included in the lexer")
+                tokens.append(Token(type=tt.equals))
             elif char == ">":
                 self.advance()
-                if self.current_char == "=":
-                    self.advance()
-                    tokens.append(Token(tt.larger_than_or_eq))
-                else:
-                    tokens.append(Token(type=tt.larger_than))
+                tokens.append(Token(type=tt.larger_than))
             elif char == "<":
                 self.advance()
-                if self.current_char == "=":
-                    self.advance()
-                    tokens.append(Token(tt.less_than_or_eq))
-                else:
-                    tokens.append(Token(type=tt.less_than))
+                tokens.append(Token(type=tt.less_than))
             elif char == "+":
                 self.advance()
                 tokens.append(Token(type=tt.plus))
@@ -128,10 +129,6 @@ class Tokenizer(ErrorHandler):
             elif char == "*":
                 self.advance()
                 tokens.append(Token(type=tt.star))
-            elif char == "/" and self.look_ahead() == "/":
-                self.advance()
-                while self.current_char not in ("\n", None):
-                    self.advance()
             elif char == "/":
                 self.advance()
                 tokens.append(Token(type=tt.slash))

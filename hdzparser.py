@@ -167,6 +167,7 @@ class NodeProgram:
     stmts: list[NodeStmt]
 
 
+
 class Parser(ErrorHandler):
     def __init__(self, tokens, file_content):
         super().__init__(file_content)
@@ -187,15 +188,15 @@ class Parser(ErrorHandler):
 
 
     def parse_term(self) -> NodeTerm | None:
-        negative = False
+        is_negative = False
         if self.current_token is not None and self.current_token.type == tt.minus:
-            negative = True
+            is_negative = True
             self.next_token()
 
         if self.current_token is not None and self.current_token.type == tt.integer:
-            return NodeTerm(var=NodeTermInt(int_lit=self.current_token), negative=negative)
+            return NodeTerm(NodeTermInt(int_lit=self.current_token), is_negative)
         elif self.current_token is not None and self.current_token.type == tt.identifier:
-            return NodeTerm(var=NodeTermIdent(ident=self.current_token), negative=negative)
+            return NodeTerm(NodeTermIdent(ident=self.current_token), is_negative)
         elif self.current_token is not None and self.current_token.type == tt.left_paren:
             self.next_token()
             expr = self.parse_expr()
@@ -205,7 +206,7 @@ class Parser(ErrorHandler):
             if self.current_token is None or self.current_token.type != tt.right_paren:
                 self.raise_error("Syntax", "expected ')'")
 
-            return NodeTerm(var=NodeTermParen(expr=expr), negative=negative)
+            return NodeTerm(NodeTermParen(expr), is_negative)
         elif self.current_token is not None and self.current_token.type == tt.not_:
             self.next_token()
             
@@ -242,7 +243,7 @@ class Parser(ErrorHandler):
                 self.raise_error("Value", "unable to parse expression")
 
             expr = NodeBinExpr(None)
-            expr_lhs2 = NodeExpr(None)
+            expr_lhs2 = NodeExpr(None) # prevents a recursion error, god knows why bit it makes it work
             if op.type == tt.plus:
                 expr_lhs2.var = expr_lhs.var
                 add = NodeBinExprAdd(lhs=expr_lhs2, rhs=expr_rhs)

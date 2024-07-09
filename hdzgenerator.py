@@ -99,7 +99,8 @@ class Generator(ErrorHandler):
     
     def generate_comparison_expression(self, comparison: prs.NodeBinExprComp) -> None:
         """
-        generates a comparison expression, a type of binary expression
+        generates a comparison expression,
+        type of binary expression that returns 1 or 0 depending on if its true or false
         """
         self.generate_expression(comparison.rhs)
         self.generate_expression(comparison.lhs)
@@ -124,6 +125,11 @@ class Generator(ErrorHandler):
         self.push("rax")
 
     def generate_logical_expression(self, logic_expr: prs.NodeBinExprLogic) -> None:
+        """
+        generates an eval for a logical expression (AND or OR),
+        its result can be either 1 or 0
+        """
+        #TODO: doesn't work as expected with anything other than 1 and 0 (make it logical not bitwise) 
         self.generate_expression(logic_expr.rhs)
         self.generate_expression(logic_expr.lhs)
         self.pop("rax")
@@ -299,8 +305,9 @@ class Generator(ErrorHandler):
         """
         generates the whole assembly based on the nodes that are given,
         returns a string that contains the assembly
-        """
-        self.output.append("global _start\n_start:\n")
+        """ #TODO: add section .data so printing is possible
+        self.output.append("section .text\n    global _start\n")
+        self.output.append("_start:\n")
         for stmt in self.main_program.stmts:
             self.generate_statement(stmt)
         self.output.append("    ; default exit\n    mov rax, 60\n    mov rdi, 0\n    syscall" )
