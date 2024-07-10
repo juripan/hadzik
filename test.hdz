@@ -1,30 +1,9 @@
-naj y = 1 + 1
-naj a = 12
-/*
-naj a = 15  <- shadowing is not allowed
-also chaining multiple comparisons leads to stupid behavior a.k.a javascript behavior
-because ((1 < 12) < 12) -> 1 < 12 -> 1
-*/
+naj a = 11
 
-kec y == 2 {
-    kec ne (a == 12) {
-        vychod(y)
-    } inac {
-        kim y < 5{
-            y = y + 1
-            konec
-        }
-        vychod(y)
+furt(naj i = 0, i < 2, i = i + 1){
+    furt(naj j = 0, j <= 2, j = j + 1){
+        a = a + 1
     }
-} ikec -12 >= -11 {
-    y = 89 + 4
-} ikec ne (11 == 10 aj 12 * 2 == 24) {
-    y = 15 * 6
-} ikec 11 == 1 abo 12 == 24 / 2{
-    y = 5 * 5
-}
-inac {
-    y = -18 * -9
 }
 
-vychod(y)
+vychod(a)

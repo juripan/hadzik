@@ -2,13 +2,18 @@
 
 [Stmt] -> {
     vychod([Expr])
-    naj ident = [Expr]
-    ident = [Expr]
+    [IdentDef]
+    [IdentAssign]
     [Scope]
     kec [Expr] [Scope] [IfPred]
     kim [Expr] [Scope]
+    furt ([IdentDef], [CompExpr], [IdentAssign])[Scope]
     konec <- only inside a loop
 }
+
+[IdentDef] -> {naj ident = [Expr]}
+
+[IdentAssign] -> ident = [Expr]
 
 [Scope] -> {[Stmt]*}
 

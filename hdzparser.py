@@ -149,13 +149,21 @@ class NodeStmtWhile:
 
 
 @dataclass(slots=True)
+class NodeStmtFor:
+    ident_def: NodeStmtLet
+    condition: NodeBinExprComp
+    ident_assign: NodeStmtAssign
+    scope: NodeScope
+
+
+@dataclass(slots=True)
 class NodeStmtBreak:
     pass
 
 
 @dataclass(slots=True)
 class NodeStmt:
-    stmt_var: NodeStmtLet | NodeStmtExit | NodeScope | NodeStmtIf | NodeStmtAssign | NodeStmtWhile | NodeStmtBreak
+    stmt_var: NodeStmtLet | NodeStmtExit | NodeScope | NodeStmtIf | NodeStmtAssign | NodeStmtWhile | NodeStmtBreak | NodeStmtFor
 
 
 @dataclass(slots=True)
@@ -290,8 +298,8 @@ class Parser(ErrorHandler):
         if expr is None:
             self.raise_error("Syntax", "Invalid expression")
 
-        if self.current_token is not None and self.current_token.type != tt.end_line:
-            self.raise_error("Syntax", "Expected endline")
+        if self.current_token is not None and self.current_token.type not in (tt.end_line, tt.dash, tt.right_curly):
+            self.raise_error("Syntax", "Expected endline") #TODO: make this more accurate
 
         return NodeStmtLet(ident, expr)
 
@@ -381,6 +389,53 @@ class Parser(ErrorHandler):
 
         scope = self.parse_scope()
         return NodeStmtWhile(expr=expr, scope=scope)
+    
+    def parse_for_loop(self) -> NodeStmtFor:
+        self.next_token()
+
+        if self.current_token.type != tt.left_paren:
+            self.raise_error("Syntax", "expected '('")
+        self.next_token()
+
+        ident_def = self.parse_let()
+
+        if self.current_token.type != tt.dash:
+            self.raise_error("Syntax", "expected ','")
+        self.next_token()
+
+        condition = self.parse_expr().var.var #gets the NodeTermComp
+        if not isinstance(condition, NodeBinExprComp):
+            self.raise_error("Syntax", "invalid condition")
+
+        if self.current_token.type != tt.dash:
+            self.raise_error("Syntax", "expected ','")
+        self.next_token()
+
+        assign = self.parse_assign()
+        
+        if self.current_token.type != tt.right_paren:
+            self.raise_error("Syntax", "expected ')'")
+        self.next_token()
+
+        scope = self.parse_scope()
+        return NodeStmtFor(ident_def, condition, assign, scope)
+
+    def parse_assign(self) -> NodeStmtAssign:
+        ident = self.current_token
+        self.next_token()
+
+        if self.current_token is None or self.current_token.type != tt.equals:
+            self.raise_error("Syntax", "expected '='")
+        self.next_token()
+
+        expr = self.parse_expr()
+        if expr is None:
+            self.raise_error("Value", "expected expression")
+        
+        if self.current_token is not None and self.current_token.type not in (tt.end_line, tt.right_curly, tt.right_paren):
+            self.raise_error("Syntax", "Expected endline")
+        
+        return NodeStmtAssign(ident, expr)
 
     def parse_statement(self) -> NodeStmt | None:
         if self.current_token is None:
@@ -397,24 +452,16 @@ class Parser(ErrorHandler):
         elif self.current_token.type == tt.if_:
             statement = self.parse_if()
         elif self.current_token.type == tt.identifier and self.get_token_at(1) is not None and self.get_token_at(1).type == tt.equals:
-            ident = self.current_token
-            self.next_token()
-            self.next_token()
-
-            expr = self.parse_expr()
-            if expr is None:
-                self.raise_error("Value", "expected expression")
-            
-            if self.current_token is not None and self.current_token.type != tt.end_line:
-                self.raise_error("Syntax", "Expected endline")
-
-            statement = NodeStmtAssign(ident, expr)
+            statement = self.parse_assign()
         elif self.current_token.type == tt.while_:
             statement = self.parse_while()
+        elif self.current_token.type == tt.for_:
+            statement = self.parse_for_loop()
         elif self.current_token.type == tt.break_:
             self.next_token()
             statement = NodeStmtBreak()
         else:
+            print(self.current_token)
             self.raise_error("Parsing", "cannot parse program correctly")
         return NodeStmt(stmt_var=statement)
 

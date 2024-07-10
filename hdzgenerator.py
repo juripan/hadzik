@@ -223,7 +223,24 @@ class Generator(ErrorHandler):
             self.generate_scope(pred.var.scope)
             self.output.append("    ;/else\n")
 
-    def generate_statement(self, statement: prs.NodeStmt, curr_end_label: str = None) -> None:
+    def generate_let(self, let_stmt: prs.NodeStmtLet):
+        if let_stmt.ident.value in self.variables.keys():
+            self.raise_error("Syntax", f"variable has been already declared: {let_stmt.ident.value}")
+        stack_size_buffer = self.stack_size # stack size changes after generating the expression, thats why its saved here
+        self.generate_expression(let_stmt.expr)
+        self.variables.update({let_stmt.ident.value : stack_size_buffer})
+
+    def generate_assign(self, assign_stmt: prs.NodeStmtAssign):
+        self.output.append("    ;reassigning a variable\n")
+        if assign_stmt.ident.value not in self.variables.keys():
+            self.raise_error("Value", "undeclared identifier: " + assign_stmt.ident.value)
+        
+        self.generate_expression(assign_stmt.expr)
+        self.pop("rax")
+        self.output.append(f"    mov [rsp + {(self.stack_size - self.variables[assign_stmt.ident.value] - 1) * 8}], rax\n")
+        self.output.append("    ;/reassigning a variable\n")
+
+    def generate_statement(self, statement: prs.NodeStmt) -> None:
         """
         generates a statement based on the node given
         """
@@ -235,11 +252,7 @@ class Generator(ErrorHandler):
             self.output.append("    syscall\n")
 
         elif isinstance(statement.stmt_var, prs.NodeStmtLet):
-            if statement.stmt_var.ident.value in self.variables.keys():
-                self.raise_error("Syntax", f"variable has been already declared: {statement.stmt_var.ident.value}")
-            stack_size_buffer = self.stack_size # stack size changes after generating the expression, thats why its saved here
-            self.generate_expression(statement.stmt_var.expr)
-            self.variables.update({statement.stmt_var.ident.value : stack_size_buffer})
+            self.generate_let(statement.stmt_var)
         
         elif isinstance(statement.stmt_var, prs.NodeScope):
             self.generate_scope(statement.stmt_var)
@@ -266,14 +279,7 @@ class Generator(ErrorHandler):
             self.output.append("    ;/if block\n")
 
         elif isinstance(statement.stmt_var, prs.NodeStmtAssign):
-            self.output.append("    ;reassigning a variable\n")
-            if statement.stmt_var.ident.value not in self.variables.keys():
-                self.raise_error("Value", "undeclared identifier: " + statement.stmt_var.ident.value)
-            
-            self.generate_expression(statement.stmt_var.expr)
-            self.pop("rax")
-            self.output.append(f"    mov [rsp + {(self.stack_size - self.variables[statement.stmt_var.ident.value] - 1) * 8}], rax\n")
-            self.output.append("    ;/reassigning a variable\n")
+            self.generate_assign(statement.stmt_var)
 
         elif isinstance(statement.stmt_var, prs.NodeStmtWhile):
             self.output.append("    ;while loop\n")
@@ -293,6 +299,34 @@ class Generator(ErrorHandler):
             self.output.append("    ;/while loop\n")
             self.loop_end_label = None
         
+        elif isinstance(statement.stmt_var, prs.NodeStmtFor):
+            self.output.append("    ;for loop\n")
+            end_label = self.create_label()
+            reset_label = self.create_label()
+            self.loop_end_label = end_label
+
+            self.generate_let(statement.stmt_var.ident_def)
+
+            self.output.append(reset_label  + ":\n")
+
+            self.generate_comparison_expression(statement.stmt_var.condition)
+            
+            self.pop("rax")
+            self.output.append("    test rax, rax\n")
+            self.output.append(f"    jz {end_label}\n")
+
+            self.generate_assign(statement.stmt_var.ident_assign)
+
+            self.generate_scope(statement.stmt_var.scope)
+            
+            self.output.append("    jmp " + reset_label + "\n")
+            self.output.append(end_label  + ":\n")
+            self.output.append("    add rsp, " + str(8) + "\n")
+            self.stack_size -= 1 # does this to remove the variable after the i loop ends
+            self.variables.popitem()
+            self.output.append("    ;/for loop\n")
+            self.loop_end_label = None
+
         elif isinstance(statement.stmt_var, prs.NodeStmtBreak):
             if self.loop_end_label:
                 self.output.append("    ; break \n")
