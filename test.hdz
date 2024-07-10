@@ -1,9 +1,9 @@
-naj a = 11
+naj s54 = 11
 
-furt(naj i = 0, i < 2, i = i + 1){
-    furt(naj j = 0, j <= 2, j = j + 1){
-        a = a + 1
+furt(naj i = 0, i < 2, i++){
+    furt(naj j = 0, j <= 2, j++){
+        s54 = s54 + 1
     }
 }
 
-vychod(a)
+vychod(s54)

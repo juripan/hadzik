@@ -4,8 +4,6 @@
     vychod([Expr])
     [IdentDef]
     [IdentAssign]
-    ident++
-    ident--
     [Scope]
     kec [Expr] [Scope] [IfPred]
     kim [Expr] [Scope]
@@ -13,9 +11,15 @@
     konec <- only inside a loop
 }
 
-[IdentDef] -> {naj ident = [Expr]}
+[IdentDef] -> {
+    naj ident = [Expr]
+}
 
-[IdentAssign] -> ident = [Expr]
+[IdentAssign] -> {
+    ident = [Expr]
+    ident++
+    ident--
+}
 
 [Scope] -> {[Stmt]*}
 

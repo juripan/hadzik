@@ -66,7 +66,8 @@ class Generator(ErrorHandler):
 
     def generate_term(self, term: prs.NodeTerm) -> None:
         """
-        generates a term, a term being a variable or a number
+        generates a term, a term being a variable or a number, 
+        gets pushed on to of the stack
         """
         if isinstance(term.var, prs.NodeTermInt):
             if term.negative:
@@ -230,14 +231,23 @@ class Generator(ErrorHandler):
         self.generate_expression(let_stmt.expr)
         self.variables.update({let_stmt.ident.value : stack_size_buffer})
 
-    def generate_assign(self, assign_stmt: prs.NodeStmtAssign):
+    def generate_assign(self, assign_stmt: prs.NodeStmtReassign):
         self.output.append("    ;reassigning a variable\n")
-        if assign_stmt.ident.value not in self.variables.keys():
-            self.raise_error("Value", "undeclared identifier: " + assign_stmt.ident.value)
-        
-        self.generate_expression(assign_stmt.expr)
-        self.pop("rax")
-        self.output.append(f"    mov [rsp + {(self.stack_size - self.variables[assign_stmt.ident.value] - 1) * 8}], rax\n")
+        if isinstance(assign_stmt.var, prs.NodeStmtReassignEq):
+            if assign_stmt.var.ident.value not in self.variables.keys():
+                self.raise_error("Value", "undeclared identifier: " + assign_stmt.var.ident.value)
+            self.generate_expression(assign_stmt.var.expr)
+            self.pop("rax")
+            self.output.append(f"    mov [rsp + {(self.stack_size - self.variables[assign_stmt.var.ident.value] - 1) * 8}], rax\n")
+        elif isinstance(assign_stmt.var, (prs.NodeStmtReassignInc, prs.NodeStmtReassignDec)):
+            if assign_stmt.var.ident.var.ident.value not in self.variables.keys():
+                self.raise_error("Value", "undeclared identifier: " + assign_stmt.var.ident.var.ident.value)
+            self.generate_term(assign_stmt.var.ident)
+            self.pop("rax")
+            self.output.append("    add rax, 1\n" 
+                               if isinstance(assign_stmt.var, prs.NodeStmtReassignInc) 
+                               else "    sub rax, 1\n")
+            self.output.append(f"    mov [rsp + {(self.stack_size - self.variables[assign_stmt.var.ident.var.ident.value] - 1) * 8}], rax\n")
         self.output.append("    ;/reassigning a variable\n")
 
     def generate_statement(self, statement: prs.NodeStmt) -> None:
@@ -278,7 +288,7 @@ class Generator(ErrorHandler):
                 self.output.append(label + ":\n")
             self.output.append("    ;/if block\n")
 
-        elif isinstance(statement.stmt_var, prs.NodeStmtAssign):
+        elif isinstance(statement.stmt_var, prs.NodeStmtReassign):
             self.generate_assign(statement.stmt_var)
 
         elif isinstance(statement.stmt_var, prs.NodeStmtWhile):

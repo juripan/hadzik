@@ -137,9 +137,24 @@ class NodeStmtIf:
 
 
 @dataclass(slots=True)
-class NodeStmtAssign:
+class NodeStmtReassignEq:
     ident: Token
     expr: NodeExpr
+
+
+@dataclass(slots=True)
+class NodeStmtReassignInc:
+    ident: NodeTerm
+
+
+@dataclass(slots=True)
+class NodeStmtReassignDec:
+    ident: NodeTerm
+
+
+@dataclass(slots=True)
+class NodeStmtReassign:
+    var: NodeStmtReassignEq | NodeStmtReassignInc | NodeStmtReassignDec
 
 
 @dataclass(slots=True)
@@ -152,7 +167,7 @@ class NodeStmtWhile:
 class NodeStmtFor:
     ident_def: NodeStmtLet
     condition: NodeBinExprComp
-    ident_assign: NodeStmtAssign
+    ident_assign: NodeStmtReassign
     scope: NodeScope
 
 
@@ -163,7 +178,7 @@ class NodeStmtBreak:
 
 @dataclass(slots=True)
 class NodeStmt:
-    stmt_var: NodeStmtLet | NodeStmtExit | NodeScope | NodeStmtIf | NodeStmtAssign | NodeStmtWhile | NodeStmtBreak | NodeStmtFor
+    stmt_var: NodeStmtLet | NodeStmtExit | NodeScope | NodeStmtIf | NodeStmtReassign | NodeStmtWhile | NodeStmtBreak | NodeStmtFor
 
 
 @dataclass(slots=True)
@@ -420,9 +435,16 @@ class Parser(ErrorHandler):
         scope = self.parse_scope()
         return NodeStmtFor(ident_def, condition, assign, scope)
 
-    def parse_assign(self) -> NodeStmtAssign:
+    def parse_assign(self) -> NodeStmtReassign:
         ident = self.current_token
         self.next_token()
+
+        if self.current_token is not None and self.current_token.type == tt.increment:
+            self.next_token()
+            return NodeStmtReassign(var=NodeStmtReassignInc(NodeTerm(NodeTermIdent(ident))))
+        elif self.current_token is not None and self.current_token.type == tt.decrement:
+            self.next_token()
+            return NodeStmtReassign(var=NodeStmtReassignDec(NodeTerm(NodeTermIdent(ident))))
 
         if self.current_token is None or self.current_token.type != tt.equals:
             self.raise_error("Syntax", "expected '='")
@@ -435,7 +457,7 @@ class Parser(ErrorHandler):
         if self.current_token is not None and self.current_token.type not in (tt.end_line, tt.right_curly, tt.right_paren):
             self.raise_error("Syntax", "Expected endline")
         
-        return NodeStmtAssign(ident, expr)
+        return NodeStmtReassign(var=NodeStmtReassignEq(ident, expr))
 
     def parse_statement(self) -> NodeStmt | None:
         if self.current_token is None:
@@ -451,7 +473,7 @@ class Parser(ErrorHandler):
             statement = self.parse_scope()
         elif self.current_token.type == tt.if_:
             statement = self.parse_if()
-        elif self.current_token.type == tt.identifier and self.get_token_at(1) is not None and self.get_token_at(1).type == tt.equals:
+        elif self.current_token.type == tt.identifier:
             statement = self.parse_assign()
         elif self.current_token.type == tt.while_:
             statement = self.parse_while()

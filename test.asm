@@ -22,14 +22,9 @@ label2:
     test rax, rax
     jz label1
     ;reassigning a variable
-    mov rax, 1
-    push rax
-    push QWORD [rsp + 8]
+    push QWORD [rsp + 0]
     pop rax
-    pop rbx
-    add rax, rbx
-    push rax
-    pop rax
+    add rax, 1
     mov [rsp + 0], rax
     ;/reassigning a variable
     ;for loop
@@ -49,14 +44,9 @@ label4:
     test rax, rax
     jz label3
     ;reassigning a variable
-    mov rax, 1
-    push rax
-    push QWORD [rsp + 8]
+    push QWORD [rsp + 0]
     pop rax
-    pop rbx
-    add rax, rbx
-    push rax
-    pop rax
+    add rax, 1
     mov [rsp + 0], rax
     ;/reassigning a variable
     ;reassigning a variable
