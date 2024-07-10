@@ -1,3 +1,5 @@
+section .data
+section .bss
 section .text
     global _start
 _start:
@@ -11,7 +13,6 @@ _start:
     push rax
     mov rax, 12
     push rax
-    add rsp, 0
     ;if block
     mov rax, 2
     push rax

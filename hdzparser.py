@@ -101,7 +101,7 @@ class NodeStmtExit:
 
 @dataclass(slots=True)
 class NodeStmtLet:
-    ident: Token  # tt.ident
+    ident: Token
     expr: NodeExpr
 
 
@@ -274,7 +274,7 @@ class Parser(ErrorHandler):
         return expr_lhs
     
     def parse_let(self) -> NodeStmtLet:
-        self.next_token()
+        self.next_token() # removes naj
 
         if self.current_token.type != tt.identifier:
             self.raise_error("Syntax", "Expected identifier")

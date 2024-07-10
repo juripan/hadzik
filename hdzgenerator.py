@@ -17,6 +17,8 @@ class Generator(ErrorHandler):
         self.scopes: list[int] = []
         self.label_count: int = 0
         self.loop_end_label: str = None
+        self.data_section_index: int = 1
+        self.bss_section_index: int = 2
     
     def push(self, register: str):
         """
@@ -305,7 +307,9 @@ class Generator(ErrorHandler):
         """
         generates the whole assembly based on the nodes that are given,
         returns a string that contains the assembly
-        """ #TODO: add section .data so printing is possible
+        """
+        self.output.append("section .data\n")
+        self.output.append("section .bss\n")
         self.output.append("section .text\n    global _start\n")
         self.output.append("_start:\n")
         for stmt in self.main_program.stmts:

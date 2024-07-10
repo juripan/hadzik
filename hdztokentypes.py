@@ -36,7 +36,7 @@ not_ = "ne"
 
 all_token_types = (
     left_paren, right_paren, left_curly, right_curly,
-    end_line, 
+    end_line,  
     exit_, let, if_, elif_, else_, while_, break_,
     identifier, integer, floating_number,
     plus, minus, star, slash, equals, 

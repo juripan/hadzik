@@ -37,6 +37,9 @@ class Tokenizer(ErrorHandler):
         """
         changes the current char to the next one and increments the index and the column number
         """
+        if self.current_char is not None and self.current_char == "\n":
+            self.line_number += 1
+            self.column_number = -1
         self.index += 1
         self.column_number += 1
         self.current_char = self.file_content[self.index] if self.index < len(self.file_content) else None
@@ -92,11 +95,20 @@ class Tokenizer(ErrorHandler):
                 self.advance()
                 while self.current_char not in ("\n", None):
                     self.advance()
+            elif char == "/" and self.look_ahead() == "*":
+                cache = self.line_number, self.column_number
+                self.advance()
+                self.advance()
+                while self.current_char not in ("*", None) or self.look_ahead() not in ("/", None):
+                    self.advance()
+                self.advance()
+                self.advance()
+                if self.current_char is None:
+                    self.line_number, self.column_number = cache
+                    self.raise_error("Syntax", "unclosed multiline comment")
             elif char == "\n":
                 self.advance()
                 tokens.append(Token(type=tt.end_line))
-                self.line_number += 1
-                self.column_number = 1
             elif char == " ":
                 self.advance()
             elif char == "(":
