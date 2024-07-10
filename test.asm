@@ -27,44 +27,36 @@ label2:
     add rax, 1
     mov [rsp + 0], rax
     ;/reassigning a variable
-    ;for loop
-    mov rax, 0
-    push rax
-label4:
-    mov rax, 2
-    push rax
+    ;reassigning a variable
     push QWORD [rsp + 8]
+    pop rax
+    add rax, 1
+    mov [rsp + 8], rax
+    ;/reassigning a variable
+    ;do while loop
+label4:
+    ;reassigning a variable
+    push QWORD [rsp + 8]
+    pop rax
+    sub rax, 1
+    mov [rsp + 8], rax
+    ;/reassigning a variable
+    add rsp, 0
+    mov rax, 11
+    push rax
+    push QWORD [rsp + 16]
     pop rax
     pop rbx
     cmp rax, rbx
-    setle al
+    setge al
     movzx rax, al
     push rax
     pop rax
     test rax, rax
     jz label3
-    ;reassigning a variable
-    push QWORD [rsp + 0]
-    pop rax
-    add rax, 1
-    mov [rsp + 0], rax
-    ;/reassigning a variable
-    ;reassigning a variable
-    mov rax, 1
-    push rax
-    push QWORD [rsp + 24]
-    pop rax
-    pop rbx
-    add rax, rbx
-    push rax
-    pop rax
-    mov [rsp + 16], rax
-    ;/reassigning a variable
-    add rsp, 0
     jmp label4
 label3:
-    add rsp, 8
-    ;/for loop
+    ;/do while loop
     add rsp, 0
     jmp label2
 label1:

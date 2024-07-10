@@ -164,6 +164,12 @@ class NodeStmtWhile:
 
 
 @dataclass(slots=True)
+class NodeStmtDoWhile:
+    scope: NodeScope
+    expr: NodeExpr
+
+
+@dataclass(slots=True)
 class NodeStmtFor:
     ident_def: NodeStmtLet
     condition: NodeBinExprComp
@@ -435,6 +441,29 @@ class Parser(ErrorHandler):
         scope = self.parse_scope()
         return NodeStmtFor(ident_def, condition, assign, scope)
 
+    def parse_do_while(self) -> NodeStmtDoWhile:
+        self.next_token()
+
+        scope = self.parse_scope()
+        
+        if self.current_token is None or self.current_token.type != tt.while_:
+            self.raise_error("Syntax", "expected 'kim'")
+        self.next_token()
+
+        if self.current_token is None or self.current_token.type != tt.left_paren:
+            self.raise_error("Syntax", "expected '('")
+        self.next_token()
+
+        expr = self.parse_expr()
+        if expr is None:
+            self.raise_error("Value", "invalid expression")
+
+        if self.current_token is None or self.current_token.type != tt.right_paren:
+            self.raise_error("Syntax", "expected ')'")
+        self.next_token()
+
+        return NodeStmtDoWhile(scope, expr)
+
     def parse_assign(self) -> NodeStmtReassign:
         ident = self.current_token
         self.next_token()
@@ -479,6 +508,8 @@ class Parser(ErrorHandler):
             statement = self.parse_while()
         elif self.current_token.type == tt.for_:
             statement = self.parse_for_loop()
+        elif self.current_token.type == tt.do:
+            statement = self.parse_do_while()
         elif self.current_token.type == tt.break_:
             self.next_token()
             statement = NodeStmtBreak()

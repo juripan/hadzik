@@ -298,15 +298,37 @@ class Generator(ErrorHandler):
             self.loop_end_labels.append(end_label)
 
             self.output.append(reset_label  + ":\n")
+
             self.generate_expression(statement.stmt_var.expr)
             self.pop("rax")
             self.output.append("    test rax, rax\n")
             self.output.append(f"    jz {end_label}\n")
 
             self.generate_scope(statement.stmt_var.scope)
+            
             self.output.append("    jmp " + reset_label + "\n")
             self.output.append(end_label  + ":\n")
             self.output.append("    ;/while loop\n")
+            self.loop_end_labels.pop()
+        
+        elif isinstance(statement.stmt_var, prs.NodeStmtDoWhile):
+            self.output.append("    ;do while loop\n")
+            end_label = self.create_label()
+            reset_label = self.create_label()
+            self.loop_end_labels.append(end_label)
+
+            self.output.append(reset_label  + ":\n")
+
+            self.generate_scope(statement.stmt_var.scope)
+
+            self.generate_expression(statement.stmt_var.expr)
+            self.pop("rax")
+            self.output.append("    test rax, rax\n")
+            self.output.append(f"    jz {end_label}\n")
+
+            self.output.append("    jmp " + reset_label + "\n")
+            self.output.append(end_label  + ":\n")
+            self.output.append("    ;/do while loop\n")
             self.loop_end_labels.pop()
         
         elif isinstance(statement.stmt_var, prs.NodeStmtFor):

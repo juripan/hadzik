@@ -20,7 +20,6 @@ print(tokens)
 parse_tree = Parser(tokens, content).parse_program()
 print(parse_tree)
 final_asm = Generator(parse_tree, content).generate_program()
-print(final_asm)
 
 filename_no_extension = filename[:4]
 

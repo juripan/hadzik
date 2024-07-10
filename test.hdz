@@ -1,9 +1,10 @@
-naj s54 = 11
+naj a = 11
 
 furt(naj i = 0, i < 2, i++){
-    furt(naj j = 0, j <= 2, j++){
-        s54 = s54 + 1
-    }
+    a++
+    zrob{
+        a--
+    }kim(a >= 11)
 }
 
-vychod(s54)
+vychod(a)

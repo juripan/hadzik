@@ -5,8 +5,9 @@
     [IdentDef]
     [IdentAssign]
     [Scope]
-    kec [Expr] [Scope] [IfPred]
-    kim [Expr] [Scope]
+    kec ([Expr]) [Scope] [IfPred]
+    kim ([Expr]) [Scope]
+    zrob [Scope] kim ([Expr])
     furt ([IdentDef], [CompExpr], [IdentAssign])[Scope]
     konec <- only inside a loop
 }
