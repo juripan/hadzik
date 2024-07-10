@@ -4,6 +4,8 @@
     vychod([Expr])
     [IdentDef]
     [IdentAssign]
+    ident++
+    ident--
     [Scope]
     kec [Expr] [Scope] [IfPred]
     kim [Expr] [Scope]

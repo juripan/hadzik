@@ -32,6 +32,9 @@ less_than = "<"
 larger_than_or_eq = ">="
 less_than_or_eq = "<="
 
+increment = "increment"
+decrement = "decrement"
+
 and_ = "aj"
 or_ = "abo"
 not_ = "ne"

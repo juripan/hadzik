@@ -91,6 +91,14 @@ class Tokenizer(ErrorHandler):
                 self.advance()
                 self.advance()
                 tokens.append(Token(type=tt.less_than_or_eq))
+            elif char == "+" and self.look_ahead() == "+":
+                self.advance()
+                self.advance()
+                tokens.append(Token(type=tt.increment))
+            elif char == "-" and self.look_ahead() == "-":
+                self.advance()
+                self.advance()
+                tokens.append(Token(type=tt.decrement))
             elif char == "/" and self.look_ahead() == "/":
                 self.advance()
                 while self.current_char not in ("\n", None):

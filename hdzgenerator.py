@@ -16,7 +16,7 @@ class Generator(ErrorHandler):
         self.variables: OrderedDict = OrderedDict()
         self.scopes: list[int] = []
         self.label_count: int = 0
-        self.loop_end_label: str = None
+        self.loop_end_labels: list[str] = []
         self.data_section_index: int = 1
         self.bss_section_index: int = 2
     
@@ -285,7 +285,7 @@ class Generator(ErrorHandler):
             self.output.append("    ;while loop\n")
             end_label = self.create_label()
             reset_label = self.create_label()
-            self.loop_end_label = end_label
+            self.loop_end_labels.append(end_label)
 
             self.output.append(reset_label  + ":\n")
             self.generate_expression(statement.stmt_var.expr)
@@ -297,13 +297,13 @@ class Generator(ErrorHandler):
             self.output.append("    jmp " + reset_label + "\n")
             self.output.append(end_label  + ":\n")
             self.output.append("    ;/while loop\n")
-            self.loop_end_label = None
+            self.loop_end_labels.pop()
         
         elif isinstance(statement.stmt_var, prs.NodeStmtFor):
             self.output.append("    ;for loop\n")
             end_label = self.create_label()
             reset_label = self.create_label()
-            self.loop_end_label = end_label
+            self.loop_end_labels.append(end_label)
 
             self.generate_let(statement.stmt_var.ident_def)
 
@@ -325,12 +325,13 @@ class Generator(ErrorHandler):
             self.stack_size -= 1 # does this to remove the variable after the i loop ends
             self.variables.popitem()
             self.output.append("    ;/for loop\n")
-            self.loop_end_label = None
+            self.loop_end_labels.pop()
 
         elif isinstance(statement.stmt_var, prs.NodeStmtBreak):
-            if self.loop_end_label:
+            print(self.loop_end_labels)
+            if self.loop_end_labels:
                 self.output.append("    ; break \n")
-                self.output.append("    jmp " + self.loop_end_label + "\n")
+                self.output.append("    jmp " + self.loop_end_labels[-1] + "\n")
             else:
                 self.raise_error("Syntax", "cant break out of a loop when not inside one")
 
