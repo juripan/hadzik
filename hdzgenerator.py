@@ -132,15 +132,24 @@ class Generator(ErrorHandler):
         generates an eval for a logical expression (AND or OR),
         its result can be either 1 or 0
         """
-        #TODO: doesn't work as expected with anything other than 1 and 0 (make it logical not bitwise) 
         self.generate_expression(logic_expr.rhs)
         self.generate_expression(logic_expr.lhs)
         self.pop("rax")
         self.pop("rbx")
         if logic_expr.logical_operator.type == tt.and_:
-            self.output.append("    and rax, rbx\n")
+            self.output.append("    mov rcx, rax\n")
+            self.output.append("    test rbx, rbx\n")
+            self.output.append("    cmovz rcx, rbx\n")
+            self.output.append("    test rcx, rcx\n")
+            self.output.append("    setne al\n")
+            self.output.append("    movzx rax, al\n")
         elif logic_expr.logical_operator.type == tt.or_:
-            self.output.append("    or rax, rbx\n")
+            self.output.append("    mov rcx, rax\n")
+            self.output.append("    test rbx, rbx\n")
+            self.output.append("    cmovnz rcx, rbx\n")
+            self.output.append("    test rcx, rcx\n")
+            self.output.append("    setne al\n")
+            self.output.append("    movzx rax, al\n")
         else:
             self.raise_error("Syntax", "Invalid logic expression")
         self.push("rax")
