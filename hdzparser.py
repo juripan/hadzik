@@ -144,12 +144,12 @@ class NodeStmtReassignEq:
 
 @dataclass(slots=True)
 class NodeStmtReassignInc:
-    ident: NodeTerm
+    ident: Token
 
 
 @dataclass(slots=True)
 class NodeStmtReassignDec:
-    ident: NodeTerm
+    ident: Token
 
 
 @dataclass(slots=True)
@@ -432,7 +432,7 @@ class Parser(ErrorHandler):
             self.raise_error("Syntax", "expected ','")
         self.next_token()
 
-        assign = self.parse_assign()
+        assign = self.parse_reassign()
         
         if self.current_token.type != tt.right_paren:
             self.raise_error("Syntax", "expected ')'")
@@ -464,16 +464,16 @@ class Parser(ErrorHandler):
 
         return NodeStmtDoWhile(scope, expr)
 
-    def parse_assign(self) -> NodeStmtReassign:
+    def parse_reassign(self) -> NodeStmtReassign:
         ident = self.current_token
         self.next_token()
 
         if self.current_token is not None and self.current_token.type == tt.increment:
             self.next_token()
-            return NodeStmtReassign(var=NodeStmtReassignInc(NodeTerm(NodeTermIdent(ident))))
+            return NodeStmtReassign(var=NodeStmtReassignInc(ident))
         elif self.current_token is not None and self.current_token.type == tt.decrement:
             self.next_token()
-            return NodeStmtReassign(var=NodeStmtReassignDec(NodeTerm(NodeTermIdent(ident))))
+            return NodeStmtReassign(var=NodeStmtReassignDec(ident))
 
         if self.current_token is None or self.current_token.type != tt.equals:
             self.raise_error("Syntax", "expected '='")
@@ -503,7 +503,7 @@ class Parser(ErrorHandler):
         elif self.current_token.type == tt.if_:
             statement = self.parse_if()
         elif self.current_token.type == tt.identifier:
-            statement = self.parse_assign()
+            statement = self.parse_reassign()
         elif self.current_token.type == tt.while_:
             statement = self.parse_while()
         elif self.current_token.type == tt.for_:
