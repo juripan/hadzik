@@ -3,18 +3,5 @@ naj a = 11
 naj b = c
 
 c++
-kec 1{
-    c++
-}
 
-furt(naj i = 0, i < 5, i++){ // zopakuje sa 5 krat
-    b++
-}
-
-furt(naj i = 0, i < 2, i++){
-    zrob{
-        a--
-    }kim(a >= 11)
-}
-
-vychod(a)
+vychod(a + c + b)

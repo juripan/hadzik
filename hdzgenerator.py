@@ -20,18 +20,18 @@ class Generator(ErrorHandler):
         self.data_section_index: int = 1
         self.bss_section_index: int = 2
     
-    def push(self, register: str):
+    def push(self, content: str):
         """
         adds a push instruction to the output and updates the stack size 
         """
-        self.output.append("    push " + register + "\n")
+        self.output.append("    push " + content + "\n")
         self.stack_size += 1
 
-    def pop(self, register: str):
+    def pop(self, content: str):
         """
         adds a pop instruction to the output and updates the stack size 
         """
-        self.output.append("    pop " + register + "\n")
+        self.output.append("    pop " + content + "\n")
         self.stack_size -= 1
 
     def create_label(self) -> str:
@@ -72,8 +72,7 @@ class Generator(ErrorHandler):
         if isinstance(term.var, prs.NodeTermInt):
             if term.negative:
                 term.var.int_lit.value = "-" + term.var.int_lit.value
-            self.output.append("    mov rax, " + term.var.int_lit.value + "\n")
-            self.push("rax")
+            self.push(term.var.int_lit.value)
         elif isinstance(term.var, prs.NodeTermIdent):
             if term.var.ident.value not in self.variables.keys():
                 self.raise_error("Value", f"variable was not declared: {term.var.ident.value}")
