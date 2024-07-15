@@ -64,6 +64,9 @@ class Generator(ErrorHandler):
             self.variables.popitem()
         del self.scopes[-1]
 
+    def generate_char(self, char: prs.NodeTermChar) -> None:
+        self.push(char.char.value)
+
     def generate_term(self, term: prs.NodeTerm) -> None:
         """
         generates a term, a term being a variable or a number, 
@@ -359,6 +362,16 @@ class Generator(ErrorHandler):
         self.output.append("    ;/for loop\n")
         self.loop_end_labels.pop()
 
+    def generate_print(self, print_stmt: prs.NodeStmtPrint) -> None:
+        self.generate_char(print_stmt.expr)
+        self.output.append("    ; printing\n")
+        self.output.append("    mov rax, 1\n")
+        self.output.append("    mov rdi, 1\n")
+        self.output.append("    mov rsi, rsp\n")
+        self.output.append("    mov rdx, 1\n")
+        self.output.append("    syscall\n")
+        self.output.append("    ; /printing\n")
+
     def generate_statement(self, statement: prs.NodeStmt) -> None:
         """
         generates a statement based on the node given
@@ -386,6 +399,9 @@ class Generator(ErrorHandler):
         
         elif isinstance(statement.stmt_var, prs.NodeStmtFor):
             self.generate_for(statement.stmt_var)
+        
+        elif isinstance(statement.stmt_var, prs.NodeStmtPrint):
+            self.generate_print(statement.stmt_var)
 
         elif isinstance(statement.stmt_var, prs.NodeStmtBreak):
             print(self.loop_end_labels)

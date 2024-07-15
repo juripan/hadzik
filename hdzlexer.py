@@ -75,6 +75,14 @@ class Tokenizer(ErrorHandler):
                 tokens.append(Token(type=type_of_number, value=buffer))
                 buffer = ""
             
+            elif char == "'":
+                self.advance()
+                tokens.append(Token(type=tt.char, value=str(ord(self.current_char))))
+                self.advance()
+                if self.current_char is None or self.current_char != "'":
+                    self.raise_error("Syntax", "missing \"'\"")
+                self.advance()
+            
             elif char == "=" and self.look_ahead() == "=":
                 self.advance()
                 self.advance()

@@ -2,6 +2,7 @@
 
 [Stmt] -> {
     vychod([Expr])
+    hutor(char) TODO: rework this
     [IdentDef]
     [IdentAssign]
     [Scope]

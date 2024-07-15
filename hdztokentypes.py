@@ -7,6 +7,7 @@ dash = "dash"
 end_line = "end_ln"
 
 exit_ = "vychod" # names of keywords must be what is used in the hadzik syntax
+print_ = "hutor"
 if_ = "kec"
 elif_ = "ikec"
 else_ = "inac"
@@ -17,6 +18,7 @@ for_ = "furt"
 break_ = "konec"
 
 identifier = "ident"
+char = "chr"
 integer = "int"
 floating_number = "float"
 
@@ -44,7 +46,7 @@ not_ = "ne"
 all_token_types = (
     left_paren, right_paren, left_curly, right_curly, dash,
     end_line,  
-    exit_, let, if_, elif_, else_, while_, do, for_, break_,
+    exit_, print_, let, if_, elif_, else_, while_, do, for_, break_,
     identifier, integer, floating_number,
     plus, minus, star, slash, percent, equals, 
     is_equal, is_not_equal, larger_than, less_than, larger_than_or_eq, less_than_or_eq,

@@ -9,6 +9,9 @@ from hdzerrors import ErrorHandler
 class NodeExpr:
     pass
 
+@dataclass(slots=True)
+class NodeTermChar:
+    char: Token
 
 @dataclass(slots=True)
 class NodeTermIdent:
@@ -189,8 +192,13 @@ class NodeStmtBreak:
 
 
 @dataclass(slots=True)
+class NodeStmtPrint:
+    expr: NodeExpr
+
+
+@dataclass(slots=True)
 class NodeStmt:
-    stmt_var: NodeStmtLet | NodeStmtExit | NodeScope | NodeStmtIf | NodeStmtReassign | NodeStmtWhile | NodeStmtBreak | NodeStmtFor
+    stmt_var: NodeStmtLet | NodeStmtExit | NodeScope | NodeStmtIf | NodeStmtReassign | NodeStmtWhile | NodeStmtBreak | NodeStmtFor | NodeStmtPrint
 
 
 @dataclass(slots=True)
@@ -221,6 +229,12 @@ class Parser(ErrorHandler):
     def get_token_at(self, offset: int = 0) -> Token | None:
         return self.all_tokens[self.index + offset] if self.index + offset < len(self.all_tokens) else None
 
+
+    def parse_char(self) -> NodeTermChar | None: # TODO: make this part of the node term structure
+        if self.current_token is None or self.current_token.type != tt.char:
+            return None
+        
+        return NodeTermChar(char=self.current_token)
 
     def parse_term(self) -> NodeTerm | None:
         is_negative = False
@@ -498,6 +512,28 @@ class Parser(ErrorHandler):
         
         return NodeStmtReassign(var=NodeStmtReassignEq(ident, expr))
 
+    def parse_print(self) -> NodeStmtPrint:
+        self.next_token() # removes print token
+        
+        if self.current_token.type != tt.left_paren:
+            self.raise_error("Syntax", "Expected '('")
+        self.next_token()
+
+        char = self.parse_char()
+        
+        if char is None:
+            self.raise_error("Syntax", "Invalid char")
+        self.next_token()
+
+        if self.current_token and self.current_token.type != tt.right_paren:
+            self.raise_error("Syntax", "Expected ')'")
+        self.next_token()
+        
+        if self.current_token is not None and self.current_token.type != tt.end_line:
+            self.raise_error("Syntax", "Expected endline")
+        
+        return NodeStmtPrint(char)
+    
     def parse_statement(self) -> NodeStmt | None:
         if self.current_token is None:
             return None
@@ -506,6 +542,8 @@ class Parser(ErrorHandler):
             self.next_token()
         elif self.current_token.type == tt.exit_:
             statement = self.parse_exit()
+        elif self.current_token.type == tt.print_:
+            statement = self.parse_print()
         elif self.current_token.type == tt.let:
             statement = self.parse_let()
         elif self.current_token.type == tt.left_curly:
