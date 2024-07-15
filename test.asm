@@ -12,16 +12,11 @@ _start:
     add rax, 1
     mov [rsp + 16], rax
     ;/reassigning a variable
-    push QWORD [rsp + 0]
-    push QWORD [rsp + 24]
-    push QWORD [rsp + 24]
+    push 3
+    push 8
     pop rax
     pop rbx
-    add rax, rbx
-    push rax
-    pop rax
-    pop rbx
-    add rax, rbx
+    idiv rbx
     push rax
     ; manual exit (vychod)
     mov rax, 60

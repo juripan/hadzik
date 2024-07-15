@@ -155,6 +155,9 @@ class Tokenizer(ErrorHandler):
             elif char == "/":
                 self.advance()
                 tokens.append(Token(type=tt.slash))
+            elif char == "%":
+                self.advance()
+                tokens.append(Token(type=tt.percent))
             else:
                 self.raise_error("Syntax", "char not included in the lexer")
         return tokens

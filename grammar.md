@@ -39,6 +39,7 @@
 [BinExpr] -> {
     [Expr] * [Expr] prec = 3
     [Expr] / [Expr] prec = 3
+    [Expr] % [Expr] prec = 3
     [Expr] + [Expr] prec = 2
     [Expr] - [Expr] prec = 2
     [CompExpr] prec = 1

@@ -1,7 +1,7 @@
-naj c = 7
+naj c_A = 7
 naj a = 11
-naj b = c
+naj b = c_A
 
-c++
+c_A++
 
-vychod(a + c + b)
+vychod(8 / 3)

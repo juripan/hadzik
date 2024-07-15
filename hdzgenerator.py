@@ -72,7 +72,7 @@ class Generator(ErrorHandler):
         if isinstance(term.var, prs.NodeTermInt):
             if term.negative:
                 term.var.int_lit.value = "-" + term.var.int_lit.value
-            self.push(term.var.int_lit.value)
+            self.push(term.var.int_lit.value) #NOTE: this is possible if the value is the size of 4bits or less, if more you have to push it onto a stack first
         elif isinstance(term.var, prs.NodeTermIdent):
             if term.var.ident.value not in self.variables.keys():
                 self.raise_error("Value", f"variable was not declared: {term.var.ident.value}")
@@ -135,22 +135,17 @@ class Generator(ErrorHandler):
         self.generate_expression(logic_expr.lhs)
         self.pop("rax")
         self.pop("rbx")
+        self.output.append("    mov rcx, rax\n")
+        self.output.append("    test rbx, rbx\n")
         if logic_expr.logical_operator.type == tt.and_:
-            self.output.append("    mov rcx, rax\n")
-            self.output.append("    test rbx, rbx\n")
             self.output.append("    cmovz rcx, rbx\n")
-            self.output.append("    test rcx, rcx\n")
-            self.output.append("    setne al\n")
-            self.output.append("    movzx rax, al\n")
         elif logic_expr.logical_operator.type == tt.or_:
-            self.output.append("    mov rcx, rax\n")
-            self.output.append("    test rbx, rbx\n")
             self.output.append("    cmovnz rcx, rbx\n")
-            self.output.append("    test rcx, rcx\n")
-            self.output.append("    setne al\n")
-            self.output.append("    movzx rax, al\n")
         else:
             self.raise_error("Syntax", "Invalid logic expression")
+        self.output.append("    test rcx, rcx\n")
+        self.output.append("    setne al\n")
+        self.output.append("    movzx rax, al\n")
         self.push("rax")
 
     def generate_binary_expression(self, bin_expr: prs.NodeBinExpr) -> None:
@@ -183,8 +178,17 @@ class Generator(ErrorHandler):
             self.generate_expression(bin_expr.var.lhs)
             self.pop("rax")
             self.pop("rbx")
-            self.output.append("    div rbx\n")
+            self.output.append("    idiv rbx\n") #NOTE: idiv is used because div only works with unsigned numbers
             self.push("rax")
+        elif isinstance(bin_expr.var, prs.NodeBinExprMod):
+            self.generate_expression(bin_expr.var.rhs)
+            self.generate_expression(bin_expr.var.lhs)
+            self.pop("rax")
+            self.pop("rbx")
+            self.output.append("    mov rdx, 0\n")
+            self.output.append("    cqo\n") # sign extends so the modulus result can be negative
+            self.output.append("    idiv rbx\n")
+            self.push("rdx") # assembly stores the modulus in rdx after the standard division instruction
         elif isinstance(bin_expr.var, prs.NodeBinExprComp): 
             self.generate_comparison_expression(bin_expr.var)
         elif isinstance(bin_expr.var, prs.NodeBinExprLogic):

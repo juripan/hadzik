@@ -47,6 +47,12 @@ class NodeBinExpr:
 
 
 @dataclass(slots=True)
+class NodeBinExprMod:
+    lhs: NodeExpr
+    rhs: NodeExpr
+
+
+@dataclass(slots=True)
 class NodeBinExprDiv:
     lhs: NodeExpr
     rhs: NodeExpr
@@ -86,7 +92,7 @@ class NodeBinExprLogic:
 
 @dataclass(slots=True)
 class NodeBinExpr:
-    var: NodeBinExprAdd | NodeBinExprMulti | NodeBinExprSub | NodeBinExprDiv | NodeBinExprComp | NodeBinExprLogic
+    var: NodeBinExprAdd | NodeBinExprMulti | NodeBinExprSub | NodeBinExprDiv | NodeBinExprMod | NodeBinExprComp | NodeBinExprLogic
 
 
 @dataclass(slots=True)
@@ -289,6 +295,10 @@ class Parser(ErrorHandler):
                 expr_lhs2.var = expr_lhs.var
                 div = NodeBinExprDiv(lhs=expr_lhs2, rhs=expr_rhs)
                 expr.var = div
+            elif op.type == tt.percent:
+                expr_lhs2.var = expr_lhs.var
+                mod = NodeBinExprMod(lhs=expr_lhs2, rhs=expr_rhs)
+                expr.var = mod
             elif op.type in (tt.is_equal, tt.is_not_equal, tt.larger_than, tt.less_than, tt.larger_than_or_eq, tt.less_than_or_eq):
                 expr_lhs2.var = expr_lhs.var
                 comp = NodeBinExprComp(lhs=expr_lhs2, rhs=expr_rhs, comp_sign=op)

@@ -24,6 +24,7 @@ plus = "+"
 minus = "-"
 star = "*"
 slash = "/"
+percent = "%"
 equals = "="
 
 is_equal = "=="
@@ -45,7 +46,7 @@ all_token_types = (
     end_line,  
     exit_, let, if_, elif_, else_, while_, do, for_, break_,
     identifier, integer, floating_number,
-    plus, minus, star, slash, equals, 
+    plus, minus, star, slash, percent, equals, 
     is_equal, is_not_equal, larger_than, less_than, larger_than_or_eq, less_than_or_eq,
     increment, decrement,
     and_, or_, not_,
@@ -62,7 +63,7 @@ def get_prec_level(token_type: str) -> int | None:
         return 1
     elif token_type == plus or token_type == minus:
         return 2
-    elif token_type == star or token_type == slash:
+    elif token_type == star or token_type == slash or token_type == percent:
         return 3
     else:
         return None
