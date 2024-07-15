@@ -9,15 +9,32 @@ _start:
     ;reassigning a variable
     push QWORD [rsp + 16]
     pop rax
-    add rax, 1
+    inc rax
     mov [rsp + 16], rax
     ;/reassigning a variable
-    push 3
-    push 8
+    ;while loop
+label2:
+    push QWORD [rsp + 16]
     pop rax
-    pop rbx
-    idiv rbx
-    push rax
+    test rax, rax
+    jz label1
+    ;reassigning a variable
+    push QWORD [rsp + 16]
+    pop rax
+    dec rax
+    mov [rsp + 16], rax
+    ;/reassigning a variable
+    add rsp, 0
+    jmp label2
+label1:
+    ;/while loop
+    ;reassigning a variable
+    push QWORD [rsp + 16]
+    pop rax
+    dec rax
+    mov [rsp + 16], rax
+    ;/reassigning a variable
+    push QWORD [rsp + 16]
     ; manual exit (vychod)
     mov rax, 60
     pop rdi

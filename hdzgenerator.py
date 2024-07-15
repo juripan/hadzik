@@ -257,9 +257,9 @@ class Generator(ErrorHandler):
             location = self.variables[reassign_stmt.var.ident.value]
             self.push(f"QWORD [rsp + {(self.stack_size - location - 1) * 8}]") # QWORD 64 bits (word = 16 bits)
             self.pop("rax")
-            self.output.append("    add rax, 1\n" 
+            self.output.append("    inc rax\n" 
                                if isinstance(reassign_stmt.var, prs.NodeStmtReassignInc) 
-                               else "    sub rax, 1\n")
+                               else "    dec rax\n")
             self.output.append(f"    mov [rsp + {(self.stack_size - self.variables[reassign_stmt.var.ident.value] - 1) * 8}], rax\n")
         self.output.append("    ;/reassigning a variable\n")
 

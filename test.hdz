@@ -1,7 +1,9 @@
-naj c_A = 7
+naj res = 7
 naj a = 11
-naj b = c_A
+naj b = res
 
-c_A++
+kim res {
+    res--
+}
 
-vychod(8 / 3)
+vychod(res)
