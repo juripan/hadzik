@@ -1,9 +1,10 @@
-naj res = 7
-naj a = 11
-naj b = res
+naj res = 65
+naj a = 0
+naj d = 12
 
-kim res {
-    res--
+furt(naj i = 0, i < 10, i++){
+    a = d + a
+    hutor(i + 30)
 }
 
-vychod(res)
+vychod(a)

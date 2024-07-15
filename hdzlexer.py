@@ -75,7 +75,7 @@ class Tokenizer(ErrorHandler):
                 tokens.append(Token(type=type_of_number, value=buffer))
                 buffer = ""
             
-            elif char == "'":
+            elif char == "'": #TODO: add special char cases line newline and quotes
                 self.advance()
                 tokens.append(Token(type=tt.char, value=str(ord(self.current_char))))
                 self.advance()

@@ -35,7 +35,7 @@ class NodeTermNot:
 
 @dataclass(slots=True)
 class NodeTerm:
-    var: NodeTermIdent | NodeTermInt | NodeTermParen | NodeTermNot
+    var: NodeTermIdent | NodeTermInt | NodeTermChar | NodeTermParen | NodeTermNot
     negative: bool = False
 
 
@@ -229,13 +229,6 @@ class Parser(ErrorHandler):
     def get_token_at(self, offset: int = 0) -> Token | None:
         return self.all_tokens[self.index + offset] if self.index + offset < len(self.all_tokens) else None
 
-
-    def parse_char(self) -> NodeTermChar | None: # TODO: make this part of the node term structure
-        if self.current_token is None or self.current_token.type != tt.char:
-            return None
-        
-        return NodeTermChar(char=self.current_token)
-
     def parse_term(self) -> NodeTerm | None:
         is_negative = False
         if self.current_token is not None and self.current_token.type == tt.minus:
@@ -246,6 +239,8 @@ class Parser(ErrorHandler):
             return NodeTerm(NodeTermInt(int_lit=self.current_token), is_negative)
         elif self.current_token is not None and self.current_token.type == tt.identifier:
             return NodeTerm(NodeTermIdent(ident=self.current_token), is_negative)
+        elif self.current_token is not None and self.current_token.type == tt.char:
+            return NodeTerm(NodeTermChar(char=self.current_token), is_negative)
         elif self.current_token is not None and self.current_token.type == tt.left_paren:
             self.next_token()
             expr = self.parse_expr()
@@ -519,11 +514,10 @@ class Parser(ErrorHandler):
             self.raise_error("Syntax", "Expected '('")
         self.next_token()
 
-        char = self.parse_char()
+        expr = self.parse_expr()
         
-        if char is None:
-            self.raise_error("Syntax", "Invalid char")
-        self.next_token()
+        if expr is None:
+            self.raise_error("Syntax", "Invalid print argument")
 
         if self.current_token and self.current_token.type != tt.right_paren:
             self.raise_error("Syntax", "Expected ')'")
@@ -532,7 +526,7 @@ class Parser(ErrorHandler):
         if self.current_token is not None and self.current_token.type != tt.end_line:
             self.raise_error("Syntax", "Expected endline")
         
-        return NodeStmtPrint(char)
+        return NodeStmtPrint(expr)
     
     def parse_statement(self) -> NodeStmt | None:
         if self.current_token is None:

@@ -64,9 +64,6 @@ class Generator(ErrorHandler):
             self.variables.popitem()
         del self.scopes[-1]
 
-    def generate_char(self, char: prs.NodeTermChar) -> None:
-        self.push(char.char.value)
-
     def generate_term(self, term: prs.NodeTerm) -> None:
         """
         generates a term, a term being a variable or a number, 
@@ -86,6 +83,8 @@ class Generator(ErrorHandler):
                 self.output.append("    mov rax, -1\n")
                 self.output.append("    mul rbx\n")
                 self.push("rax")
+        elif isinstance(term.var, prs.NodeTermChar):
+            self.push(term.var.char.value)
         elif isinstance(term.var, prs.NodeTermParen):
             self.generate_expression(term.var.expr)
             if term.negative:
@@ -363,13 +362,18 @@ class Generator(ErrorHandler):
         self.loop_end_labels.pop()
 
     def generate_print(self, print_stmt: prs.NodeStmtPrint) -> None:
-        self.generate_char(print_stmt.expr)
+        init_stack_size = self.stack_size
+        self.generate_expression(print_stmt.expr)
+        expr_loc = f"rsp"
         self.output.append("    ; printing\n")
         self.output.append("    mov rax, 1\n")
         self.output.append("    mov rdi, 1\n")
-        self.output.append("    mov rsi, rsp\n")
+        self.output.append(f"    mov rsi, {expr_loc}\n")
         self.output.append("    mov rdx, 1\n")
         self.output.append("    syscall\n")
+        pushed_res = self.stack_size - init_stack_size #it removes the printed expression because it causes a mess in the stack when looping
+        self.output.append("    add rsp, " + str(pushed_res * 8) + "\n") #removes the printed expression from the stack
+        self.stack_size -= 1 #lowers the stack size
         self.output.append("    ; /printing\n")
 
     def generate_statement(self, statement: prs.NodeStmt) -> None:
