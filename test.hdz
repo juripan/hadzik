@@ -1,10 +1,9 @@
-naj res = 65
-naj a = 0
-naj d = 12
+naj vstup = 12
 
-furt(naj i = 0, i < 10, i++){
-    a = d + a
-    hutor(i + 30)
+kec(vstup % 2 == 0){
+    hutor('a')
+    hutor('\n')
+} inac {
+    hutor('n')
+    hutor('\n')
 }
-
-vychod(a)

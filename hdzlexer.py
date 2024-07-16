@@ -77,7 +77,17 @@ class Tokenizer(ErrorHandler):
             
             elif char == "'": #TODO: add special char cases line newline and quotes
                 self.advance()
-                tokens.append(Token(type=tt.char, value=str(ord(self.current_char))))
+                if self.current_char == "\\":
+                    self.advance()
+                    if self.current_char == "n":
+                        ascii_value = 10 # ascii code for newline
+                    elif self.current_char == "t":
+                        ascii_value = 9
+                    else:
+                        ascii_value = ord(self.current_char)    
+                else:
+                    ascii_value = ord(self.current_char)
+                tokens.append(Token(type=tt.char, value=str(ascii_value)))
                 self.advance()
                 if self.current_char is None or self.current_char != "'":
                     self.raise_error("Syntax", "missing \"'\"")
