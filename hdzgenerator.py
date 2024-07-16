@@ -83,8 +83,6 @@ class Generator(ErrorHandler):
                 self.output.append("    mov rax, -1\n")
                 self.output.append("    mul rbx\n")
                 self.push("rax")
-        elif isinstance(term.var, prs.NodeTermChar):
-            self.push(term.var.char.value)
         elif isinstance(term.var, prs.NodeTermParen):
             self.generate_expression(term.var.expr)
             if term.negative:
@@ -206,6 +204,9 @@ class Generator(ErrorHandler):
             self.generate_term(expression.var)
         elif isinstance(expression.var, prs.NodeBinExpr):
             self.generate_binary_expression(expression.var)
+    
+    def generate_char(self, char: prs.NodeTermChar) -> None:
+        self.push(char.char.value)
 
     def generate_scope(self, scope: prs.NodeScope) -> None:
         self.begin_scope()
@@ -363,7 +364,10 @@ class Generator(ErrorHandler):
 
     def generate_print(self, print_stmt: prs.NodeStmtPrint) -> None:
         init_stack_size = self.stack_size
-        self.generate_expression(print_stmt.expr)
+        if isinstance(print_stmt.content, prs.NodeExpr):
+            self.generate_expression(print_stmt.content)
+        elif isinstance(print_stmt.content, prs.NodeTermChar):
+            self.generate_char(print_stmt.content)
         expr_loc = f"rsp"
         self.output.append("    ; printing\n")
         self.output.append("    mov rax, 1\n")

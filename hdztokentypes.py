@@ -17,9 +17,9 @@ do = "zrob"
 for_ = "furt"
 break_ = "konec"
 
-identifier = "ident"
-char = "chr"
-integer = "int"
+identifier = "identifier"
+char_lit = "character"
+int_lit = "integer"
 floating_number = "float"
 
 plus = "+"
@@ -47,7 +47,7 @@ all_token_types = (
     left_paren, right_paren, left_curly, right_curly, dash,
     end_line,  
     exit_, print_, let, if_, elif_, else_, while_, do, for_, break_,
-    identifier, integer, floating_number,
+    identifier, int_lit, floating_number,
     plus, minus, star, slash, percent, equals, 
     is_equal, is_not_equal, larger_than, less_than, larger_than_or_eq, less_than_or_eq,
     increment, decrement,

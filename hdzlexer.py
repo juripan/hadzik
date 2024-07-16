@@ -71,7 +71,7 @@ class Tokenizer(ErrorHandler):
                 while self.current_char.isnumeric():  # or self.current_char == ".":
                     buffer += self.current_char
                     self.advance()
-                type_of_number = tt.integer  # if "." not in buffer else tt.floating_number
+                type_of_number = tt.int_lit  # if "." not in buffer else tt.floating_number
                 tokens.append(Token(type=type_of_number, value=buffer))
                 buffer = ""
             
@@ -87,7 +87,7 @@ class Tokenizer(ErrorHandler):
                         ascii_value = ord(self.current_char)    
                 else:
                     ascii_value = ord(self.current_char)
-                tokens.append(Token(type=tt.char, value=str(ascii_value)))
+                tokens.append(Token(type=tt.char_lit, value=str(ascii_value)))
                 self.advance()
                 if self.current_char is None or self.current_char != "'":
                     self.raise_error("Syntax", "missing \"'\"")

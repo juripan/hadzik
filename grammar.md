@@ -2,7 +2,7 @@
 
 [Stmt] -> {
     vychod([Expr])
-    hutor([Expr]) TODO rework this
+    hutor([Expr] | [Txt]) TODO rework this
     [IdentDef]
     [IdentAssign]
     [Scope]
@@ -15,9 +15,11 @@
 
 [IdentDef] -> {
     naj ident = [Expr]
+    naj ident = [Txt]
 }
 
 [IdentAssign] -> {
+    ident = [Txt]
     ident = [Expr]
     ident++
     ident--
@@ -63,8 +65,12 @@
 
 [Term] -> {
     int
-    char
     ident
     ([Expr])
     ne [Term]
+}
+
+[Txt] -> {
+    char
+    ident
 }
