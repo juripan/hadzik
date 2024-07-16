@@ -1,9 +1,10 @@
-naj vstup = 12
+naj vstup = -12
 
 kec(vstup % 2 == 0){
-    hutor('a')
+    hutor('8')
     hutor('\n')
-} inac {
+}
+inac {
     hutor('n')
     hutor('\n')
 }

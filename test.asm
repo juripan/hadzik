@@ -3,7 +3,7 @@ section .bss
 section .text
     global _start
 _start:
-    push 12
+    push -12
     ;if block
     push 0
     push 2
@@ -23,7 +23,7 @@ _start:
     pop rax
     test rax, rax
     jz label1
-    push 97
+    push 56
     ; printing
     mov rax, 1
     mov rdi, 1
@@ -97,9 +97,8 @@ label4:
     ; /printing
     add rsp, 0
     ;reassigning a variable
-    push QWORD [rsp + 0]
+    push 1
     pop rax
-    inc rax
     mov [rsp + 0], rax
     ;/reassigning a variable
     jmp label4
