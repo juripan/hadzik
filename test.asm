@@ -67,6 +67,83 @@ label1:
     ;/else
 label2:
     ;/if block
+    ;for loop
+    push 0
+label4:
+    push 5
+    push QWORD [rsp + 8]
+    pop rax
+    pop rbx
+    cmp rax, rbx
+    setl al
+    movzx rax, al
+    push rax
+    pop rax
+    test rax, rax
+    jz label3
+    push 60
+    push QWORD [rsp + 8]
+    pop rax
+    pop rbx
+    add rax, rbx
+    push rax
+    ; printing
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, rsp
+    mov rdx, 1
+    syscall
+    add rsp, 8
+    ; /printing
+    add rsp, 0
+    ;reassigning a variable
+    push QWORD [rsp + 0]
+    pop rax
+    inc rax
+    mov [rsp + 0], rax
+    ;/reassigning a variable
+    jmp label4
+label3:
+    add rsp, 8
+    ;/for loop
+    push 0
+    ;while loop
+label6:
+    push 10
+    push QWORD [rsp + 8]
+    pop rax
+    pop rbx
+    cmp rax, rbx
+    setl al
+    movzx rax, al
+    push rax
+    pop rax
+    test rax, rax
+    jz label5
+    push 60
+    push QWORD [rsp + 8]
+    pop rax
+    pop rbx
+    add rax, rbx
+    push rax
+    ; printing
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, rsp
+    mov rdx, 1
+    syscall
+    add rsp, 8
+    ; /printing
+    ;reassigning a variable
+    push QWORD [rsp + 0]
+    pop rax
+    inc rax
+    mov [rsp + 0], rax
+    ;/reassigning a variable
+    add rsp, 0
+    jmp label6
+label5:
+    ;/while loop
     ; default exit
     mov rax, 60
     mov rdi, 0

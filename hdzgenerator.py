@@ -349,10 +349,10 @@ class Generator(ErrorHandler):
         self.output.append("    test rax, rax\n")
         self.output.append(f"    jz {end_label}\n")
 
-        self.generate_reassign(for_stmt.ident_assign)
-
         self.generate_scope(for_stmt.scope)
         
+        self.generate_reassign(for_stmt.ident_assign)
+
         self.output.append("    jmp " + reset_label + "\n")
         self.output.append(end_label  + ":\n")
         self.output.append("    add rsp, " + str(8) + "\n")

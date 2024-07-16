@@ -287,7 +287,7 @@ class Parser(ErrorHandler):
                 self.raise_error("Value", "unable to parse expression")
 
             expr = NodeBinExpr(None)
-            expr_lhs2 = NodeExpr(None) # prevents a recursion error, god knows why bit it makes it work
+            expr_lhs2 = NodeExpr(None) # prevents a recursion error, god knows why but it makes it work
             if op.type == tt.plus:
                 expr_lhs2.var = expr_lhs.var
                 add = NodeBinExprAdd(lhs=expr_lhs2, rhs=expr_rhs)
@@ -381,13 +381,13 @@ class Parser(ErrorHandler):
         else:
             self.raise_error("Syntax", "expected '}'")
         
-        if self.current_token.type == tt.end_line:
+        if self.current_token is not None and self.current_token.type == tt.end_line:
             self.next_token()
 
         return scope
 
     def parse_ifpred(self) -> NodeIfPred | None:
-        if self.current_token.type == tt.elif_:
+        if self.current_token is not None and self.current_token.type == tt.elif_:
             self.next_token()
             
             expr = self.parse_expr()
@@ -399,7 +399,7 @@ class Parser(ErrorHandler):
             ifpred = self.parse_ifpred()
 
             return NodeIfPred(NodeIfPredElif(expr, scope, ifpred))
-        elif self.current_token.type == tt.else_:
+        elif self.current_token is not None and self.current_token.type == tt.else_:
             self.next_token()
             
             scope = self.parse_scope()

@@ -7,3 +7,7 @@ kec(vstup % 2 == 0){
     hutor('n')
     hutor('\n')
 }
+
+furt(naj i = 0, i < 5, i++){
+    hutor(i + 60)
+}
