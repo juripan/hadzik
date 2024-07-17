@@ -3,10 +3,13 @@ section .bss
 section .text
     global _start
 _start:
-    push -12
+    mov rax, -12
+    push rax
     ;if block
-    push 0
-    push 2
+    mov rax, 0
+    push rax
+    mov rax, 2
+    push rax
     push QWORD [rsp + 16]
     pop rax
     pop rbx
@@ -23,7 +26,8 @@ _start:
     pop rax
     test rax, rax
     jz label1
-    push 121
+    mov rax, 121
+    push rax
     ; printing
     mov rax, 1
     mov rdi, 1
@@ -32,7 +36,8 @@ _start:
     syscall
     add rsp, 8
     ; /printing
-    push 10
+    mov rax, 10
+    push rax
     ; printing
     mov rax, 1
     mov rdi, 1
@@ -45,7 +50,8 @@ _start:
     jmp label2
 label1:
     ;else
-    push 110
+    mov rax, 110
+    push rax
     ; printing
     mov rax, 1
     mov rdi, 1
@@ -54,7 +60,8 @@ label1:
     syscall
     add rsp, 8
     ; /printing
-    push 10
+    mov rax, 10
+    push rax
     ; printing
     mov rax, 1
     mov rdi, 1
@@ -68,9 +75,11 @@ label1:
 label2:
     ;/if block
     ;for loop
-    push 0
+    mov rax, 0
+    push rax
 label4:
-    push 5
+    mov rax, 5
+    push rax
     push QWORD [rsp + 8]
     pop rax
     pop rbx
@@ -81,7 +90,8 @@ label4:
     pop rax
     test rax, rax
     jz label3
-    push 60
+    mov rax, 60
+    push rax
     push QWORD [rsp + 8]
     pop rax
     pop rbx

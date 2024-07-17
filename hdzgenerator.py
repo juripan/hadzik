@@ -32,6 +32,8 @@ class Generator(ErrorHandler):
             size = 8
         elif content in self.registers_16bit or content.startswith("WORD"):
             size = 2
+        else:
+            raise ValueError("invalid register")
         self.output.append("    push " + content + "\n")
         self.stack_size += 1
 
@@ -80,7 +82,8 @@ class Generator(ErrorHandler):
         if isinstance(term.var, prs.NodeTermInt):
             if term.negative:
                 term.var.int_lit.value = "-" + term.var.int_lit.value
-            self.push(term.var.int_lit.value) #NOTE: this is possible if the value is the size of 4bits or less, if more you have to push it onto a stack first
+            self.output.append(f"    mov rax, {term.var.int_lit.value}\n")
+            self.push("rax") #NOTE: this is possible if the value is the size of 4bits or less, if more you have to push it onto a stack first
         elif isinstance(term.var, prs.NodeTermIdent):
             if term.var.ident.value not in self.variables.keys():
                 self.raise_error("Value", f"variable was not declared: {term.var.ident.value}")
@@ -214,7 +217,8 @@ class Generator(ErrorHandler):
             self.generate_binary_expression(expression.var)
     
     def generate_char(self, char: prs.NodeTermChar) -> None:
-        self.push(char.char.value)
+        self.output.append(f"    mov rax, {char.char.value}\n")
+        self.push("rax")
 
     def generate_scope(self, scope: prs.NodeScope) -> None:
         self.begin_scope()
@@ -258,16 +262,15 @@ class Generator(ErrorHandler):
 
     def generate_reassign(self, reassign_stmt: prs.NodeStmtReassign):
         self.output.append("    ;reassigning a variable\n")
+        if reassign_stmt.var.ident.value not in self.variables.keys():
+            self.raise_error("Value", "undeclared identifier: " + reassign_stmt.var.ident.value)
+        
         if isinstance(reassign_stmt.var, prs.NodeStmtReassignEq):
-            if reassign_stmt.var.ident.value not in self.variables.keys():
-                self.raise_error("Value", "undeclared identifier: " + reassign_stmt.var.ident.value)
             self.generate_expression(reassign_stmt.var.expr)
             self.pop("rax")
             location, _, byte_size = self.variables[reassign_stmt.var.ident.value]
             self.output.append(f"    mov [rsp + {(self.stack_size - location - 1) * byte_size}], rax\n")
         elif isinstance(reassign_stmt.var, (prs.NodeStmtReassignInc, prs.NodeStmtReassignDec)):
-            if reassign_stmt.var.ident.value not in self.variables.keys():
-                self.raise_error("Value", "undeclared identifier: " + reassign_stmt.var.ident.value)
             location, size, byte_size = self.variables[reassign_stmt.var.ident.value]
             self.push(f"{size} [rsp + {(self.stack_size - location - 1) * byte_size}]") # QWORD 64 bits (word = 16 bits)
             self.pop("rax")
@@ -423,7 +426,6 @@ class Generator(ErrorHandler):
             self.generate_print(statement.stmt_var)
 
         elif isinstance(statement.stmt_var, prs.NodeStmtBreak):
-            print(self.loop_end_labels)
             if self.loop_end_labels:
                 self.output.append("    ; break \n")
                 self.output.append("    jmp " + self.loop_end_labels[-1] + "\n")

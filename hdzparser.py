@@ -240,7 +240,9 @@ class Parser(ErrorHandler):
 
     def parse_char(self) -> NodeTermChar | None:
         if self.current_token is not None and self.current_token.type == tt.char_lit:
-            return NodeTermChar(char=self.current_token)
+            char = self.current_token
+            self.next_token()
+            return NodeTermChar(char)
         else:
             return None
 
@@ -520,7 +522,6 @@ class Parser(ErrorHandler):
 
         if self.current_token.type == tt.char_lit:
             cont = self.parse_char()
-            self.next_token()
         else:
             cont = self.parse_expr()
 
