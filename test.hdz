@@ -1,7 +1,7 @@
 naj vstup = -12
 
 kec(vstup % 2 == 0){
-    hutor('8')
+    hutor('y')
     hutor('\n')
 }
 inac {

@@ -23,7 +23,7 @@ _start:
     pop rax
     test rax, rax
     jz label1
-    push 56
+    push 121
     ; printing
     mov rax, 1
     mov rdi, 1
@@ -97,8 +97,9 @@ label4:
     ; /printing
     add rsp, 0
     ;reassigning a variable
-    push 1
+    push QWORD [rsp + 0]
     pop rax
+    inc rax
     mov [rsp + 0], rax
     ;/reassigning a variable
     jmp label4

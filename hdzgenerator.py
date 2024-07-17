@@ -13,17 +13,25 @@ class Generator(ErrorHandler):
         self.column_number = -1
         
         self.stack_size: int = 0 # uses whole 64bit integers as size (until more datatypes are added)
-        self.variables: OrderedDict = OrderedDict()
+        self.variables: OrderedDict[str, tuple[int, str, int]] = OrderedDict() #tuples content is location and word size and size in bytes
         self.scopes: list[int] = []
         self.label_count: int = 0
         self.loop_end_labels: list[str] = []
         self.data_section_index: int = 1
         self.bss_section_index: int = 2
+
+        self.registers_64bit: tuple[str] = ("rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rsp", "rbp", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15")
+        self.registers_16bit: tuple[str] = ("ax", "bx", "cx", "dx", "si", "di", "sp", "bp", "r8w", "r9w", "r10w", "r11w", "r12w", "r13w", "r14w", "r15w")
     
     def push(self, content: str):
         """
         adds a push instruction to the output and updates the stack size 
         """
+        #NOTE: size in bytes
+        if content in self.registers_64bit or content.startswith("QWORD"): #TODO: add proper size to the stack size pointer
+            size = 8
+        elif content in self.registers_16bit or content.startswith("WORD"):
+            size = 2
         self.output.append("    push " + content + "\n")
         self.stack_size += 1
 
@@ -76,7 +84,7 @@ class Generator(ErrorHandler):
         elif isinstance(term.var, prs.NodeTermIdent):
             if term.var.ident.value not in self.variables.keys():
                 self.raise_error("Value", f"variable was not declared: {term.var.ident.value}")
-            location = self.variables[term.var.ident.value]
+            location = self.variables[term.var.ident.value][0]
             self.push(f"QWORD [rsp + {(self.stack_size - location - 1) * 8}]") # QWORD 64 bits (word = 16 bits)
             if term.negative:
                 self.pop("rbx")
@@ -242,9 +250,11 @@ class Generator(ErrorHandler):
     def generate_let(self, let_stmt: prs.NodeStmtLet):
         if let_stmt.ident.value in self.variables.keys():
             self.raise_error("Syntax", f"variable has been already declared: {let_stmt.ident.value}")
-        stack_size_buffer = self.stack_size # stack size changes after generating the expression, thats why its saved here
+        stack_size_buffer: int = self.stack_size # stack size changes after generating the expression, thats why its saved here
+        var_size: str = "QWORD"
+        byte_size: int = 8
         self.generate_expression(let_stmt.expr)
-        self.variables.update({let_stmt.ident.value : stack_size_buffer})
+        self.variables.update({let_stmt.ident.value : (stack_size_buffer, var_size, byte_size)})
 
     def generate_reassign(self, reassign_stmt: prs.NodeStmtReassign):
         self.output.append("    ;reassigning a variable\n")
@@ -253,17 +263,18 @@ class Generator(ErrorHandler):
                 self.raise_error("Value", "undeclared identifier: " + reassign_stmt.var.ident.value)
             self.generate_expression(reassign_stmt.var.expr)
             self.pop("rax")
-            self.output.append(f"    mov [rsp + {(self.stack_size - self.variables[reassign_stmt.var.ident.value] - 1) * 8}], rax\n")
+            location, _, byte_size = self.variables[reassign_stmt.var.ident.value]
+            self.output.append(f"    mov [rsp + {(self.stack_size - location - 1) * byte_size}], rax\n")
         elif isinstance(reassign_stmt.var, (prs.NodeStmtReassignInc, prs.NodeStmtReassignDec)):
             if reassign_stmt.var.ident.value not in self.variables.keys():
                 self.raise_error("Value", "undeclared identifier: " + reassign_stmt.var.ident.value)
-            location = self.variables[reassign_stmt.var.ident.value]
-            self.push(f"QWORD [rsp + {(self.stack_size - location - 1) * 8}]") # QWORD 64 bits (word = 16 bits)
+            location, size, byte_size = self.variables[reassign_stmt.var.ident.value]
+            self.push(f"{size} [rsp + {(self.stack_size - location - 1) * byte_size}]") # QWORD 64 bits (word = 16 bits)
             self.pop("rax")
             self.output.append("    inc rax\n" 
                                if isinstance(reassign_stmt.var, prs.NodeStmtReassignInc) 
                                else "    dec rax\n")
-            self.output.append(f"    mov [rsp + {(self.stack_size - self.variables[reassign_stmt.var.ident.value] - 1) * 8}], rax\n")
+            self.output.append(f"    mov [rsp + {(self.stack_size - location - 1) * byte_size}], rax\n")
         self.output.append("    ;/reassigning a variable\n")
 
     def generate_exit(self, exit_stmt: prs.NodeStmtExit) -> None:
