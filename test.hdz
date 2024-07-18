@@ -1,7 +1,12 @@
 naj vstup = -12
+naj k = 8
 
 kec(vstup % 2 == 0){
     hutor('y')
+    hutor('\n')
+}
+ikec (vstup % 3 == 0){
+    hutor('3')
     hutor('\n')
 }
 inac {
@@ -12,3 +17,9 @@ inac {
 furt(naj i = 0, i < 5, i++){
     hutor(i + 60)
 }
+
+kim(k > 1){
+    k--
+}
+
+vychod(k)

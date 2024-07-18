@@ -12,7 +12,8 @@ class Generator(ErrorHandler):
 
         self.column_number = -1
         
-        self.stack_size: int = 0 # uses whole 64bit integers as size (until more datatypes are added)
+        self.stack_size: int = 0 # uses whole 8 bytes (a word) as a unit
+        self.stack_item_sizes: list[int] = []
         self.variables: OrderedDict[str, tuple[int, str, int]] = OrderedDict() #tuples content is location and word size and size in bytes
         self.scopes: list[int] = []
         self.label_count: int = 0
@@ -35,14 +36,15 @@ class Generator(ErrorHandler):
         else:
             raise ValueError("invalid register")
         self.output.append("    push " + content + "\n")
-        self.stack_size += 1
+        self.stack_size += size
+        self.stack_item_sizes.append(size)
 
     def pop(self, content: str):
         """
         adds a pop instruction to the output and updates the stack size 
         """
         self.output.append("    pop " + content + "\n")
-        self.stack_size -= 1
+        self.stack_size -= self.stack_item_sizes.pop() # removes and gives the last number
 
     def create_label(self) -> str:
         """
@@ -65,13 +67,19 @@ class Generator(ErrorHandler):
         removes the last scopes variables from memory (by moving the stack pointer),
         removes itself from the generators list of scopes,
         removes the aforementioned variables from the generators dictionary
+        returns prematurely if theres nothing to remove
         """
         pop_count: int = len(self.variables) - self.scopes[-1]
+        if pop_count != 0:
+            popped_size: int = sum(self.stack_item_sizes[-pop_count:])
+        else: # nothing to remove
+            return
 
-        self.output.append("    add rsp, " + str(pop_count * 8) + "\n")
-        self.stack_size -= pop_count
+        self.output.append("    add rsp, " + str(popped_size) + "\n")
+        self.stack_size -= popped_size
         for _ in range(pop_count):
             self.variables.popitem()
+            self.stack_item_sizes.pop()
         del self.scopes[-1]
 
     def generate_term(self, term: prs.NodeTerm) -> None:
@@ -83,12 +91,12 @@ class Generator(ErrorHandler):
             if term.negative:
                 term.var.int_lit.value = "-" + term.var.int_lit.value
             self.output.append(f"    mov rax, {term.var.int_lit.value}\n")
-            self.push("rax") #NOTE: this is possible if the value is the size of 4bits or less, if more you have to push it onto a stack first
+            self.push("rax")
         elif isinstance(term.var, prs.NodeTermIdent):
             if term.var.ident.value not in self.variables.keys():
                 self.raise_error("Value", f"variable was not declared: {term.var.ident.value}")
-            location = self.variables[term.var.ident.value][0]
-            self.push(f"QWORD [rsp + {(self.stack_size - location - 1) * 8}]") # QWORD 64 bits (word = 16 bits)
+            location, _, byte_size = self.variables[term.var.ident.value]
+            self.push(f"QWORD [rsp + {self.stack_size - location - byte_size}]") # QWORD 64 bits (word = 16 bits)
             if term.negative:
                 self.pop("rbx")
                 self.output.append("    mov rax, -1\n")
@@ -269,15 +277,15 @@ class Generator(ErrorHandler):
             self.generate_expression(reassign_stmt.var.expr)
             self.pop("rax")
             location, _, byte_size = self.variables[reassign_stmt.var.ident.value]
-            self.output.append(f"    mov [rsp + {(self.stack_size - location - 1) * byte_size}], rax\n")
+            self.output.append(f"    mov [rsp + {self.stack_size - location - byte_size}], rax\n")
         elif isinstance(reassign_stmt.var, (prs.NodeStmtReassignInc, prs.NodeStmtReassignDec)):
             location, size, byte_size = self.variables[reassign_stmt.var.ident.value]
-            self.push(f"{size} [rsp + {(self.stack_size - location - 1) * byte_size}]") # QWORD 64 bits (word = 16 bits)
+            self.push(f"{size} [rsp + {self.stack_size - location - byte_size}]") # QWORD 64 bits (word = 16 bits)
             self.pop("rax")
             self.output.append("    inc rax\n" 
                                if isinstance(reassign_stmt.var, prs.NodeStmtReassignInc) 
                                else "    dec rax\n")
-            self.output.append(f"    mov [rsp + {(self.stack_size - location - 1) * byte_size}], rax\n")
+            self.output.append(f"    mov [rsp + {self.stack_size - location - byte_size}], rax\n")
         self.output.append("    ;/reassigning a variable\n")
 
     def generate_exit(self, exit_stmt: prs.NodeStmtExit) -> None:
@@ -371,13 +379,12 @@ class Generator(ErrorHandler):
         self.output.append("    jmp " + reset_label + "\n")
         self.output.append(end_label  + ":\n")
         self.output.append("    add rsp, " + str(8) + "\n")
-        self.stack_size -= 1 # does this to remove the variable after the i loop ends
+        self.stack_size -= self.stack_item_sizes.pop() # does this to remove the variable after the i loop ends
         self.variables.popitem()
         self.output.append("    ;/for loop\n")
         self.loop_end_labels.pop()
 
     def generate_print(self, print_stmt: prs.NodeStmtPrint) -> None:
-        init_stack_size = self.stack_size
         if isinstance(print_stmt.content, prs.NodeExpr):
             self.generate_expression(print_stmt.content)
         elif isinstance(print_stmt.content, prs.NodeTermChar):
@@ -389,9 +396,9 @@ class Generator(ErrorHandler):
         self.output.append(f"    mov rsi, {expr_loc}\n")
         self.output.append("    mov rdx, 1\n")
         self.output.append("    syscall\n")
-        pushed_res = self.stack_size - init_stack_size #it removes the printed expression because it causes a mess in the stack when looping
-        self.output.append("    add rsp, " + str(pushed_res * 8) + "\n") #removes the printed expression from the stack
-        self.stack_size -= 1 #lowers the stack size
+        pushed_res = self.stack_item_sizes[-1] #it removes the printed expression because it causes a mess in the stack when looping
+        self.output.append("    add rsp, " + str(pushed_res) + "\n") #removes the printed expression from the stack
+        self.stack_size -= self.stack_item_sizes.pop() #lowers the stack size
         self.output.append("    ; /printing\n")
 
     def generate_statement(self, statement: prs.NodeStmt) -> None:
