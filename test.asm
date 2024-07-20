@@ -23,10 +23,9 @@ _start:
     pop rbx
     cmp rax, rbx
     sete al
-    movzx rax, al
-    push rax
-    pop rax
-    test rax, rax
+    push ax
+    pop ax
+    test ax, ax
     jz label1
     mov rax, 121
     push rax
@@ -66,10 +65,9 @@ label1:
     pop rbx
     cmp rax, rbx
     sete al
-    movzx rax, al
-    push rax
-    pop rax
-    test rax, rax
+    push ax
+    pop ax
+    test ax, ax
     jz label3
     mov rax, 51
     push rax
@@ -129,10 +127,9 @@ label5:
     pop rbx
     cmp rax, rbx
     setl al
-    movzx rax, al
-    push rax
-    pop rax
-    test rax, rax
+    push ax
+    pop ax
+    test ax, ax
     jz label4
     mov rax, 60
     push rax
@@ -168,10 +165,9 @@ label7:
     pop rbx
     cmp rax, rbx
     setg al
-    movzx rax, al
-    push rax
-    pop rax
-    test rax, rax
+    push ax
+    pop ax
+    test ax, ax
     jz label6
     ;reassigning a variable
     push QWORD [rsp + 0]

@@ -12,12 +12,15 @@ class Generator(ErrorHandler):
 
         self.column_number = -1
         
-        self.stack_size: int = 0 # uses whole 8 bytes (a word) as a unit
-        self.stack_item_sizes: list[int] = []
+        self.stack_size: int = 0 # uses whole 8 bytes (half of a word) as a unit
+        self.stack_item_sizes: list[int] = [] # same as above
+
         self.variables: OrderedDict[str, tuple[int, str, int]] = OrderedDict() #tuples content is location and word size and size in bytes
         self.scopes: list[int] = []
+        
         self.label_count: int = 0
         self.loop_end_labels: list[str] = []
+        
         self.data_section_index: int = 1
         self.bss_section_index: int = 2
 
@@ -38,6 +41,7 @@ class Generator(ErrorHandler):
         self.output.append("    push " + content + "\n")
         self.stack_size += size
         self.stack_item_sizes.append(size)
+        print("push", self.stack_size, self.stack_item_sizes, self.variables)
 
     def pop(self, content: str):
         """
@@ -45,6 +49,7 @@ class Generator(ErrorHandler):
         """
         self.output.append("    pop " + content + "\n")
         self.stack_size -= self.stack_item_sizes.pop() # removes and gives the last number
+        print("pop", self.stack_size, self.stack_item_sizes, self.variables)
 
     def create_label(self) -> str:
         """
@@ -70,17 +75,20 @@ class Generator(ErrorHandler):
         returns prematurely if theres nothing to remove
         """
         pop_count: int = len(self.variables) - self.scopes[-1]
-        if pop_count != 0:
-            popped_size: int = sum(self.stack_item_sizes[-pop_count:])
-        else: # nothing to remove
-            return
+        if pop_count == 0:
+            return # nothing to remove, if its not here then slice accepts all of the stack -> list[0:] == list
 
+        popped_size: int = sum(self.stack_item_sizes[-pop_count:])
         self.output.append("    add rsp, " + str(popped_size) + "\n")
         self.stack_size -= popped_size
         for _ in range(pop_count):
             self.variables.popitem()
             self.stack_item_sizes.pop()
         del self.scopes[-1]
+
+    def generate_boolean(self, bool: prs.NodeTermBool) -> None:
+        self.output.append(f"    mov ax, {bool.bool.value}\n")
+        self.push("ax")
 
     def generate_term(self, term: prs.NodeTerm) -> None:
         """
@@ -91,12 +99,13 @@ class Generator(ErrorHandler):
             if term.negative:
                 term.var.int_lit.value = "-" + term.var.int_lit.value
             self.output.append(f"    mov rax, {term.var.int_lit.value}\n")
+            print(term.var.int_lit.value)
             self.push("rax")
         elif isinstance(term.var, prs.NodeTermIdent):
             if term.var.ident.value not in self.variables.keys():
                 self.raise_error("Value", f"variable was not declared: {term.var.ident.value}")
-            location, _, byte_size = self.variables[term.var.ident.value]
-            self.push(f"QWORD [rsp + {self.stack_size - location - byte_size}]") # QWORD 64 bits (word = 16 bits)
+            location, word_size, byte_size = self.variables[term.var.ident.value]
+            self.push(f"{word_size} [rsp + {self.stack_size - location - byte_size}]") # QWORD 64 bits (word = 16 bits)
             if term.negative:
                 self.pop("rbx")
                 self.output.append("    mov rax, -1\n")
@@ -120,7 +129,7 @@ class Generator(ErrorHandler):
     
     def generate_comparison_expression(self, comparison: prs.NodeBinExprComp) -> None:
         """
-        generates a comparison expression,
+        generates a comparison expression that pushes a 16bit value onto the stack,
         type of binary expression that returns 1 or 0 depending on if its true or false
         """
         self.generate_expression(comparison.rhs)
@@ -142,12 +151,12 @@ class Generator(ErrorHandler):
             self.output.append("    setle al\n")
         else:
             self.raise_error("Syntax", "Invalid comparison expression")
-        self.output.append("    movzx rax, al\n")
-        self.push("rax")
+        #self.output.append("    movzx rax, al\n")
+        self.push("ax")
 
     def generate_logical_expression(self, logic_expr: prs.NodeBinExprLogic) -> None:
         """
-        generates an eval for a logical expression (AND or OR),
+        generates an eval for a logical expression (AND or OR) that pushes a 16bit value onto the stack,
         its result can be either 1 or 0
         """
         self.generate_expression(logic_expr.rhs)
@@ -164,8 +173,8 @@ class Generator(ErrorHandler):
             self.raise_error("Syntax", "Invalid logic expression")
         self.output.append("    test rcx, rcx\n")
         self.output.append("    setne al\n")
-        self.output.append("    movzx rax, al\n")
-        self.push("rax")
+        #self.output.append("    movzx rax, al\n")
+        self.push("ax")
 
     def generate_binary_expression(self, bin_expr: prs.NodeBinExpr) -> None:
         """
@@ -243,8 +252,8 @@ class Generator(ErrorHandler):
             self.generate_expression(pred.var.expr)
             label = self.create_label()
 
-            self.pop("rax")
-            self.output.append("    test rax, rax\n")
+            self.pop("ax")
+            self.output.append("    test ax, ax\n")
             
             self.output.append("    jz " + label + "\n")
             self.generate_scope(pred.var.scope)
@@ -262,11 +271,20 @@ class Generator(ErrorHandler):
     def generate_let(self, let_stmt: prs.NodeStmtLet):
         if let_stmt.ident.value in self.variables.keys():
             self.raise_error("Syntax", f"variable has been already declared: {let_stmt.ident.value}")
-        stack_size_buffer: int = self.stack_size # stack size changes after generating the expression, thats why its saved here
-        var_size: str = "QWORD"
-        byte_size: int = 8
-        self.generate_expression(let_stmt.expr)
-        self.variables.update({let_stmt.ident.value : (stack_size_buffer, var_size, byte_size)})
+        location: int = self.stack_size # stack size changes after generating the expression, thats why its saved here
+
+        if let_stmt.type_.type == tt.let:
+            var_size: str = "QWORD"
+            byte_size: int = 8
+            self.generate_expression(let_stmt.expr)
+        elif let_stmt.type_.type == tt.bool_def:
+            var_size: str = "WORD"
+            byte_size: int = 2
+            self.generate_boolean(let_stmt.expr)
+        else:
+            assert False
+        
+        self.variables.update({let_stmt.ident.value : (location, var_size, byte_size)})
 
     def generate_reassign(self, reassign_stmt: prs.NodeStmtReassign):
         self.output.append("    ;reassigning a variable\n")
@@ -300,8 +318,8 @@ class Generator(ErrorHandler):
         self.generate_expression(if_stmt.expr)
         label = self.create_label()
 
-        self.pop("rax")
-        self.output.append("    test rax, rax\n")
+        self.pop("ax") #TODO: make the comparison expressions use the correct size depending on type (if not used it mis-aligns the stack cuz when popping into rax it takes the top 64bits and cuts off a value misaliging the sack)
+        self.output.append("    test ax, ax\n")
 
         self.output.append("    jz " + label + "\n")
         self.generate_scope(if_stmt.scope)
@@ -325,8 +343,8 @@ class Generator(ErrorHandler):
         self.output.append(reset_label  + ":\n")
 
         self.generate_expression(while_stmt.expr)
-        self.pop("rax")
-        self.output.append("    test rax, rax\n")
+        self.pop("ax")
+        self.output.append("    test ax, ax\n")
         self.output.append(f"    jz {end_label}\n")
 
         self.generate_scope(while_stmt.scope)
@@ -347,8 +365,8 @@ class Generator(ErrorHandler):
         self.generate_scope(do_while_stmt.scope)
 
         self.generate_expression(do_while_stmt.expr)
-        self.pop("rax")
-        self.output.append("    test rax, rax\n")
+        self.pop("ax")
+        self.output.append("    test ax, ax\n")
         self.output.append(f"    jz {end_label}\n")
 
         self.output.append("    jmp " + reset_label + "\n")
@@ -368,8 +386,8 @@ class Generator(ErrorHandler):
 
         self.generate_comparison_expression(for_stmt.condition)
         
-        self.pop("rax")
-        self.output.append("    test rax, rax\n")
+        self.pop("ax")
+        self.output.append("    test ax, ax\n")
         self.output.append(f"    jz {end_label}\n")
 
         self.generate_scope(for_stmt.scope)
@@ -396,9 +414,9 @@ class Generator(ErrorHandler):
         self.output.append(f"    mov rsi, {expr_loc}\n")
         self.output.append("    mov rdx, 1\n")
         self.output.append("    syscall\n")
-        pushed_res = self.stack_item_sizes[-1] #it removes the printed expression because it causes a mess in the stack when looping
+        pushed_res = self.stack_item_sizes.pop() #it removes the printed expression because it causes a mess in the stack when looping
         self.output.append("    add rsp, " + str(pushed_res) + "\n") #removes the printed expression from the stack
-        self.stack_size -= self.stack_item_sizes.pop() #lowers the stack size
+        self.stack_size -= pushed_res #lowers the stack size
         self.output.append("    ; /printing\n")
 
     def generate_statement(self, statement: prs.NodeStmt) -> None:

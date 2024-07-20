@@ -1,4 +1,5 @@
 #TODO: fix the end lines acting weird while parsing, with if statements, scopes, etc.
+#TODO: implement proper parsing for booleans and boolean expressions
 from dataclasses import dataclass
 from hdzlexer import Token
 import hdztokentypes as tt
@@ -8,6 +9,10 @@ from hdzerrors import ErrorHandler
 @dataclass(slots=True)
 class NodeExpr:
     pass
+
+@dataclass(slots=True)
+class NodeTermBool:
+    bool: Token
 
 @dataclass(slots=True)
 class NodeTermChar:
@@ -112,6 +117,7 @@ class NodeStmtExit:
 class NodeStmtLet:
     ident: Token
     expr: NodeExpr
+    type_: Token
 
 
 class NodeScope:
@@ -238,6 +244,20 @@ class Parser(ErrorHandler):
             self.raise_error(error_name, error_details)
 
 
+    def parse_bool(self) -> NodeTermBool | None:
+        curr_tok = self.current_token
+        if self.current_token.type == tt.true:
+            self.next_token()
+            curr_tok.value = 1
+            return NodeTermBool(curr_tok)
+        elif self.current_token.type == tt.false:
+            self.next_token()
+            curr_tok.value = 0
+            return NodeTermBool(curr_tok)
+        else:
+            self.next_token()
+            return None
+
     def parse_char(self) -> NodeTermChar | None:
         if self.current_token is not None and self.current_token.type == tt.char_lit:
             char = self.current_token
@@ -336,7 +356,8 @@ class Parser(ErrorHandler):
         return expr_lhs
     
     def parse_let(self) -> NodeStmtLet:
-        self.next_token() # removes naj
+        type_def = self.current_token
+        self.next_token() # removes type def
 
         self.try_throw_error(tt.identifier, "Syntax", "Expected identifier")
         ident = self.current_token
@@ -344,16 +365,20 @@ class Parser(ErrorHandler):
 
         self.try_throw_error(tt.equals, "Syntax", "Expected '='")
         self.next_token()
+        if type_def.type == tt.bool_def:
+            value = self.parse_bool()
+        elif type_def.type == tt.let:
+            value = self.parse_expr()
+        else:
+            self.raise_error("Type", "type not defined")
 
-        expr = self.parse_expr()
-
-        if expr is None:
+        if value is None:
             self.raise_error("Syntax", "Invalid expression")
 
         if self.current_token is not None and self.current_token.type not in (tt.end_line, tt.dash, tt.right_curly):
             self.raise_error("Syntax", "Expected endline") #TODO: make this more accurate
 
-        return NodeStmtLet(ident, expr)
+        return NodeStmtLet(ident, value, type_def)
 
     def parse_exit(self) -> NodeStmtExit:
         self.next_token() # removes exit token
@@ -546,7 +571,7 @@ class Parser(ErrorHandler):
             statement = self.parse_exit()
         elif self.current_token.type == tt.print_:
             statement = self.parse_print()
-        elif self.current_token.type == tt.let:
+        elif self.current_token.type in (tt.let, tt.bool_def):
             statement = self.parse_let()
         elif self.current_token.type == tt.left_curly:
             statement = self.parse_scope()

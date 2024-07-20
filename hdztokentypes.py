@@ -8,10 +8,13 @@ end_line = "end_ln"
 
 exit_ = "vychod" # names of keywords must be what is used in the hadzik syntax
 print_ = "hutor"
+
+let = "naj"
+bool_def = "bul"
+
 if_ = "kec"
 elif_ = "ikec"
 else_ = "inac"
-let = "naj"
 while_ = "kim"
 do = "zrob"
 for_ = "furt"
@@ -20,6 +23,8 @@ break_ = "konec"
 identifier = "identifier"
 char_lit = "character"
 int_lit = "integer"
+true = "pravda"
+false = "klamstvo"
 floating_number = "float"
 
 plus = "+"
@@ -46,12 +51,12 @@ not_ = "ne"
 all_token_types = (
     left_paren, right_paren, left_curly, right_curly, dash,
     end_line,  
-    exit_, print_, let, if_, elif_, else_, while_, do, for_, break_,
+    exit_, print_, let, bool_def, if_, elif_, else_, while_, do, for_, break_,
     identifier, int_lit, floating_number,
     plus, minus, star, slash, percent, equals, 
     is_equal, is_not_equal, larger_than, less_than, larger_than_or_eq, less_than_or_eq,
     increment, decrement,
-    and_, or_, not_,
+    and_, or_, not_, true, false,
 )
 
 def get_prec_level(token_type: str) -> int | None:

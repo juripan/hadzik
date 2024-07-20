@@ -15,7 +15,14 @@
 
 [IdentDef] -> {
     naj ident = [Expr]
-    naj ident = [Txt]
+    bul ident = [BoolTerm]
+}
+
+[BoolTerm] ->{
+    pravda
+    klamstvo
+    [CompExpr]
+    [LogicExpr]
 }
 
 [IdentAssign] -> {
