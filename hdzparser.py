@@ -40,7 +40,7 @@ class NodeTermNot:
 
 @dataclass(slots=True)
 class NodeTerm:
-    var: NodeTermIdent | NodeTermInt | NodeTermChar | NodeTermParen | NodeTermNot
+    var: NodeTermIdent | NodeTermInt | NodeTermChar | NodeTermParen | NodeTermNot | NodeTermBool
     negative: bool = False
 
 
@@ -100,12 +100,15 @@ class NodeBinExprLogic:
 
 @dataclass(slots=True)
 class NodeBinExpr:
-    var: NodeBinExprAdd | NodeBinExprMulti | NodeBinExprSub | NodeBinExprDiv | NodeBinExprMod | NodeBinExprComp | NodeBinExprLogic
+    var: NodeBinExprAdd | NodeBinExprMulti | NodeBinExprSub | NodeBinExprDiv | NodeBinExprMod
 
+@dataclass(slots=True)
+class NodeLogicExpr:
+    var: NodeBinExprComp | NodeBinExprLogic
 
 @dataclass(slots=True)
 class NodeExpr:
-    var: NodeTerm | NodeBinExpr
+    var: NodeTerm | NodeBinExpr | NodeLogicExpr
 
 
 @dataclass(slots=True)
@@ -244,20 +247,6 @@ class Parser(ErrorHandler):
             self.raise_error(error_name, error_details)
 
 
-    def parse_bool(self) -> NodeTermBool | None:
-        curr_tok = self.current_token
-        if self.current_token.type == tt.true:
-            self.next_token()
-            curr_tok.value = 1
-            return NodeTermBool(curr_tok)
-        elif self.current_token.type == tt.false:
-            self.next_token()
-            curr_tok.value = 0
-            return NodeTermBool(curr_tok)
-        else:
-            self.next_token()
-            return None
-
     def parse_char(self) -> NodeTermChar | None:
         if self.current_token is not None and self.current_token.type == tt.char_lit:
             char = self.current_token
@@ -276,6 +265,12 @@ class Parser(ErrorHandler):
             return NodeTerm(NodeTermInt(int_lit=self.current_token), is_negative)
         elif self.current_token is not None and self.current_token.type == tt.identifier:
             return NodeTerm(NodeTermIdent(ident=self.current_token), is_negative)
+        elif self.current_token is not None and self.current_token.type == tt.true:
+            self.current_token.value = 1
+            return NodeTerm(NodeTermBool(bool=self.current_token), is_negative)
+        elif self.current_token is not None and self.current_token.type == tt.false:
+            self.current_token.value = 0
+            return NodeTerm(NodeTermBool(bool=self.current_token), is_negative)
         elif self.current_token is not None and self.current_token.type == tt.left_paren:
             self.next_token()
             expr = self.parse_expr()
@@ -320,7 +315,7 @@ class Parser(ErrorHandler):
             if expr_rhs is None:
                 self.raise_error("Value", "unable to parse expression")
 
-            expr = NodeBinExpr(None)
+            expr = NodeBinExpr(None) if op.type in (tt.plus, tt.minus, tt.star, tt.slash, tt.percent) else NodeLogicExpr(None)
             expr_lhs2 = NodeExpr(None) # prevents a recursion error, god knows why but it makes it work
             if op.type == tt.plus:
                 expr_lhs2.var = expr_lhs.var
@@ -365,9 +360,7 @@ class Parser(ErrorHandler):
 
         self.try_throw_error(tt.equals, "Syntax", "Expected '='")
         self.next_token()
-        if type_def.type == tt.bool_def:
-            value = self.parse_bool()
-        elif type_def.type == tt.let:
+        if type_def.type in (tt.let, tt.bool_def):
             value = self.parse_expr()
         else:
             self.raise_error("Type", "type not defined")

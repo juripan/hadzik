@@ -14,15 +14,8 @@
 }
 
 [IdentDef] -> {
-    naj ident = [Expr]
-    bul ident = [BoolTerm]
-}
-
-[BoolTerm] ->{
-    pravda
-    klamstvo
-    [CompExpr]
-    [LogicExpr]
+    naj ident = [Term] | [BinExpr]
+    bul ident = [Term] | [LogicExpr]
 }
 
 [IdentAssign] -> {
@@ -44,6 +37,7 @@
     [Term]
     -[Term]
     [BinExpr]
+    [LogicExpr]
 }
 
 [BinExpr] -> {
@@ -52,32 +46,24 @@
     [Expr] % [Expr] prec = 3
     [Expr] + [Expr] prec = 2
     [Expr] - [Expr] prec = 2
-    [CompExpr] prec = 1
-    [LogicExpr] prec = 0
-}
-
-[CompExpr] -> {
-    [Expr] == [Expr]
-    [Expr] != [Expr]
-    [Expr] > [Expr]
-    [Expr] < [Expr]
-    [Expr] <= [Expr]
-    [Expr] >= [Expr]
 }
 
 [LogicExpr] -> {
-    [Expr] aj [Expr]
-    [Expr] abo [Expr]
+    [Expr] == [Expr] prec = 1
+    [Expr] != [Expr] prec = 1
+    [Expr] > [Expr] prec = 1
+    [Expr] < [Expr] prec = 1
+    [Expr] <= [Expr] prec = 1
+    [Expr] >= [Expr] prec = 1
+    [Expr] aj [Expr] prec = 0
+    [Expr] abo [Expr] prec = 0
 }
 
 [Term] -> {
     int
+    char
+    bool
     ident
     ([Expr])
     ne [Term]
-}
-
-[Txt] -> {
-    char
-    ident
 }

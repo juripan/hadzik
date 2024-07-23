@@ -1,7 +1,8 @@
 naj vstup = -12
 naj k = 8
+bul x = klamstvo
 
-kec(vstup % 2 == 0){
+kec(x){
     hutor('y')
     hutor('\n')
 }

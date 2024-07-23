@@ -7,23 +7,10 @@ _start:
     push rax
     mov rax, 8
     push rax
-    ;if block
-    mov rax, 0
-    push rax
-    mov rax, 2
-    push rax
-    push QWORD [rsp + 24]
-    pop rax
-    pop rbx
-    mov rdx, 0
-    cqo
-    idiv rbx
-    push rdx
-    pop rax
-    pop rbx
-    cmp rax, rbx
-    sete al
+    mov ax, 0
     push ax
+    ;if block
+    push WORD [rsp + 0]
     pop ax
     test ax, ax
     jz label1
@@ -50,22 +37,7 @@ _start:
     jmp label2
 label1:
     ;elif
-    mov rax, 0
-    push rax
-    mov rax, 3
-    push rax
-    push QWORD [rsp + 24]
-    pop rax
-    pop rbx
-    mov rdx, 0
-    cqo
-    idiv rbx
-    push rdx
-    pop rax
-    pop rbx
-    cmp rax, rbx
-    sete al
-    push ax
+    push QWORD [rsp + 10]
     pop ax
     test ax, ax
     jz label3
@@ -160,7 +132,7 @@ label4:
 label7:
     mov rax, 1
     push rax
-    push QWORD [rsp + 8]
+    push QWORD [rsp + 10]
     pop rax
     pop rbx
     cmp rax, rbx
@@ -170,15 +142,15 @@ label7:
     test ax, ax
     jz label6
     ;reassigning a variable
-    push QWORD [rsp + 0]
+    push QWORD [rsp + 2]
     pop rax
     dec rax
-    mov [rsp + 0], rax
+    mov [rsp + 2], rax
     ;/reassigning a variable
     jmp label7
 label6:
     ;/while loop
-    push QWORD [rsp + 0]
+    push QWORD [rsp + 2]
     ; manual exit (vychod)
     mov rax, 60
     pop rdi

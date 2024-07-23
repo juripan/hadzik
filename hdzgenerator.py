@@ -32,7 +32,7 @@ class Generator(ErrorHandler):
         adds a push instruction to the output and updates the stack size 
         """
         #NOTE: size in bytes
-        if content in self.registers_64bit or content.startswith("QWORD"): #TODO: add proper size to the stack size pointer
+        if content in self.registers_64bit or content.startswith("QWORD"):
             size = 8
         elif content in self.registers_16bit or content.startswith("WORD"):
             size = 2
@@ -95,11 +95,11 @@ class Generator(ErrorHandler):
         generates a term, a term being a variable or a number, 
         gets pushed on to of the stack
         """
+        print(term.var)
         if isinstance(term.var, prs.NodeTermInt):
             if term.negative:
                 term.var.int_lit.value = "-" + term.var.int_lit.value
             self.output.append(f"    mov rax, {term.var.int_lit.value}\n")
-            print(term.var.int_lit.value)
             self.push("rax")
         elif isinstance(term.var, prs.NodeTermIdent):
             if term.var.ident.value not in self.variables.keys():
@@ -111,6 +111,9 @@ class Generator(ErrorHandler):
                 self.output.append("    mov rax, -1\n")
                 self.output.append("    mul rbx\n")
                 self.push("rax")
+        elif isinstance(term.var, prs.NodeTermBool):
+            self.output.append(f"    mov ax, {term.var.bool.value}\n")
+            self.push("ax")
         elif isinstance(term.var, prs.NodeTermParen):
             self.generate_expression(term.var.expr)
             if term.negative:
@@ -154,7 +157,7 @@ class Generator(ErrorHandler):
         #self.output.append("    movzx rax, al\n")
         self.push("ax")
 
-    def generate_logical_expression(self, logic_expr: prs.NodeBinExprLogic) -> None:
+    def generate_binary_logical_expression(self, logic_expr: prs.NodeBinExprLogic) -> None: #TODO: rename ths mess
         """
         generates an eval for a logical expression (AND or OR) that pushes a 16bit value onto the stack,
         its result can be either 1 or 0
@@ -217,12 +220,14 @@ class Generator(ErrorHandler):
             self.output.append("    cqo\n") # sign extends so the modulus result can be negative
             self.output.append("    idiv rbx\n")
             self.push("rdx") # assembly stores the modulus in rdx after the standard division instruction
-        elif isinstance(bin_expr.var, prs.NodeBinExprComp): 
-            self.generate_comparison_expression(bin_expr.var)
-        elif isinstance(bin_expr.var, prs.NodeBinExprLogic):
-            self.generate_logical_expression(bin_expr.var)
         else:
             self.raise_error("Generator", "failed to generate binary expression")
+
+    def generate_logical_expression(self, expression: prs.NodeLogicExpr):
+        if isinstance(expression.var, prs.NodeBinExprComp): 
+            self.generate_comparison_expression(expression.var)
+        elif isinstance(expression.var, prs.NodeBinExprLogic):
+            self.generate_binary_logical_expression(expression.var)
 
     def generate_expression(self, expression: prs.NodeExpr) -> None:
         """
@@ -232,6 +237,8 @@ class Generator(ErrorHandler):
             self.generate_term(expression.var)
         elif isinstance(expression.var, prs.NodeBinExpr):
             self.generate_binary_expression(expression.var)
+        elif isinstance(expression.var, prs.NodeLogicExpr):
+            self.generate_logical_expression(expression.var)
     
     def generate_char(self, char: prs.NodeTermChar) -> None:
         self.output.append(f"    mov rax, {char.char.value}\n")
@@ -276,11 +283,15 @@ class Generator(ErrorHandler):
         if let_stmt.type_.type == tt.let:
             var_size: str = "QWORD"
             byte_size: int = 8
+            if isinstance(let_stmt.expr.var, prs.NodeLogicExpr):
+                self.raise_error("Ci pana", "to co")
             self.generate_expression(let_stmt.expr)
         elif let_stmt.type_.type == tt.bool_def:
             var_size: str = "WORD"
             byte_size: int = 2
-            self.generate_boolean(let_stmt.expr)
+            if isinstance(let_stmt.expr.var, prs.NodeBinExpr):
+                self.raise_error("Ci pana", "to co")
+            self.generate_expression(let_stmt.expr)
         else:
             assert False
         
