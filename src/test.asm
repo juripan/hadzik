@@ -37,7 +37,22 @@ _start:
     jmp label2
 label1:
     ;elif
-    push QWORD [rsp + 10]
+    mov rax, 0
+    push rax
+    mov rax, 3
+    push rax
+    push QWORD [rsp + 26]
+    pop rax
+    pop rbx
+    mov rdx, 0
+    cqo
+    idiv rbx
+    push rdx
+    pop rax
+    pop rbx
+    cmp rax, rbx
+    sete al
+    push ax
     pop ax
     test ax, ax
     jz label3
