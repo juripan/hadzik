@@ -10,4 +10,3 @@ RUN apk add --no-cache python3
 
 COPY tools/start.sh .
 
-CMD ["./start.sh"]

@@ -284,13 +284,13 @@ class Generator(ErrorHandler):
             var_size: str = "QWORD"
             byte_size: int = 8
             if isinstance(let_stmt.expr.var, prs.NodeLogicExpr):
-                self.raise_error("Ci pana", "to co")
+                self.raise_error("Unexpected", "what ")
             self.generate_expression(let_stmt.expr)
         elif let_stmt.type_.type == tt.bool_def:
             var_size: str = "WORD"
             byte_size: int = 2
             if isinstance(let_stmt.expr.var, prs.NodeBinExpr):
-                self.raise_error("Ci pana", "to co")
+                self.raise_error("Unexpected", "what ")
             self.generate_expression(let_stmt.expr)
         else:
             assert False

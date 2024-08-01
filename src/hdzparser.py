@@ -275,7 +275,7 @@ class Parser(ErrorHandler):
             self.next_token()
             expr = self.parse_expr()
             if expr is None:
-                self.raise_error("Value", "Expected expression")
+                self.raise_error("Value", "expected expression")
 
             self.try_throw_error(tt.right_paren, "Syntax", "expected ')'")
 
@@ -285,7 +285,7 @@ class Parser(ErrorHandler):
             
             term = self.parse_term()
             if term is None:
-                self.raise_error("Value", "Expected term")
+                self.raise_error("Value", "expected term")
             
             return NodeTerm(var=NodeTermNot(term=term))
         else:
@@ -354,11 +354,11 @@ class Parser(ErrorHandler):
         type_def = self.current_token
         self.next_token() # removes type def
 
-        self.try_throw_error(tt.identifier, "Syntax", "Expected identifier")
+        self.try_throw_error(tt.identifier, "Syntax", "expected identifier")
         ident = self.current_token
         self.next_token()
 
-        self.try_throw_error(tt.equals, "Syntax", "Expected '='")
+        self.try_throw_error(tt.equals, "Syntax", "expected '='")
         self.next_token()
         if type_def.type in (tt.let, tt.bool_def):
             value = self.parse_expr()
@@ -366,28 +366,28 @@ class Parser(ErrorHandler):
             self.raise_error("Type", "type not defined")
 
         if value is None:
-            self.raise_error("Syntax", "Invalid expression")
+            self.raise_error("Syntax", "invalid expression")
 
         if self.current_token is not None and self.current_token.type not in (tt.end_line, tt.dash, tt.right_curly):
-            self.raise_error("Syntax", "Expected endline") #TODO: make this more accurate
+            self.raise_error("Syntax", "expected endline") #TODO: make this more accurate
 
         return NodeStmtLet(ident, value, type_def)
 
     def parse_exit(self) -> NodeStmtExit:
         self.next_token() # removes exit token
         
-        self.try_throw_error(tt.left_paren, "Syntax", "Expected '('")
+        self.try_throw_error(tt.left_paren, "Syntax", "expected '('")
         self.next_token()
 
         expr = self.parse_expr()
         
         if expr is None:
-            self.raise_error("Syntax", "Invalid expression")
+            self.raise_error("Syntax", "invalid expression")
 
-        self.try_throw_error(tt.right_paren, "Syntax", "Expected ')'")
+        self.try_throw_error(tt.right_paren, "Syntax", "expected ')'")
         self.next_token()
         
-        self.try_throw_error(tt.end_line, "Syntax", "Expected endline")
+        self.try_throw_error(tt.end_line, "Syntax", "expected endline")
 
         return NodeStmtExit(expr=expr)
 
@@ -509,7 +509,7 @@ class Parser(ErrorHandler):
         return NodeStmtDoWhile(scope, expr)
 
     def parse_reassign(self) -> NodeStmtReassign:
-        self.try_throw_error(tt.identifier, "Syntax", "Expected identifier")
+        self.try_throw_error(tt.identifier, "Syntax", "expected identifier")
         ident = self.current_token
         self.next_token()
 
@@ -528,7 +528,7 @@ class Parser(ErrorHandler):
             self.raise_error("Value", "expected expression")
         
         if self.current_token is not None and self.current_token.type not in (tt.end_line, tt.right_curly, tt.right_paren):
-            self.raise_error("Syntax", "Expected endline")
+            self.raise_error("Syntax", "expected endline")
         
         return NodeStmtReassign(var=NodeStmtReassignEq(ident, expr))
 
@@ -550,7 +550,7 @@ class Parser(ErrorHandler):
         self.next_token()
         
         if self.current_token is not None and self.current_token.type not in (tt.end_line, tt.right_curly):
-            self.raise_error("Syntax", "Expected endline")
+            self.raise_error("Syntax", "expected endline")
         
         return NodeStmtPrint(cont)
     

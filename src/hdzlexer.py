@@ -90,7 +90,7 @@ class Tokenizer(ErrorHandler):
                 tokens.append(Token(type=tt.char_lit, value=str(ascii_value)))
                 self.advance()
                 if self.current_char is None or self.current_char != "'":
-                    self.raise_error("Syntax", "missing \"'\"")
+                    self.raise_error("Syntax", "expected \"'\"")
                 self.advance()
             
             elif char == "=" and self.look_ahead() == "=":

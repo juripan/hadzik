@@ -1,5 +1,7 @@
 
 class ErrorHandler:
+    dialect_errors: bool = False
+    translate: dict[str, str] = {"Syntax": "NapisanePlano", "Value": "HodnotaPlana", "Generator": "VyrobaPlana", "expected": "tu malo buc toto", "Parsing": "DzelenePlane"}
     def __init__(self, file: str) -> None:
         self.file_content: str = file
         self.line_number: int = 1
@@ -14,8 +16,10 @@ class ErrorHandler:
         print(wrong_line)
         if self.column_number != -1:
             print("^".rjust(self.column_number))
-            print(f"{type}Error: (line {self.line_number} column {self.column_number}) {details}")
+            print(f"{type}Error: (line {self.line_number} column {self.column_number}) {details}" if
+                    not self.dialect_errors else f"Joj bysťu {self.translate[type]}: (lajna {self.line_number} stlupik {self.column_number}) {details}")
         else:
             print("^" * len(wrong_line))
-            print(f"{type}Error: (line {self.line_number}) {details}")
+            print(f"{type}Error: (line {self.line_number}) {details}" if
+                    not self.dialect_errors else f"Joj bysťu {self.translate[type]}: (lajna {self.line_number}) {details}")
         exit(1)
