@@ -1,4 +1,4 @@
-#NOTE: this dockerfile is run maling a version of the src directory on the /app docker run -v <src dir path>:/app <image name>
+#NOTE: this dockerfile is run making a version of the src directory on the /app docker run -it -v <src dir path>:/app <image name>
 
 FROM alpine
 
