@@ -25,11 +25,11 @@ To run this project in a docker you first need to install docker and then run th
 **NOTE: use the full file paths on windows** 
 ```
 docker build -t <image name> <Dockerfile directory>
-docker run -v <src dir path>:/app <image name>
+docker run -it -v <src dir path>:/app <image name>
 ```
 The container creates a volume of the source directory on the /app directory inside the docker container so it can access the src folder and modify its content
 
-The start.sh file located in the tools directory is used by the Dockerfile when creating a container
+-it flag makes the container console acessible so you can run the start.sh file yourself or run any commands in the container until you close it
 
 ## Credits:
 name of the programming language by: Miška Mašlonková
