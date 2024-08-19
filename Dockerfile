@@ -9,4 +9,3 @@ RUN apk add --no-cache nasm
 RUN apk add --no-cache python3
 
 COPY tools/start.sh .
-

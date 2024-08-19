@@ -1,2 +1,4 @@
 # cache that gets created after running the python files
 __pycache__/
+# vscode spellchecker settings
+.vscode/

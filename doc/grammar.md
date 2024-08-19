@@ -1,69 +1,85 @@
-[Program] -> [Stmt | *\n*]* <- new line for accurate error throwing during code generation
+$$
+\begin{align*}
+    [\text{Program}] &\to
+    \begin{cases}
+    [\text{Stmt}]^*\\
+    \text{newline}^* \leftarrow \text{new line for accurate error throwing during code generation}
+    \end{cases}\\
 
-[Stmt] -> {
-    vychod([Expr])
-    hutor([Expr] | [Txt]) TODO rework this
-    [IdentDef]
-    [IdentAssign]
-    [Scope]
-    kec ([Expr]) [Scope] [IfPred]
-    kim ([Expr]) [Scope]
-    zrob [Scope] kim ([Expr])
-    furt ([IdentDef], [CompExpr], [IdentAssign])[Scope]
-    konec <- only inside a loop
-}
+    [Stmt] &\to
+    \begin{cases}
+        vychod([\text{Expr}])\\
+        hutor([[\text{Expr}]] | [[\text{Txt}]]) \text{TODO rework this}\\
+        [\text{IdentDef}]\\
+        [\text{IdentAssign}]\\
+        [\text{Scope}]\\
+        kec ([\text{Expr}]) [\text{Scope}] [\text{IfPred}]\\
+        kim ([\text{Expr}]) [\text{Scope}]\\
+        zrob [\text{Scope}] kim ([\text{Expr}])\\
+        furt ([\text{IdentDef}], [\text{CompExpr}], [\text{IdentAssign}])[\text{Scope}]\\
+        konec \leftarrow \text{only inside a loop}\\
+    \end{cases}\\
 
-[IdentDef] -> {
-    naj ident = [Term] | [BinExpr]
-    bul ident = [Term] | [LogicExpr]
-}
+    [\text{IdentDef}] &\to
+    \begin{cases}
+        naj \space \text{ident} = [\text{Expr}] | [\text{BinExpr}]\\
+        bul \space \text{ident} = [\text{Term}] | [\text{LogicExpr}]\\
+    \end{cases}\\
 
-[IdentAssign] -> {
-    ident = [Txt]
-    ident = [Expr]
-    ident++
-    ident--
-}
+    [\text{IdentAssign}] &\to
+    \begin{cases}
+        \text{ident} = [\text{Txt}]\\
+        \text{ident} = [\text{Expr}]\\
+        \text{ident}++\\
+        \text{ident}--\\
+    \end{cases}\\
 
-[Scope] -> {[Stmt]*}
+    [\text{Scope}] &\to \{[\text{Stmt}]^*\}\\
 
-[IfPred] -> {
-    ikec [Expr] [Scope] [IfPred]
-    inac [Scope]
-    *nothing*
-}
+    [\text{IfPred}] &\to
+    \begin{cases}
+        ikec [\text{Expr}] [\text{Scope}] [\text{IfPred}]\\
+        inac [\text{Scope}]\\
+        \epsilon
+    \end{cases}\\
 
-[Expr] -> {
-    [Term]
-    -[Term]
-    [BinExpr]
-    [LogicExpr]
-}
+    [\text{Expr}] &\to
+    \begin{cases}
+        [\text{Term}]\\
+        -[\text{Term}]\\
+        [\text{BinExpr}]\\
+        [\text{LogicExpr}]\\
+    \end{cases}\\
 
-[BinExpr] -> {
-    [Expr] * [Expr] prec = 3
-    [Expr] / [Expr] prec = 3
-    [Expr] % [Expr] prec = 3
-    [Expr] + [Expr] prec = 2
-    [Expr] - [Expr] prec = 2
-}
+    [\text{BinExpr}] &\to
+    \begin{cases}
+        [\text{Expr}] * [\text{Expr}] & \text{prec} = 3\\
+        [\text{Expr}] / [\text{Expr}] & \text{prec} = 3\\
+        [\text{Expr}] \% [\text{Expr}] & \text{prec} = 3\\
+        [\text{Expr}] + [\text{Expr}] & \text{prec} = 2\\
+        [\text{Expr}] - [\text{Expr}] & \text{prec} = 2\\
+    \end{cases}\\
 
-[LogicExpr] -> {
-    [Expr] == [Expr] prec = 1
-    [Expr] != [Expr] prec = 1
-    [Expr] > [Expr] prec = 1
-    [Expr] < [Expr] prec = 1
-    [Expr] <= [Expr] prec = 1
-    [Expr] >= [Expr] prec = 1
-    [Expr] aj [Expr] prec = 0
-    [Expr] abo [Expr] prec = 0
-}
+    [\text{LogicExpr}] &\to
+    \begin{cases}
+        [\text{Expr}] == [\text{Expr}] & \text{prec} = 1\\
+        [\text{Expr}] != [\text{Expr}] & \text{prec} = 1\\
+        [\text{Expr}] > [\text{Expr}] & \text{prec} = 1\\
+        [\text{Expr}] < [\text{Expr}] & \text{prec} = 1\\
+        [\text{Expr}] <= [\text{Expr}] & \text{prec} = 1\\
+        [\text{Expr}] >= [\text{Expr}] & \text{prec} = 1\\
+        [\text{Expr}]\ aj\ [\text{Expr}] & \text{prec} = 0\\
+        [\text{Expr}]\ abo\ [\text{Expr}] & \text{prec} = 0\\
+    \end{cases}\\
 
-[Term] -> {
-    int
-    char
-    bool
-    ident
-    ([Expr])
-    ne [Term]
-}
+    [\text{Term}] &\to
+    \begin{cases}
+        \text{int}\\
+        \text{char}\\
+        \text{bool}\\
+        \text{ident}\\
+        ([\text{Expr}])\\
+        ne [\text{Term}]\\
+    \end{cases}\\
+\end{align*}
+$$
