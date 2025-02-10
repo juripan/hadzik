@@ -26,11 +26,11 @@ parse_tree = Parser(tokens, content).parse_program()
 print(parse_tree)
 final_asm = Generator(parse_tree, content).generate_program()
 
-filename_no_extension = filename[:4]
+filepath_no_extension = filename.split(".")[0]
 
-with open("./" + filename_no_extension + ".asm", "w") as f:
+with open("./" + filepath_no_extension + ".asm", "w") as f:
     f.write(final_asm)
 
-os.system("nasm -felf64 " + filename_no_extension + ".asm")
-os.system("ld " + filename_no_extension + ".o -o " + filename_no_extension)
+os.system("nasm -felf64 " + filepath_no_extension + ".asm")
+os.system("ld " + filepath_no_extension + ".o -o " + filepath_no_extension)
 print("Done!")
