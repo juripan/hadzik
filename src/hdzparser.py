@@ -1,6 +1,6 @@
 #TODO: fix the end lines acting weird while parsing, with if statements, scopes, etc.
 #TODO: implement proper parsing for booleans and boolean expressions
-from comptypes import * #o-oh a wildcard import
+from comptypes import * #uh-oh a wildcard import
 import hdztokentypes as tt
 from hdzerrors import ErrorHandler
 

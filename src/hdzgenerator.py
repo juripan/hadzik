@@ -1,6 +1,7 @@
+from collections import OrderedDict
+
 from hdzerrors import ErrorHandler
 from comptypes import *
-from collections import OrderedDict
 import hdztokentypes as tt
 
 
