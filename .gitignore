@@ -2,3 +2,7 @@
 __pycache__/
 # vscode spellchecker settings
 .vscode/
+# object, assembly and bin files created by compilation
+*.o
+*.asm
+test

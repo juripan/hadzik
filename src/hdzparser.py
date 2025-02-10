@@ -1,223 +1,8 @@
 #TODO: fix the end lines acting weird while parsing, with if statements, scopes, etc.
 #TODO: implement proper parsing for booleans and boolean expressions
-from dataclasses import dataclass
-from hdzlexer import Token
+from comptypes import * #o-oh a wildcard import
 import hdztokentypes as tt
 from hdzerrors import ErrorHandler
-
-
-@dataclass(slots=True)
-class NodeExpr:
-    pass
-
-@dataclass(slots=True)
-class NodeTermBool:
-    bool: Token
-
-@dataclass(slots=True)
-class NodeTermChar:
-    char: Token
-
-@dataclass(slots=True)
-class NodeTermIdent:
-    ident: Token
-
-
-@dataclass(slots=True)
-class NodeTermInt:
-    int_lit: Token
-
-
-@dataclass(slots=True)
-class NodeTermParen:
-    expr: NodeExpr
-
-
-@dataclass(slots=True)
-class NodeTermNot:
-    pass
-
-
-@dataclass(slots=True)
-class NodeTerm:
-    var: NodeTermIdent | NodeTermInt | NodeTermChar | NodeTermParen | NodeTermNot | NodeTermBool
-    negative: bool = False
-
-
-@dataclass(slots=True)
-class NodeTermNot:
-    term: NodeTerm
-
-
-@dataclass(slots=True)
-class NodeBinExpr:
-    pass
-
-
-@dataclass(slots=True)
-class NodeBinExprMod:
-    lhs: NodeExpr
-    rhs: NodeExpr
-
-
-@dataclass(slots=True)
-class NodeBinExprDiv:
-    lhs: NodeExpr
-    rhs: NodeExpr
-
-
-@dataclass(slots=True)
-class NodeBinExprSub:
-    lhs: NodeExpr
-    rhs: NodeExpr
-
-
-@dataclass(slots=True)
-class NodeBinExprAdd:
-    lhs: NodeExpr
-    rhs: NodeExpr
-
-
-@dataclass(slots=True)
-class NodeBinExprMulti:
-    lhs: NodeExpr
-    rhs: NodeExpr
-
-
-@dataclass(slots=True)
-class NodeBinExprComp:
-    comp_sign: Token
-    lhs: NodeExpr
-    rhs: NodeExpr
-
-
-@dataclass(slots=True)
-class NodeBinExprLogic:
-    logical_operator: Token
-    lhs: NodeExpr
-    rhs: NodeExpr
-
-
-@dataclass(slots=True)
-class NodeBinExpr:
-    var: NodeBinExprAdd | NodeBinExprMulti | NodeBinExprSub | NodeBinExprDiv | NodeBinExprMod
-
-@dataclass(slots=True)
-class NodeLogicExpr:
-    var: NodeBinExprComp | NodeBinExprLogic
-
-@dataclass(slots=True)
-class NodeExpr:
-    var: NodeTerm | NodeBinExpr | NodeLogicExpr
-
-
-@dataclass(slots=True)
-class NodeStmtExit:
-    expr: NodeExpr
-
-
-@dataclass(slots=True)
-class NodeStmtLet:
-    ident: Token
-    expr: NodeExpr
-    type_: Token
-
-
-class NodeScope:
-    pass
-
-class NodeIfPred:
-    pass
-
-
-@dataclass(slots=True)
-class NodeIfPredElse:
-    scope: NodeScope
-
-
-@dataclass(slots=True)
-class NodeIfPredElif:
-    expr: NodeExpr
-    scope: NodeScope
-    pred: NodeIfPred
-
-
-@dataclass(slots=True)
-class NodeIfPred:
-    var: NodeIfPredElif | NodeIfPredElse
-
-
-@dataclass(slots=True)
-class NodeStmtIf:
-    expr: NodeExpr
-    scope: NodeScope
-    ifpred: NodeIfPred | None
-
-
-@dataclass(slots=True)
-class NodeStmtReassignEq:
-    ident: Token
-    expr: NodeExpr
-
-
-@dataclass(slots=True)
-class NodeStmtReassignInc:
-    ident: Token
-
-
-@dataclass(slots=True)
-class NodeStmtReassignDec:
-    ident: Token
-
-
-@dataclass(slots=True)
-class NodeStmtReassign:
-    var: NodeStmtReassignEq | NodeStmtReassignInc | NodeStmtReassignDec
-
-
-@dataclass(slots=True)
-class NodeStmtWhile:
-    expr: NodeExpr
-    scope: NodeScope
-
-
-@dataclass(slots=True)
-class NodeStmtDoWhile:
-    scope: NodeScope
-    expr: NodeExpr
-
-
-@dataclass(slots=True)
-class NodeStmtFor:
-    ident_def: NodeStmtLet
-    condition: NodeBinExprComp
-    ident_assign: NodeStmtReassign
-    scope: NodeScope
-
-
-@dataclass(slots=True)
-class NodeStmtBreak:
-    pass
-
-
-@dataclass(slots=True)
-class NodeStmtPrint:
-    content: NodeExpr | NodeTermChar
-
-
-@dataclass(slots=True)
-class NodeStmt:
-    stmt_var: NodeStmtLet | NodeStmtExit | NodeScope | NodeStmtIf | NodeStmtReassign | NodeStmtWhile | NodeStmtBreak | NodeStmtFor | NodeStmtPrint
-
-
-@dataclass(slots=True)
-class NodeScope:
-    stmts: list[NodeStmt]
-
-@dataclass(slots=True)
-class NodeProgram:
-    stmts: list[NodeStmt]
-
 
 
 class Parser(ErrorHandler):
@@ -226,12 +11,10 @@ class Parser(ErrorHandler):
         self.index: int = -1
         self.column_number = -1 # -1 means that theres no column number tracked
         self.all_tokens: list = tokens
-        self.current_token: Token = None
+        self.current_token: Token | None = None
         self.next_token()
 
     def next_token(self):
-        if self.current_token is not None and self.current_token.type == tt.end_line:
-            self.line_number += 1
         self.index += 1
         self.current_token = self.all_tokens[self.index] if self.index < len(self.all_tokens) else None
 
@@ -244,7 +27,7 @@ class Parser(ErrorHandler):
         raises an error if the condition is true
         """
         if self.current_token is None or self.current_token.type != token_type:
-            self.raise_error(error_name, error_details)
+            self.raise_error(error_name, error_details, self.current_token)
 
 
     def parse_char(self) -> NodeTermChar | None:
@@ -275,7 +58,7 @@ class Parser(ErrorHandler):
             self.next_token()
             expr = self.parse_expr()
             if expr is None:
-                self.raise_error("Value", "expected expression")
+                self.raise_error("Value", "expected expression", self.current_token)
 
             self.try_throw_error(tt.right_paren, "Syntax", "expected ')'")
 
@@ -285,7 +68,7 @@ class Parser(ErrorHandler):
             
             term = self.parse_term()
             if term is None:
-                self.raise_error("Value", "expected term")
+                self.raise_error("Value", "expected term", self.current_token)
             
             return NodeTerm(var=NodeTermNot(term=term))
         else:
@@ -302,7 +85,8 @@ class Parser(ErrorHandler):
 
         while True:
             op: Token | None = self.current_token
-            prec: int | None = tt.get_prec_level(op.type)
+            if op:
+                prec: int | None = tt.get_prec_level(op.type)
 
             if op is None or prec is None or prec < min_prec:
                 break
@@ -313,7 +97,7 @@ class Parser(ErrorHandler):
             expr_rhs = self.parse_expr(next_min_prec)
 
             if expr_rhs is None:
-                self.raise_error("Value", "unable to parse expression")
+                self.raise_error("Value", "unable to parse expression", self.current_token)
 
             expr = NodeBinExpr(None) if op.type in (tt.plus, tt.minus, tt.star, tt.slash, tt.percent) else NodeLogicExpr(None)
             expr_lhs2 = NodeExpr(None) # prevents a recursion error, god knows why but it makes it work
@@ -363,13 +147,13 @@ class Parser(ErrorHandler):
         if type_def.type in (tt.let, tt.bool_def):
             value = self.parse_expr()
         else:
-            self.raise_error("Type", "type not defined")
+            self.raise_error("Type", "type not defined", self.current_token)
 
         if value is None:
-            self.raise_error("Syntax", "invalid expression")
+            self.raise_error("Syntax", "invalid expression", self.current_token)
 
         if self.current_token is not None and self.current_token.type not in (tt.end_line, tt.dash, tt.right_curly):
-            self.raise_error("Syntax", "expected endline") #TODO: make this more accurate
+            self.raise_error("Syntax", "expected endline", self.current_token) #TODO: make this more accurate
 
         return NodeStmtLet(ident, value, type_def)
 
@@ -382,7 +166,7 @@ class Parser(ErrorHandler):
         expr = self.parse_expr()
         
         if expr is None:
-            self.raise_error("Syntax", "invalid expression")
+            self.raise_error("Syntax", "invalid expression", self.current_token)
 
         self.try_throw_error(tt.right_paren, "Syntax", "expected ')'")
         self.next_token()
@@ -405,7 +189,7 @@ class Parser(ErrorHandler):
                 self.next_token() # right curly
                 break
         else:
-            self.raise_error("Syntax", "expected '}'")
+            self.raise_error("Syntax", "expected '}'", self.current_token)
         
         if self.current_token is not None and self.current_token.type == tt.end_line:
             self.next_token()
@@ -418,7 +202,7 @@ class Parser(ErrorHandler):
             
             expr = self.parse_expr()
             if expr is None:
-                self.raise_error("Value", "not able to evaluate expression")
+                self.raise_error("Value", "not able to evaluate expression", self.current_token)
             
             scope = self.parse_scope()
 
@@ -442,7 +226,7 @@ class Parser(ErrorHandler):
 
         expr = self.parse_expr()
         if expr is None:
-            self.raise_error("Value", "not able to parse expression")
+            self.raise_error("Value", "not able to parse expression", self.current_token)
         
         scope = self.parse_scope()
 
@@ -457,7 +241,7 @@ class Parser(ErrorHandler):
 
         expr = self.parse_expr()
         if expr is None:
-            self.raise_error("Value", "not able to parse expression")
+            self.raise_error("Value", "not able to parse expression", self.current_token)
 
         scope = self.parse_scope()
         return NodeStmtWhile(expr=expr, scope=scope)
@@ -475,7 +259,7 @@ class Parser(ErrorHandler):
 
         condition = self.parse_expr().var.var #gets the NodeTermComp
         if not isinstance(condition, NodeBinExprComp):
-            self.raise_error("Syntax", "invalid condition")
+            self.raise_error("Syntax", "invalid condition", self.current_token)
 
         self.try_throw_error(tt.dash, "Syntax", "expected ','")
         self.next_token()
@@ -501,7 +285,7 @@ class Parser(ErrorHandler):
 
         expr = self.parse_expr()
         if expr is None:
-            self.raise_error("Value", "invalid expression")
+            self.raise_error("Value", "invalid expression", self.current_token)
 
         self.try_throw_error(tt.right_paren, "Syntax", "expected ')'")
         self.next_token()
@@ -525,10 +309,10 @@ class Parser(ErrorHandler):
 
         expr = self.parse_expr()
         if expr is None:
-            self.raise_error("Value", "expected expression")
+            self.raise_error("Value", "expected expression", self.current_token)
         
         if self.current_token is not None and self.current_token.type not in (tt.end_line, tt.right_curly, tt.right_paren):
-            self.raise_error("Syntax", "expected endline")
+            self.raise_error("Syntax", "expected endline", self.current_token)
         
         return NodeStmtReassign(var=NodeStmtReassignEq(ident, expr))
 
@@ -544,13 +328,13 @@ class Parser(ErrorHandler):
             cont = self.parse_expr()
 
         if cont is None:
-            self.raise_error("Syntax", "Invalid print argument")
+            self.raise_error("Syntax", "Invalid print argument", self.current_token)
 
         self.try_throw_error(tt.right_paren, "Syntax", "expected ')'")
         self.next_token()
         
         if self.current_token is not None and self.current_token.type not in (tt.end_line, tt.right_curly):
-            self.raise_error("Syntax", "expected endline")
+            self.raise_error("Syntax", "expected endline", self.current_token)
         
         return NodeStmtPrint(cont)
     
@@ -582,7 +366,7 @@ class Parser(ErrorHandler):
             self.next_token()
             statement = NodeStmtBreak()
         else:
-            self.raise_error("Parsing", "cannot parse program correctly")
+            self.raise_error("Parsing", "cannot parse program correctly", self.current_token)
         return NodeStmt(stmt_var=statement)
 
     def parse_program(self) -> NodeProgram:

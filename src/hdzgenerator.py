@@ -1,14 +1,14 @@
 from hdzerrors import ErrorHandler
-import hdzparser as prs
+from comptypes import *
 from collections import OrderedDict
 import hdztokentypes as tt
 
 
 class Generator(ErrorHandler):
-    def __init__(self, program: prs.NodeProgram, file_content: str) -> None:
+    def __init__(self, program: NodeProgram, file_content: str) -> None:
         super().__init__(file_content)
-        self.main_program: prs.NodeProgram = program
-        self.output: list = []
+        self.main_program: NodeProgram = program
+        self.output: list[str] = []
 
         self.column_number = -1
         
@@ -24,8 +24,8 @@ class Generator(ErrorHandler):
         self.data_section_index: int = 1
         self.bss_section_index: int = 2
 
-        self.registers_64bit: tuple[str] = ("rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rsp", "rbp", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15")
-        self.registers_16bit: tuple[str] = ("ax", "bx", "cx", "dx", "si", "di", "sp", "bp", "r8w", "r9w", "r10w", "r11w", "r12w", "r13w", "r14w", "r15w")
+        self.registers_64bit: tuple[str, 16] = ("rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rsp", "rbp", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15")
+        self.registers_16bit: tuple[str, 16] = ("ax", "bx", "cx", "dx", "si", "di", "sp", "bp", "r8w", "r9w", "r10w", "r11w", "r12w", "r13w", "r14w", "r15w")
     
     def push(self, content: str):
         """
@@ -86,24 +86,24 @@ class Generator(ErrorHandler):
             self.stack_item_sizes.pop()
         del self.scopes[-1]
 
-    def generate_boolean(self, bool: prs.NodeTermBool) -> None:
+    def generate_boolean(self, bool: NodeTermBool) -> None:
         self.output.append(f"    mov ax, {bool.bool.value}\n")
         self.push("ax")
 
-    def generate_term(self, term: prs.NodeTerm) -> None:
+    def generate_term(self, term: NodeTerm) -> None:
         """
         generates a term, a term being a variable or a number, 
         gets pushed on to of the stack
         """
         print(term.var)
-        if isinstance(term.var, prs.NodeTermInt):
+        if isinstance(term.var, NodeTermInt):
             if term.negative:
                 term.var.int_lit.value = "-" + term.var.int_lit.value
             self.output.append(f"    mov rax, {term.var.int_lit.value}\n")
             self.push("rax")
-        elif isinstance(term.var, prs.NodeTermIdent):
+        elif isinstance(term.var, NodeTermIdent):
             if term.var.ident.value not in self.variables.keys():
-                self.raise_error("Value", f"variable was not declared: {term.var.ident.value}")
+                self.raise_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
             location, word_size, byte_size = self.variables[term.var.ident.value]
             self.push(f"{word_size} [rsp + {self.stack_size - location - byte_size}]") # QWORD 64 bits (word = 16 bits)
             if term.negative:
@@ -111,17 +111,17 @@ class Generator(ErrorHandler):
                 self.output.append("    mov rax, -1\n")
                 self.output.append("    mul rbx\n")
                 self.push("rax")
-        elif isinstance(term.var, prs.NodeTermBool):
+        elif isinstance(term.var, NodeTermBool):
             self.output.append(f"    mov ax, {term.var.bool.value}\n")
             self.push("ax")
-        elif isinstance(term.var, prs.NodeTermParen):
+        elif isinstance(term.var, NodeTermParen):
             self.generate_expression(term.var.expr)
             if term.negative:
                 self.pop("rbx")
                 self.output.append("    mov rax, -1\n")
                 self.output.append("    mul rbx\n")
                 self.push("rax")
-        elif isinstance(term.var, prs.NodeTermNot):
+        elif isinstance(term.var, NodeTermNot):
             self.generate_term(term.var.term)
             self.pop("rbx")
             self.output.append("    xor eax, eax\n")
@@ -130,7 +130,7 @@ class Generator(ErrorHandler):
             self.output.append("    movzx rax, al\n")
             self.push("rax")
     
-    def generate_comparison_expression(self, comparison: prs.NodeBinExprComp) -> None:
+    def generate_comparison_expression(self, comparison: NodeBinExprComp) -> None:
         """
         generates a comparison expression that pushes a 16bit value onto the stack,
         type of binary expression that returns 1 or 0 depending on if its true or false
@@ -153,11 +153,11 @@ class Generator(ErrorHandler):
         elif comparison.comp_sign.type == tt.less_than_or_eq:
             self.output.append("    setle al\n")
         else:
-            self.raise_error("Syntax", "Invalid comparison expression")
+            self.raise_error("Syntax", "Invalid comparison expression", comparison.comp_sign)
         #self.output.append("    movzx rax, al\n")
         self.push("ax")
 
-    def generate_binary_logical_expression(self, logic_expr: prs.NodeBinExprLogic) -> None: #TODO: rename ths mess
+    def generate_binary_logical_expression(self, logic_expr: NodeBinExprLogic) -> None: #TODO: rename ths mess
         """
         generates an eval for a logical expression (AND or OR) that pushes a 16bit value onto the stack,
         its result can be either 1 or 0
@@ -173,45 +173,45 @@ class Generator(ErrorHandler):
         elif logic_expr.logical_operator.type == tt.or_:
             self.output.append("    cmovnz rcx, rbx\n")
         else:
-            self.raise_error("Syntax", "Invalid logic expression")
+            self.raise_error("Syntax", "Invalid logic expression", logic_expr.logical_operator)
         self.output.append("    test rcx, rcx\n")
         self.output.append("    setne al\n")
         #self.output.append("    movzx rax, al\n")
         self.push("ax")
 
-    def generate_binary_expression(self, bin_expr: prs.NodeBinExpr) -> None:
+    def generate_binary_expression(self, bin_expr: NodeBinExpr) -> None:
         """
         generates a binary expression that gets pushed on top of the stack
         """
-        if isinstance(bin_expr.var, prs.NodeBinExprAdd):
+        if isinstance(bin_expr.var, NodeBinExprAdd):
             self.generate_expression(bin_expr.var.rhs)
             self.generate_expression(bin_expr.var.lhs)
             self.pop("rax")
             self.pop("rbx")
             self.output.append("    add rax, rbx\n")
             self.push("rax")
-        elif isinstance(bin_expr.var, prs.NodeBinExprMulti):
+        elif isinstance(bin_expr.var, NodeBinExprMulti):
             self.generate_expression(bin_expr.var.rhs)
             self.generate_expression(bin_expr.var.lhs)
             self.pop("rax")
             self.pop("rbx")
             self.output.append("    mul rbx\n")
             self.push("rax")
-        elif isinstance(bin_expr.var, prs.NodeBinExprSub):
+        elif isinstance(bin_expr.var, NodeBinExprSub):
             self.generate_expression(bin_expr.var.rhs)
             self.generate_expression(bin_expr.var.lhs)
             self.pop("rax")
             self.pop("rbx")
             self.output.append("    sub rax, rbx\n")
             self.push("rax")
-        elif isinstance(bin_expr.var, prs.NodeBinExprDiv):
+        elif isinstance(bin_expr.var, NodeBinExprDiv):
             self.generate_expression(bin_expr.var.rhs)
             self.generate_expression(bin_expr.var.lhs)
             self.pop("rax")
             self.pop("rbx")
             self.output.append("    idiv rbx\n") #NOTE: idiv is used because div only works with unsigned numbers
             self.push("rax")
-        elif isinstance(bin_expr.var, prs.NodeBinExprMod):
+        elif isinstance(bin_expr.var, NodeBinExprMod):
             self.generate_expression(bin_expr.var.rhs)
             self.generate_expression(bin_expr.var.lhs)
             self.pop("rax")
@@ -223,38 +223,38 @@ class Generator(ErrorHandler):
         else:
             self.raise_error("Generator", "failed to generate binary expression")
 
-    def generate_logical_expression(self, expression: prs.NodeLogicExpr):
-        if isinstance(expression.var, prs.NodeBinExprComp): 
+    def generate_logical_expression(self, expression: NodeLogicExpr):
+        if isinstance(expression.var, NodeBinExprComp): 
             self.generate_comparison_expression(expression.var)
-        elif isinstance(expression.var, prs.NodeBinExprLogic):
+        elif isinstance(expression.var, NodeBinExprLogic):
             self.generate_binary_logical_expression(expression.var)
 
-    def generate_expression(self, expression: prs.NodeExpr) -> None:
+    def generate_expression(self, expression: NodeExpr) -> None:
         """
         generates an expression and pushes it on top of the stack
         """
-        if isinstance(expression.var, prs.NodeTerm):
+        if isinstance(expression.var, NodeTerm):
             self.generate_term(expression.var)
-        elif isinstance(expression.var, prs.NodeBinExpr):
+        elif isinstance(expression.var, NodeBinExpr):
             self.generate_binary_expression(expression.var)
-        elif isinstance(expression.var, prs.NodeLogicExpr):
+        elif isinstance(expression.var, NodeLogicExpr):
             self.generate_logical_expression(expression.var)
     
-    def generate_char(self, char: prs.NodeTermChar) -> None:
+    def generate_char(self, char: NodeTermChar) -> None:
         self.output.append(f"    mov rax, {char.char.value}\n")
         self.push("rax")
 
-    def generate_scope(self, scope: prs.NodeScope) -> None:
+    def generate_scope(self, scope: NodeScope) -> None:
         self.begin_scope()
         for stmt in scope.stmts:
             self.generate_statement(stmt)
         self.end_scope()
 
-    def generate_if_predicate(self, pred: prs.NodeIfPred, end_label: str) -> None:
+    def generate_if_predicate(self, pred: NodeIfPred, end_label: str) -> None:
         """
         generates the following statements connected to the if statement if there are any
         """
-        if isinstance(pred.var, prs.NodeIfPredElif):
+        if isinstance(pred.var, NodeIfPredElif):
             self.output.append("    ;elif\n")
             self.generate_expression(pred.var.expr)
             label = self.create_label()
@@ -270,26 +270,26 @@ class Generator(ErrorHandler):
             if pred.var.pred is not None:
                 self.generate_if_predicate(pred.var.pred, end_label)
 
-        elif isinstance(pred.var, prs.NodeIfPredElse):
+        elif isinstance(pred.var, NodeIfPredElse):
             self.output.append("    ;else\n")
             self.generate_scope(pred.var.scope)
             self.output.append("    ;/else\n")
 
-    def generate_let(self, let_stmt: prs.NodeStmtLet):
+    def generate_let(self, let_stmt: NodeStmtLet):
         if let_stmt.ident.value in self.variables.keys():
-            self.raise_error("Syntax", f"variable has been already declared: {let_stmt.ident.value}")
+            self.raise_error("Syntax", f"variable has been already declared: {let_stmt.ident.value}", curr_token=let_stmt.ident)
         location: int = self.stack_size # stack size changes after generating the expression, thats why its saved here
 
         if let_stmt.type_.type == tt.let:
             var_size: str = "QWORD"
             byte_size: int = 8
-            if isinstance(let_stmt.expr.var, prs.NodeLogicExpr):
+            if isinstance(let_stmt.expr.var, NodeLogicExpr):
                 self.raise_error("Unexpected", "what ")
             self.generate_expression(let_stmt.expr)
         elif let_stmt.type_.type == tt.bool_def:
             var_size: str = "WORD"
             byte_size: int = 2
-            if isinstance(let_stmt.expr.var, prs.NodeBinExpr):
+            if isinstance(let_stmt.expr.var, NodeBinExpr):
                 self.raise_error("Unexpected", "what ")
             self.generate_expression(let_stmt.expr)
         else:
@@ -297,34 +297,34 @@ class Generator(ErrorHandler):
         
         self.variables.update({let_stmt.ident.value : (location, var_size, byte_size)})
 
-    def generate_reassign(self, reassign_stmt: prs.NodeStmtReassign):
+    def generate_reassign(self, reassign_stmt: NodeStmtReassign):
         self.output.append("    ;reassigning a variable\n")
         if reassign_stmt.var.ident.value not in self.variables.keys():
-            self.raise_error("Value", "undeclared identifier: " + reassign_stmt.var.ident.value)
+            self.raise_error("Value", "undeclared identifier: " + reassign_stmt.var.ident.value, reassign_stmt.var.ident)
         
-        if isinstance(reassign_stmt.var, prs.NodeStmtReassignEq):
+        if isinstance(reassign_stmt.var, NodeStmtReassignEq):
             self.generate_expression(reassign_stmt.var.expr)
             self.pop("rax")
             location, _, byte_size = self.variables[reassign_stmt.var.ident.value]
             self.output.append(f"    mov [rsp + {self.stack_size - location - byte_size}], rax\n")
-        elif isinstance(reassign_stmt.var, (prs.NodeStmtReassignInc, prs.NodeStmtReassignDec)):
+        elif isinstance(reassign_stmt.var, (NodeStmtReassignInc, NodeStmtReassignDec)):
             location, size, byte_size = self.variables[reassign_stmt.var.ident.value]
             self.push(f"{size} [rsp + {self.stack_size - location - byte_size}]") # QWORD 64 bits (word = 16 bits)
             self.pop("rax")
             self.output.append("    inc rax\n" 
-                               if isinstance(reassign_stmt.var, prs.NodeStmtReassignInc) 
-                               else "    dec rax\n")
+                                if isinstance(reassign_stmt.var, NodeStmtReassignInc) 
+                                else "    dec rax\n")
             self.output.append(f"    mov [rsp + {self.stack_size - location - byte_size}], rax\n")
         self.output.append("    ;/reassigning a variable\n")
 
-    def generate_exit(self, exit_stmt: prs.NodeStmtExit) -> None:
+    def generate_exit(self, exit_stmt: NodeStmtExit) -> None:
         self.generate_expression(exit_stmt.expr)
         self.output.append("    ; manual exit (vychod)\n")
         self.output.append("    mov rax, 60\n")
         self.pop("rdi")
         self.output.append("    syscall\n")
 
-    def generate_if_statement(self, if_stmt: prs.NodeStmtIf) -> None:
+    def generate_if_statement(self, if_stmt: NodeStmtIf) -> None:
         self.output.append("    ;if block\n")
         self.generate_expression(if_stmt.expr)
         label = self.create_label()
@@ -345,7 +345,7 @@ class Generator(ErrorHandler):
             self.output.append(label + ":\n")
         self.output.append("    ;/if block\n")
 
-    def generate_while(self, while_stmt: prs.NodeStmtWhile) -> None:
+    def generate_while(self, while_stmt: NodeStmtWhile) -> None:
         self.output.append("    ;while loop\n")
         end_label = self.create_label()
         reset_label = self.create_label()
@@ -365,7 +365,7 @@ class Generator(ErrorHandler):
         self.output.append("    ;/while loop\n")
         self.loop_end_labels.pop()
 
-    def generate_do_while(self, do_while_stmt: prs.NodeStmtDoWhile) -> None:
+    def generate_do_while(self, do_while_stmt: NodeStmtDoWhile) -> None:
         self.output.append("    ;do while loop\n")
         end_label = self.create_label()
         reset_label = self.create_label()
@@ -385,7 +385,7 @@ class Generator(ErrorHandler):
         self.output.append("    ;/do while loop\n")
         self.loop_end_labels.pop()
 
-    def generate_for(self, for_stmt: prs.NodeStmtFor) -> None:
+    def generate_for(self, for_stmt: NodeStmtFor) -> None:
         self.output.append("    ;for loop\n")
         end_label = self.create_label()
         reset_label = self.create_label()
@@ -413,10 +413,10 @@ class Generator(ErrorHandler):
         self.output.append("    ;/for loop\n")
         self.loop_end_labels.pop()
 
-    def generate_print(self, print_stmt: prs.NodeStmtPrint) -> None:
-        if isinstance(print_stmt.content, prs.NodeExpr):
+    def generate_print(self, print_stmt: NodeStmtPrint) -> None:
+        if isinstance(print_stmt.content, NodeExpr):
             self.generate_expression(print_stmt.content)
-        elif isinstance(print_stmt.content, prs.NodeTermChar):
+        elif isinstance(print_stmt.content, NodeTermChar):
             self.generate_char(print_stmt.content)
         expr_loc = f"rsp"
         self.output.append("    ; printing\n")
@@ -430,46 +430,43 @@ class Generator(ErrorHandler):
         self.stack_size -= pushed_res #lowers the stack size
         self.output.append("    ; /printing\n")
 
-    def generate_statement(self, statement: prs.NodeStmt) -> None:
+    def generate_statement(self, statement: NodeStmt) -> None:
         """
         generates a statement based on the node given
         """
-        if isinstance(statement.stmt_var, prs.NodeStmtExit):
+        if isinstance(statement.stmt_var, NodeStmtExit):
             self.generate_exit(statement.stmt_var)
 
-        elif isinstance(statement.stmt_var, prs.NodeStmtLet):
+        elif isinstance(statement.stmt_var, NodeStmtLet):
             self.generate_let(statement.stmt_var)
         
-        elif isinstance(statement.stmt_var, prs.NodeScope):
+        elif isinstance(statement.stmt_var, NodeScope):
             self.generate_scope(statement.stmt_var)
         
-        elif isinstance(statement.stmt_var, prs.NodeStmtIf):
+        elif isinstance(statement.stmt_var, NodeStmtIf):
             self.generate_if_statement(statement.stmt_var)
 
-        elif isinstance(statement.stmt_var, prs.NodeStmtReassign):
+        elif isinstance(statement.stmt_var, NodeStmtReassign):
             self.generate_reassign(statement.stmt_var)
 
-        elif isinstance(statement.stmt_var, prs.NodeStmtWhile):
+        elif isinstance(statement.stmt_var, NodeStmtWhile):
             self.generate_while(statement.stmt_var)
         
-        elif isinstance(statement.stmt_var, prs.NodeStmtDoWhile):
+        elif isinstance(statement.stmt_var, NodeStmtDoWhile):
             self.generate_do_while(statement.stmt_var)
         
-        elif isinstance(statement.stmt_var, prs.NodeStmtFor):
+        elif isinstance(statement.stmt_var, NodeStmtFor):
             self.generate_for(statement.stmt_var)
         
-        elif isinstance(statement.stmt_var, prs.NodeStmtPrint):
+        elif isinstance(statement.stmt_var, NodeStmtPrint):
             self.generate_print(statement.stmt_var)
 
-        elif isinstance(statement.stmt_var, prs.NodeStmtBreak):
+        elif isinstance(statement.stmt_var, NodeStmtBreak):
             if self.loop_end_labels:
                 self.output.append("    ; break \n")
                 self.output.append("    jmp " + self.loop_end_labels[-1] + "\n")
             else:
                 self.raise_error("Syntax", "cant break out of a loop when not inside one")
-
-        elif statement.stmt_var == "new_line": # just used for tracking line numbers TODO: fix line number tracking in generator
-            self.line_number += 1
 
     def generate_program(self) -> str:
         """

@@ -1,26 +1,12 @@
-naj vstup = -12
-naj k = 8
-bul x = klamstvo
+naj x = 0
+naj y = 1
+naj medzi = 0
+naj kolke = 13
 
-kec(x){
-    hutor('y')
-    hutor('\n')
-}
-ikec (vstup % 3 == 0){
-    hutor('3')
-    hutor('\n')
-}
-inac {
-    hutor('n')
-    hutor('\n')
+furt(naj i = 1, i < kolke - 1, i++){
+    medzi = x + y
+    x = y
+    y = medzi
 }
 
-furt(naj i = 0, i < 5, i++){
-    hutor(i + 60)
-}
-
-kim(k > 1){
-    k--
-}
-
-vychod(k)
+vychod(y)
