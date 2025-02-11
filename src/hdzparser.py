@@ -138,7 +138,7 @@ class Parser(ErrorHandler):
         type_def = self.current_token
         self.next_token() # removes type def
 
-        self.try_throw_error(tt.identifier, "Syntax", "expected identifier")
+        self.try_throw_error(tt.identifier, "Syntax", "expected valid identifier")
         ident = self.current_token
         self.next_token()
 
