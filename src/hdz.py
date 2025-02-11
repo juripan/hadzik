@@ -31,7 +31,7 @@ final_asm = Generator(parse_tree, content).generate_program()
 if "-n" in all_flags and len(non_flags) > 1:
     filepath_no_extension = non_flags[1]
 else:
-    filepath_no_extension = file_path.split(".")[0]
+    filepath_no_extension = file_path.rsplit(".")[0]
 
 
 with open("./" + filepath_no_extension + ".asm", "w") as f:

@@ -12,6 +12,7 @@ def compare_output(output_py: subprocess.CompletedProcess[str], output_hdz: subp
 
 for folder in folders:
     out_python = subprocess.run(["python3", f"./tests/{folder}/{folder}.py"], capture_output=True, text=True)
+    subprocess.run(["python3", "src/hdz.py", f"./tests/{folder}/{folder}.hdz"])
     out_hadzik = subprocess.run([f"./tests/{folder}/{folder}"], capture_output=True, text=True)
     
     if compare_output(out_python, out_hadzik):
