@@ -17,14 +17,28 @@ All current design principles are subject to change
 
 ## Quick start:
 ```
-$ python3 <path to 'hdz.py'> <path to your '.hdz' file>
+$ python3 <path to 'hdz.py'> <path to your '.hdz' file> <flags> <custom path if using the -n flag>
 ```
 
 ## Flags:
-Flags that are used when running the compiler in the console
+Flags that are used when running the compiler in the console (more are going to be added in the future)
 
 + -s - switches on the east slovak error messages
-+ more are going to be added in the future
+```
+$ python3 hdz.py path/file.hdz -s
+```
++ -r - after compilation is done runs the compiled file and prints its exit code
+```
+$ python3 hdz.py path/file.hdz -r
+```
++ -n - determine a path and name of the compiled file
+```
+$ python3 hdz.py path/file.hdz -n new_path/file2
+```
+Order of flags doesn't matter just the order of paths:
+```
+$ python3 hdz.py path/file.hdz -s -r new_path/file2 -n
+```
 
 ## Dependencies:
 all of the dependencies are listed in the Docker file but for more transparency I will list them here also

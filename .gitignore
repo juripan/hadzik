@@ -1,8 +1,15 @@
-# cache that gets created after running the python files
+# Ignore all
+*
+# Unignore all with extensions
+!*.*
+# Unignore all dirs
+!*/
+# all of that just to ignore bin files
+
+# Cache that gets created after running the python files
 __pycache__/
-# vscode spellchecker settings
+# Vscode spellchecker settings
 .vscode/
-# object, assembly and bin files created by compilation
+# Object and assembly files created by compilation
 *.o
 *.asm
-test
