@@ -1,11 +1,12 @@
 from dataclasses import dataclass
+from typing import Union, Optional
 
 @dataclass(slots=True)
 class Token:
     type: str
     line: int
     col: int
-    value: str | None = None
+    value: Optional[str] = None
 
 @dataclass(slots=True)
 class NodeExpr:
@@ -41,7 +42,7 @@ class NodeTermNot:
 
 @dataclass(slots=True)
 class NodeTerm:
-    var: NodeTermIdent | NodeTermInt | NodeTermChar | NodeTermParen | NodeTermNot | NodeTermBool
+    var: Union[NodeTermIdent, NodeTermInt, NodeTermChar, NodeTermParen, NodeTermNot, NodeTermBool]
     negative: bool = False
 
 
@@ -101,15 +102,15 @@ class NodeBinExprLogic:
 
 @dataclass(slots=True)
 class NodeBinExpr:
-    var: NodeBinExprAdd | NodeBinExprMulti | NodeBinExprSub | NodeBinExprDiv | NodeBinExprMod | None
+    var: Union[NodeBinExprAdd, NodeBinExprMulti, NodeBinExprSub, NodeBinExprDiv, NodeBinExprMod, None]
 
 @dataclass(slots=True)
 class NodeLogicExpr:
-    var: NodeBinExprComp | NodeBinExprLogic
+    var: Union[NodeBinExprComp, NodeBinExprLogic]
 
 @dataclass(slots=True)
 class NodeExpr:
-    var: NodeTerm | NodeBinExpr | NodeLogicExpr | None
+    var: Union[NodeTerm, NodeBinExpr, NodeLogicExpr, None]
 
 
 @dataclass(slots=True)
@@ -145,14 +146,14 @@ class NodeIfPredElif:
 
 @dataclass(slots=True)
 class NodeIfPred:
-    var: NodeIfPredElif | NodeIfPredElse
+    var: Union[NodeIfPredElif, NodeIfPredElse]
 
 
 @dataclass(slots=True)
 class NodeStmtIf:
     expr: NodeExpr
     scope: NodeScope
-    ifpred: NodeIfPred | None
+    ifpred: Optional[NodeIfPred]
 
 
 @dataclass(slots=True)
@@ -173,7 +174,7 @@ class NodeStmtReassignDec:
 
 @dataclass(slots=True)
 class NodeStmtReassign:
-    var: NodeStmtReassignEq | NodeStmtReassignInc | NodeStmtReassignDec
+    var: Union[NodeStmtReassignEq, NodeStmtReassignInc, NodeStmtReassignDec]
 
 
 @dataclass(slots=True)
@@ -203,12 +204,12 @@ class NodeStmtBreak:
 
 @dataclass(slots=True)
 class NodeStmtPrint:
-    content: NodeExpr | NodeTermChar
+    content: Union[NodeExpr, NodeTermChar]
 
 
 @dataclass(slots=True)
 class NodeStmt:
-    stmt_var: NodeStmtLet | NodeStmtExit | NodeScope | NodeStmtIf | NodeStmtReassign | NodeStmtWhile | NodeStmtBreak | NodeStmtFor | NodeStmtPrint
+    stmt_var: Union[NodeStmtLet, NodeStmtExit, NodeScope, NodeStmtIf, NodeStmtReassign, NodeStmtWhile, NodeStmtBreak, NodeStmtFor, NodeStmtPrint]
 
 
 @dataclass(slots=True)

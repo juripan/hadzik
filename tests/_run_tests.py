@@ -6,7 +6,9 @@ success_count = 0
 test_count = len(folders)
 
 def compare_output(output_py: subprocess.CompletedProcess[str], output_hdz: subprocess.CompletedProcess[str]):
-    return output_py.returncode == output_hdz.returncode and output_py.stdout == output_hdz.stdout and output_py.stderr == output_hdz.stderr
+    return output_py.returncode == output_hdz.returncode \
+            and output_py.stdout == output_hdz.stdout \
+            and output_py.stderr == output_hdz.stderr
 
 for folder in folders:
     out_python = subprocess.run(["python3", f"./tests/{folder}/{folder}.py"], capture_output=True, text=True)
