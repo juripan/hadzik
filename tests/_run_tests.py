@@ -1,5 +1,6 @@
 import subprocess
 import os
+import time
 
 *folders, _ = os.listdir("./tests")
 success_count = 0
@@ -12,7 +13,14 @@ def compare_output(output_py: subprocess.CompletedProcess[str], output_hdz: subp
 
 for folder in folders:
     out_python = subprocess.run(["python3", f"./tests/{folder}/{folder}.py"], capture_output=True, text=True)
-    subprocess.run(["python3", "src/hdz.py", f"./tests/{folder}/{folder}.hdz"])
+    
+    compilation = subprocess.run(["python3", "src/hdz.py", f"tests/{folder}/{folder}.hdz"])
+    while not os.path.exists(f"./tests/{folder}/{folder}"): # waits for the compilation to be done so it can run the file
+        if compilation.returncode != 0:
+            print(f"{"\033[31m"}[FAIL]{"\033[0m"} compilation failed")
+            exit(1)
+        time.sleep(1)
+    
     out_hadzik = subprocess.run([f"./tests/{folder}/{folder}"], capture_output=True, text=True)
     
     if compare_output(out_python, out_hadzik):
