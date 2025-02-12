@@ -6,8 +6,8 @@ from hdzparser import Parser
 from hdzgenerator import Generator
 from hdzerrors import ErrorHandler
 
-all_flags: tuple[str] = tuple(filter(lambda x: x[0] == "-", sys.argv))
-non_flags: tuple[str] = tuple(filter(lambda x: x[0] != "-", sys.argv))[1:]
+all_flags: tuple[str, ...] = tuple(filter(lambda x: x[0] == "-", sys.argv))
+non_flags: tuple[str, ...] = tuple(filter(lambda x: x[0] != "-", sys.argv))[1:]
 
 if "-s" in all_flags:
     ErrorHandler.dialect_errors = True

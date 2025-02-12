@@ -9,7 +9,7 @@ class Token:
     value: Optional[str] = None
 
 @dataclass(slots=True)
-class NodeExpr:
+class NodeExpr: # type: ignore (has to be predeclared)
     pass
 
 @dataclass(slots=True)
@@ -36,7 +36,7 @@ class NodeTermParen:
 
 
 @dataclass(slots=True)
-class NodeTermNot:
+class NodeTermNot: # type: ignore (has to be predeclared)
     pass
 
 
@@ -52,7 +52,7 @@ class NodeTermNot:
 
 
 @dataclass(slots=True)
-class NodeBinExpr:
+class NodeBinExpr: # type: ignore (has to be predeclared)
     pass
 
 
@@ -106,7 +106,7 @@ class NodeBinExpr:
 
 @dataclass(slots=True)
 class NodeLogicExpr:
-    var: Union[NodeBinExprComp, NodeBinExprLogic]
+    var: Union[NodeBinExprComp, NodeBinExprLogic, None]
 
 @dataclass(slots=True)
 class NodeExpr:
@@ -125,10 +125,10 @@ class NodeStmtLet:
     type_: Token
 
 
-class NodeScope:
+class NodeScope: # type: ignore (has to be predeclared)
     pass
 
-class NodeIfPred:
+class NodeIfPred: # type: ignore (has to be predeclared)
     pass
 
 
@@ -141,7 +141,7 @@ class NodeIfPredElse:
 class NodeIfPredElif:
     expr: NodeExpr
     scope: NodeScope
-    pred: NodeIfPred
+    pred: Optional[NodeIfPred]
 
 
 @dataclass(slots=True)
@@ -208,8 +208,8 @@ class NodeStmtPrint:
 
 
 @dataclass(slots=True)
-class NodeStmt:
-    stmt_var: Union[NodeStmtLet, NodeStmtExit, NodeScope, NodeStmtIf, NodeStmtReassign, NodeStmtWhile, NodeStmtBreak, NodeStmtFor, NodeStmtPrint]
+class NodeStmt: #TODO: make the str into a Newline type or EmptyStmt type
+    stmt_var: Union[NodeStmtLet, NodeStmtExit, NodeScope, NodeStmtIf, NodeStmtReassign, NodeStmtWhile, NodeStmtDoWhile, NodeStmtBreak, NodeStmtFor, NodeStmtPrint, str]
 
 
 @dataclass(slots=True)

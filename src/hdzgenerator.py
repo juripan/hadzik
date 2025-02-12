@@ -25,9 +25,17 @@ class Generator(ErrorHandler):
         self.data_section_index: int = 1
         self.bss_section_index: int = 2
 
-        self.registers_64bit: tuple[str, 16] = ("rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rsp", "rbp", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15")
-        self.registers_16bit: tuple[str, 16] = ("ax", "bx", "cx", "dx", "si", "di", "sp", "bp", "r8w", "r9w", "r10w", "r11w", "r12w", "r13w", "r14w", "r15w")
-        self.reg_lookup_table: dict[int, tuple[str, 16]] = {2: self.registers_16bit, 8: self.registers_64bit}
+        self.registers_64bit: tuple[str, ...] = ("rax", "rbx", "rcx", "rdx",  
+                                                "rsi", "rdi", "rsp", "rbp", 
+                                                "r8", "r9", "r10", "r11", 
+                                                "r12", "r13", "r14", "r15")
+        
+        self.registers_16bit: tuple[str, ...] = ("ax", "bx", "cx", "dx", 
+                                                "si", "di", "sp", "bp", 
+                                                "r8w", "r9w", "r10w", "r11w", 
+                                                "r12w", "r13w", "r14w", "r15w")
+        
+        self.reg_lookup_table: dict[int, tuple[str, ...]] = {2: self.registers_16bit, 8: self.registers_64bit}
     
     def push_stack(self, reg: str):
         """
@@ -49,8 +57,8 @@ class Generator(ErrorHandler):
         """
         adds a pop instruction to the output and updates the stack size 
         """
-        self.output.append("    pop " + reg + "\n") #TODO: make the register adapt to the latest item on the stack
-        self.stack_size -= self.stack_item_sizes.pop() # removes and gives the last number
+        self.output.append("    pop " + reg + "\n")
+        self.stack_size -= self.stack_item_sizes.pop() # removes and gives the last items size
         print("pop", self.stack_size, self.stack_item_sizes, self.variables)
     
     def get_reg(self, idx: int) -> str:
@@ -106,11 +114,15 @@ class Generator(ErrorHandler):
         """
         print(term.var)
         if isinstance(term.var, NodeTermInt):
+            assert term.var.int_lit.value is not None, "term.var.int_lit.value shouldn't be None, probably a parsing error"
+            
             if term.negative:
                 term.var.int_lit.value = "-" + term.var.int_lit.value
             self.output.append(f"    mov rax, {term.var.int_lit.value}\n")
             self.push_stack("rax")
         elif isinstance(term.var, NodeTermIdent):
+            assert term.var.ident.value is not None, "term.var.ident.value shouldn't be None, probably a parsing error"
+
             if term.var.ident.value not in self.variables.keys():
                 self.raise_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
             location, word_size, byte_size = self.variables[term.var.ident.value]
@@ -131,7 +143,7 @@ class Generator(ErrorHandler):
                 self.output.append("    mul rbx\n")
                 self.push_stack("rax")
         elif isinstance(term.var, NodeTermNot):
-            self.generate_term(term.var.term)
+            self.generate_term(term.var.term) # type: ignore (type checking freaking out)
             self.pop_stack("rbx")
             self.output.append("    xor eax, eax\n")
             self.output.append("    test rbx, rbx\n")
@@ -282,15 +294,16 @@ class Generator(ErrorHandler):
             self.output.append("    ;/elif\n")
             if pred.var.pred is not None:
                 self.generate_if_predicate(pred.var.pred, end_label)
-
-        elif isinstance(pred.var, NodeIfPredElse):
+        elif isinstance(pred.var, NodeIfPredElse): # type: ignore (here just so the else can catch mistakes)
             self.output.append("    ;else\n")
             self.generate_scope(pred.var.scope)
             self.output.append("    ;/else\n")
+        else:
+            raise ValueError("Unreachable")
 
     def generate_let(self, let_stmt: NodeStmtLet):
         if let_stmt.ident.value in self.variables.keys():
-            self.raise_error("Syntax", f"variable has been already declared: {let_stmt.ident.value}", curr_token=let_stmt.ident)
+            self.raise_error("Value", f"variable has been already declared: {let_stmt.ident.value}", curr_token=let_stmt.ident)
         location: int = self.stack_size # stack size changes after generating the expression, thats why its saved here
 
         if let_stmt.type_.type == tt.let:
@@ -306,12 +319,15 @@ class Generator(ErrorHandler):
                 self.raise_error("Unexpected", "what ")
             self.generate_expression(let_stmt.expr)
         else:
-            assert False
+            raise ValueError("Unreachable")
         
-        self.variables.update({let_stmt.ident.value : (location, var_size, byte_size)})
+        self.variables.update({let_stmt.ident.value : (location, var_size, byte_size)}) # type: ignore (freaking out over nothing)
 
     def generate_reassign(self, reassign_stmt: NodeStmtReassign):
         self.output.append("    ;reassigning a variable\n")
+
+        assert reassign_stmt.var.ident.value is not None, "has to be a string, probably a mistake in parsing"
+        
         if reassign_stmt.var.ident.value not in self.variables.keys():
             self.raise_error("Value", "undeclared identifier: " + reassign_stmt.var.ident.value, reassign_stmt.var.ident)
         
@@ -320,7 +336,7 @@ class Generator(ErrorHandler):
             self.pop_stack("rax")
             location, _, byte_size = self.variables[reassign_stmt.var.ident.value]
             self.output.append(f"    mov [rsp + {self.stack_size - location - byte_size}], rax\n")
-        elif isinstance(reassign_stmt.var, (NodeStmtReassignInc, NodeStmtReassignDec)):
+        elif isinstance(reassign_stmt.var, (NodeStmtReassignInc, NodeStmtReassignDec)): # type: ignore (using an else branch to catch errors)
             location, size, byte_size = self.variables[reassign_stmt.var.ident.value]
             self.push_stack(f"{size} [rsp + {self.stack_size - location - byte_size}]") # QWORD 64 bits (word = 16 bits)
             self.pop_stack("rax")
@@ -328,6 +344,8 @@ class Generator(ErrorHandler):
                                 if isinstance(reassign_stmt.var, NodeStmtReassignInc) 
                                 else "    dec rax\n")
             self.output.append(f"    mov [rsp + {self.stack_size - location - byte_size}], rax\n")
+        else:
+            raise ValueError("Unreachable")
         self.output.append("    ;/reassigning a variable\n")
 
     def generate_exit(self, exit_stmt: NodeStmtExit) -> None:
@@ -434,8 +452,11 @@ class Generator(ErrorHandler):
     def generate_print(self, print_stmt: NodeStmtPrint) -> None:
         if isinstance(print_stmt.content, NodeExpr):
             self.generate_expression(print_stmt.content)
-        elif isinstance(print_stmt.content, NodeTermChar):
+        elif isinstance(print_stmt.content, NodeTermChar): # type: ignore (using an else branch to catch errors)
             self.generate_char(print_stmt.content)
+        else:
+            raise ValueError("unreachable")
+        
         expr_loc = f"rsp"
         self.output.append("    ; printing\n")
         self.output.append("    mov rax, 1\n")

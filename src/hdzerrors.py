@@ -24,7 +24,7 @@ class ErrorHandler:
             print(f"{"\033[31m"}{type}Error{"\033[0m"}: (line {self.line_number} column {self.column_number}) {details}" 
                     if not self.dialect_errors else f"Joj bysťu {"\033[31m"}{self.translate[type]}{"\033[0m"}: (lajna {self.line_number} stlupik {self.column_number}) {details}")
         else:
-            assert False, "WTF DID YOU DO"
+            raise ValueError("Unreachable!!! WTF DID YOU DO")
             print("^" * len(error_line))
             print(f"{"\033[31m"}{type}Error{"\033[0m"}: (line {self.line_number}) {details}" if
                     not self.dialect_errors else f"Joj bysťu {self.translate[type]}: (lajna {self.line_number}) {details}")

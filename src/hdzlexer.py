@@ -71,9 +71,9 @@ class Tokenizer(ErrorHandler):
                 self.advance()
                 if self.current_char == "\\":
                     self.advance()
-                    if self.current_char == "n":
+                    if self.current_char == "n": # type: ignore
                         ascii_value = 10 # ascii code for newline
-                    elif self.current_char == "t":
+                    elif self.current_char == "t": # type: ignore
                         ascii_value = 9
                     else:
                         ascii_value = ord(self.current_char)    
@@ -81,7 +81,7 @@ class Tokenizer(ErrorHandler):
                     ascii_value = ord(self.current_char)
                 tokens.append(Token(type=tt.char_lit, value=str(ascii_value), line=self.line_number, col=self.column_number))
                 self.advance()
-                if self.current_char is None or self.current_char != "'":
+                if self.current_char is None or self.current_char != "'": # type: ignore
                     self.raise_error("Syntax", "expected \"'\"")
                 self.advance()
             
@@ -121,12 +121,12 @@ class Tokenizer(ErrorHandler):
                     self.advance()
                 self.advance()
                 self.advance()
-                if self.current_char is None:
+                if self.current_char is None: # type: ignore
                     self.line_number, self.column_number = cache
                     self.raise_error("Syntax", "unclosed multiline comment")
             elif char == "\n":
-                self.advance()
                 tokens.append(Token(type=tt.end_line, line=self.line_number, col=self.column_number))
+                self.advance()
             elif char == " ":
                 self.advance()
             elif char == "(":

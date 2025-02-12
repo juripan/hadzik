@@ -6,11 +6,11 @@ from hdzerrors import ErrorHandler
 
 
 class Parser(ErrorHandler):
-    def __init__(self, tokens, file_content):
+    def __init__(self, tokens: list[Token], file_content: str):
         super().__init__(file_content)
         self.index: int = -1
         self.column_number = -1 # -1 means that theres no column number tracked
-        self.all_tokens: list = tokens
+        self.all_tokens: list[Token] = tokens
         self.current_token: Token | None = None
         self.next_token()
 
@@ -49,10 +49,10 @@ class Parser(ErrorHandler):
         elif self.current_token is not None and self.current_token.type == tt.identifier:
             return NodeTerm(NodeTermIdent(ident=self.current_token), is_negative)
         elif self.current_token is not None and self.current_token.type == tt.true:
-            self.current_token.value = 1
+            self.current_token.value = "1"
             return NodeTerm(NodeTermBool(bool=self.current_token), is_negative)
         elif self.current_token is not None and self.current_token.type == tt.false:
-            self.current_token.value = 0
+            self.current_token.value = "0"
             return NodeTerm(NodeTermBool(bool=self.current_token), is_negative)
         elif self.current_token is not None and self.current_token.type == tt.left_paren:
             self.next_token()
@@ -62,6 +62,7 @@ class Parser(ErrorHandler):
 
             self.try_throw_error(tt.right_paren, "Syntax", "expected ')'")
 
+            assert expr is not None, "Should be handled in the if statement above"
             return NodeTerm(NodeTermParen(expr), is_negative)
         elif self.current_token is not None and self.current_token.type == tt.not_:
             self.next_token()
@@ -70,6 +71,7 @@ class Parser(ErrorHandler):
             if term is None:
                 self.raise_error("Value", "expected term", self.current_token)
             
+            assert term is not None, "Should be handled in the if statement above"
             return NodeTerm(var=NodeTermNot(term=term))
         else:
             return None
@@ -85,6 +87,8 @@ class Parser(ErrorHandler):
 
         while True:
             op: Token | None = self.current_token
+            prec: int | None = None
+
             if op:
                 prec: int | None = tt.get_prec_level(op.type)
 
@@ -98,39 +102,40 @@ class Parser(ErrorHandler):
 
             if expr_rhs is None:
                 self.raise_error("Value", "unable to parse expression", self.current_token)
+            assert expr_rhs is not None, "expression shouldn't be None, is handled in the above if statement"
 
             expr = NodeBinExpr(None) if op.type in (tt.plus, tt.minus, tt.star, tt.slash, tt.percent) else NodeLogicExpr(None)
             expr_lhs2 = NodeExpr(None) # prevents a recursion error, god knows why but it makes it work
             if op.type == tt.plus:
                 expr_lhs2.var = expr_lhs.var
                 add = NodeBinExprAdd(lhs=expr_lhs2, rhs=expr_rhs)
-                expr.var = add
+                expr.var = add # type: ignore (typechecking is being weird)
             elif op.type == tt.star:
                 expr_lhs2.var = expr_lhs.var
                 multi = NodeBinExprMulti(lhs=expr_lhs2, rhs=expr_rhs)
-                expr.var = multi
+                expr.var = multi # type: ignore (typechecking is being weird)
             elif op.type == tt.minus:
                 expr_lhs2.var = expr_lhs.var
                 sub = NodeBinExprSub(lhs=expr_lhs2, rhs=expr_rhs)
-                expr.var = sub
+                expr.var = sub # type: ignore (typechecking is being weird)
             elif op.type == tt.slash:
                 expr_lhs2.var = expr_lhs.var
                 div = NodeBinExprDiv(lhs=expr_lhs2, rhs=expr_rhs)
-                expr.var = div
+                expr.var = div # type: ignore (typechecking is being weird)
             elif op.type == tt.percent:
                 expr_lhs2.var = expr_lhs.var
                 mod = NodeBinExprMod(lhs=expr_lhs2, rhs=expr_rhs)
-                expr.var = mod
+                expr.var = mod # type: ignore (typechecking is being weird)
             elif op.type in (tt.is_equal, tt.is_not_equal, tt.larger_than, tt.less_than, tt.larger_than_or_eq, tt.less_than_or_eq):
                 expr_lhs2.var = expr_lhs.var
                 comp = NodeBinExprComp(lhs=expr_lhs2, rhs=expr_rhs, comp_sign=op)
-                expr.var = comp
+                expr.var = comp # type: ignore (typechecking is being weird)
             elif op.type == tt.and_ or op.type == tt.or_:
                 expr_lhs2.var = expr_lhs.var
                 log = NodeBinExprLogic(lhs=expr_lhs2, rhs=expr_rhs, logical_operator=op)
-                expr.var = log
+                expr.var = log # type: ignore (typechecking is being weird)
             else:
-                assert False # unreachable
+                raise ValueError("unreachable! in parse_expr()")
             expr_lhs.var = expr
         return expr_lhs
     
@@ -144,9 +149,12 @@ class Parser(ErrorHandler):
 
         self.try_throw_error(tt.equals, "Syntax", "expected '='")
         self.next_token()
+
+        assert type_def is not None, "type_def should never be None"
         if type_def.type in (tt.let, tt.bool_def):
             value = self.parse_expr()
         else:
+            value = None
             self.raise_error("Type", "type not defined", self.current_token)
 
         if value is None:
@@ -155,6 +163,8 @@ class Parser(ErrorHandler):
         if self.current_token is not None and self.current_token.type not in (tt.end_line, tt.dash, tt.right_curly):
             self.raise_error("Syntax", "expected endline", self.current_token) #TODO: make this more accurate
 
+        assert ident is not None, "Identifier should never be None"
+        assert value is not None, "Value should never be None, maybe a missing if value is None"
         return NodeStmtLet(ident, value, type_def)
 
     def parse_exit(self) -> NodeStmtExit:
@@ -167,6 +177,8 @@ class Parser(ErrorHandler):
         
         if expr is None:
             self.raise_error("Syntax", "invalid expression", self.current_token)
+        
+        assert expr is not None, "expr shouldnt be None, handled in the above if statement"
 
         self.try_throw_error(tt.right_paren, "Syntax", "expected ')'")
         self.next_token()
@@ -176,7 +188,7 @@ class Parser(ErrorHandler):
         return NodeStmtExit(expr=expr)
 
     def parse_scope(self) -> NodeScope:
-        if self.current_token.type == tt.end_line:
+        if self.current_token is not None and self.current_token.type == tt.end_line:
             self.next_token()
         
         self.try_throw_error(tt.left_curly, "Syntax", "expected '{'")
@@ -204,9 +216,11 @@ class Parser(ErrorHandler):
             if expr is None:
                 self.raise_error("Value", "not able to evaluate expression", self.current_token)
             
+            assert expr is not None, "expr shouldn't be None, handled in the previous if statement"
+            
             scope = self.parse_scope()
 
-            while self.current_token is not None and self.current_token.type == tt.end_line:
+            while self.current_token is not None and self.current_token.type == tt.end_line: # type: ignore (typechecker doesn't see I modify the value with method calls)
                 self.next_token()
 
             ifpred = self.parse_ifpred()
@@ -227,6 +241,8 @@ class Parser(ErrorHandler):
         expr = self.parse_expr()
         if expr is None:
             self.raise_error("Value", "not able to parse expression", self.current_token)
+
+        assert expr is not None, "expr shouldn't be None, handled in the previous if statement"
         
         scope = self.parse_scope()
 
@@ -242,6 +258,8 @@ class Parser(ErrorHandler):
         expr = self.parse_expr()
         if expr is None:
             self.raise_error("Value", "not able to parse expression", self.current_token)
+        
+        assert expr is not None, "expr shouldn't be None, handled in the previous if statement"
 
         scope = self.parse_scope()
         return NodeStmtWhile(expr=expr, scope=scope)
@@ -257,7 +275,15 @@ class Parser(ErrorHandler):
         self.try_throw_error(tt.dash, "Syntax", "expected ','")
         self.next_token()
 
-        condition = self.parse_expr().var.var #gets the NodeTermComp
+        expr = self.parse_expr()
+        if expr is None or expr.var is None:
+            self.raise_error("Syntax", "missing condition", self.current_token)
+        
+        assert expr is not None, "expr shouldn't be None, handled in the previous if statement"
+        assert expr.var is not None, "expr.var shouldn't be None, handled in the previous if statement"
+
+        condition = expr.var.var # gets the NodeTermComp
+
         if not isinstance(condition, NodeBinExprComp):
             self.raise_error("Syntax", "invalid condition", self.current_token)
 
@@ -270,7 +296,7 @@ class Parser(ErrorHandler):
         self.next_token()
 
         scope = self.parse_scope()
-        return NodeStmtFor(ident_def, condition, assign, scope)
+        return NodeStmtFor(ident_def, condition, assign, scope)  # type: ignore (type checker is going insane here)
 
     def parse_do_while(self) -> NodeStmtDoWhile:
         self.next_token()
@@ -286,6 +312,8 @@ class Parser(ErrorHandler):
         expr = self.parse_expr()
         if expr is None:
             self.raise_error("Value", "invalid expression", self.current_token)
+        
+        assert expr is not None, "expr shouldn't be None here, handled by the previous if condition"
 
         self.try_throw_error(tt.right_paren, "Syntax", "expected ')'")
         self.next_token()
@@ -296,7 +324,9 @@ class Parser(ErrorHandler):
         self.try_throw_error(tt.identifier, "Syntax", "expected identifier")
         ident = self.current_token
         self.next_token()
-
+        
+        assert ident is not None, "identifier shouldn't be None here, triggered the parse_reassign function"
+        
         if self.current_token is not None and self.current_token.type == tt.increment:
             self.next_token()
             return NodeStmtReassign(var=NodeStmtReassignInc(ident))
@@ -311,6 +341,8 @@ class Parser(ErrorHandler):
         if expr is None:
             self.raise_error("Value", "expected expression", self.current_token)
         
+        assert expr is not None, "expr shouldn't be None here, handled by the previous if condition"
+        
         if self.current_token is not None and self.current_token.type not in (tt.end_line, tt.right_curly, tt.right_paren):
             self.raise_error("Syntax", "expected endline", self.current_token)
         
@@ -322,13 +354,15 @@ class Parser(ErrorHandler):
         self.try_throw_error(tt.left_paren, "Syntax", "expected '('")
         self.next_token()
 
-        if self.current_token.type == tt.char_lit:
+        if self.current_token is not None and self.current_token.type == tt.char_lit:
             cont = self.parse_char()
         else:
             cont = self.parse_expr()
 
         if cont is None:
             self.raise_error("Syntax", "Invalid print argument", self.current_token)
+        
+        assert cont is not None, "content shouldn't be None, handled by the previous if statement"
 
         self.try_throw_error(tt.right_paren, "Syntax", "expected ')'")
         self.next_token()
@@ -339,6 +373,7 @@ class Parser(ErrorHandler):
         return NodeStmtPrint(cont)
     
     def parse_statement(self) -> NodeStmt | None:
+        statement = None
         if self.current_token is None:
             return None
         elif self.current_token.type == tt.end_line:
@@ -367,10 +402,14 @@ class Parser(ErrorHandler):
             statement = NodeStmtBreak()
         else:
             self.raise_error("Parsing", "cannot parse program correctly", self.current_token)
+        
+        assert statement is not None, "statement should never be None, handled by the if statements above"
         return NodeStmt(stmt_var=statement)
 
     def parse_program(self) -> NodeProgram:
         program: NodeProgram = NodeProgram(stmts=[])
         while self.current_token is not None:
-            program.stmts.append(self.parse_statement())
+            stmt = self.parse_statement()
+            assert stmt is not None, "statement should not be None, only if there is a None token"
+            program.stmts.append(stmt)
         return program
