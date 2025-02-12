@@ -1,10 +1,10 @@
-left_paren = "left_paren"
-right_paren = "right_paren"
-left_curly = "left_curly"
-right_curly = "right_curly"
+left_paren = "("
+right_paren = ")"
+left_curly = "{"
+right_curly = "}"
 dash = "dash"
 
-end_line = "end_ln"
+end_line = "end line"
 
 exit_ = "vychod" # names of keywords must be what is used in the hadzik syntax
 print_ = "hutor"

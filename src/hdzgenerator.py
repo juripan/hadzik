@@ -302,7 +302,7 @@ class Generator(ErrorHandler):
             raise ValueError("Unreachable")
 
     def generate_let(self, let_stmt: NodeStmtLet):
-        if let_stmt.ident.value in self.variables.keys():
+        if let_stmt.ident.value in self.variables.keys(): #TODO: make it only check the current scope (allow shadowing of variables)
             self.raise_error("Value", f"variable has been already declared: {let_stmt.ident.value}", curr_token=let_stmt.ident)
         location: int = self.stack_size # stack size changes after generating the expression, thats why its saved here
 

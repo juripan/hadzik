@@ -178,12 +178,13 @@ class Parser(ErrorHandler):
         if expr is None:
             self.raise_error("Syntax", "invalid expression", self.current_token)
         
-        assert expr is not None, "expr shouldnt be None, handled in the above if statement"
+        assert expr is not None, "expr shouldn't be None, handled in the above if statement"
 
         self.try_throw_error(tt.right_paren, "Syntax", "expected ')'")
         self.next_token()
         
-        self.try_throw_error(tt.end_line, "Syntax", "expected endline")
+        if self.current_token is not None and self.current_token.type not in (tt.end_line, tt.right_curly, tt.right_paren):
+            self.raise_error("Syntax", "expected endline", self.current_token)
 
         return NodeStmtExit(expr=expr)
 
@@ -203,7 +204,7 @@ class Parser(ErrorHandler):
         else:
             self.raise_error("Syntax", "expected '}'", self.current_token)
         
-        if self.current_token is not None and self.current_token.type == tt.end_line:
+        if self.current_token and self.current_token.type == tt.end_line:
             self.next_token()
 
         return scope
@@ -401,7 +402,7 @@ class Parser(ErrorHandler):
             self.next_token()
             statement = NodeStmtBreak()
         else:
-            self.raise_error("Parsing", "cannot parse program correctly", self.current_token)
+            self.raise_error("Syntax", "invalid statement form", self.current_token)
         
         assert statement is not None, "statement should never be None, handled by the if statements above"
         return NodeStmt(stmt_var=statement)
