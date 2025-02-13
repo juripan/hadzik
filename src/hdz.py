@@ -12,10 +12,10 @@ non_flags: tuple[str, ...] = tuple(filter(lambda x: x[0] != "-", sys.argv))[1:]
 if "-s" in all_flags:
     ErrorHandler.dialect_errors = True
 
-file_path: str = sys.argv[1]
+file_path: str = non_flags[0]
 
 if not file_path.endswith(".hdz"):
-    print("CompilerError: file extension is missing or invalid (file extension must be .hdz and file must be the first arg)")
+    print("File extension is missing or invalid (file extension must be .hdz)")
     exit(1)
 
 with open(file_path, "r") as f:
@@ -24,7 +24,7 @@ with open(file_path, "r") as f:
 tokens = Tokenizer(content).tokenize()
 print(tokens)
 parse_tree = Parser(tokens, content).parse_program()
-print(parse_tree)
+# print(parse_tree)
 final_asm = Generator(parse_tree, content).generate_program()
 
 
@@ -42,5 +42,7 @@ os.system("ld " + filepath_no_extension + ".o -o " + filepath_no_extension)
 print("Done!")
 
 if "-r" in all_flags:
+    print("Program output".center(80, "-"))
     exit_code = os.system("./" + filepath_no_extension)
+    print("-" * 80)
     print(f"Program exited with: {exit_code % 255}") # exit code 1 is 256 for some reason 

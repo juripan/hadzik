@@ -13,10 +13,11 @@ class Generator(ErrorHandler):
 
         self.column_number = -1
         
-        self.stack_size: int = 0 # uses whole 8 bytes (half of a word) as a unit
-        self.stack_item_sizes: list[int] = [] # same as above
+        self.stack_size: size_bytes = 0 # 8 bytes (half of a word) as a unit
+        self.stack_item_sizes: list[size_bytes] = [] # same as above
 
-        self.variables: OrderedDict[str, tuple[int, str, int]] = OrderedDict() #tuples content is location and word size and size in bytes
+        #TODO: make it a OrderedDict of lists with tuples, lists contain all of the different variables index the current scopes version by -1 (allows for shadowing)
+        self.variables: OrderedDict[str, tuple[int, size_words, size_bytes]] = OrderedDict() #tuples content is location and word size and size in bytes
         self.scopes: list[int] = []
         
         self.label_count: int = 0
@@ -41,11 +42,10 @@ class Generator(ErrorHandler):
         """
         adds a push instruction to the output and updates the stack size 
         """
-        #NOTE: size in bytes
         if reg in self.registers_64bit or reg.startswith("QWORD"):
-            size = 8
+            size: size_bytes = 8
         elif reg in self.registers_16bit or reg.startswith("WORD"):
-            size = 2
+            size: size_bytes = 2
         else:
             raise ValueError("invalid register")
         self.output.append("    push " + reg + "\n")
@@ -279,7 +279,7 @@ class Generator(ErrorHandler):
         generates the following statements connected to the if statement if there are any
         """
         if isinstance(pred.var, NodeIfPredElif):
-            self.output.append("    ;elif\n")
+            self.output.append("    ;; --- elif ---\n")
             self.generate_expression(pred.var.expr)
             label = self.create_label()
 
@@ -291,13 +291,13 @@ class Generator(ErrorHandler):
             self.generate_scope(pred.var.scope)
             self.output.append("    jmp " + end_label + "\n")
             self.output.append(label + ":\n")
-            self.output.append("    ;/elif\n")
+            self.output.append("    ;; --- /elif ---\n")
             if pred.var.pred is not None:
                 self.generate_if_predicate(pred.var.pred, end_label)
         elif isinstance(pred.var, NodeIfPredElse): # type: ignore (here just so the else can catch mistakes)
-            self.output.append("    ;else\n")
+            self.output.append("    ;; --- else ---\n")
             self.generate_scope(pred.var.scope)
-            self.output.append("    ;/else\n")
+            self.output.append("    ;; --- /else ---\n")
         else:
             raise ValueError("Unreachable")
 
@@ -324,7 +324,7 @@ class Generator(ErrorHandler):
         self.variables.update({let_stmt.ident.value : (location, var_size, byte_size)}) # type: ignore (freaking out over nothing)
 
     def generate_reassign(self, reassign_stmt: NodeStmtReassign):
-        self.output.append("    ;reassigning a variable\n")
+        self.output.append("    ;; --- var reassign ---\n")
 
         assert reassign_stmt.var.ident.value is not None, "has to be a string, probably a mistake in parsing"
         
@@ -346,17 +346,17 @@ class Generator(ErrorHandler):
             self.output.append(f"    mov [rsp + {self.stack_size - location - byte_size}], rax\n")
         else:
             raise ValueError("Unreachable")
-        self.output.append("    ;/reassigning a variable\n")
+        self.output.append("    ;; --- /var reassign ---\n")
 
     def generate_exit(self, exit_stmt: NodeStmtExit) -> None:
         self.generate_expression(exit_stmt.expr)
-        self.output.append("    ; manual exit (vychod)\n")
+        self.output.append("    ;; --- exit ---\n")
         self.output.append("    mov rax, 60\n")
         self.pop_stack("rdi")
         self.output.append("    syscall\n")
 
     def generate_if_statement(self, if_stmt: NodeStmtIf) -> None:
-        self.output.append("    ;if block\n")
+        self.output.append("    ;; --- if block ---\n")
         self.generate_expression(if_stmt.expr)
         label = self.create_label()
         
@@ -375,10 +375,10 @@ class Generator(ErrorHandler):
             self.output.append(end_label + ":\n")
         else:
             self.output.append(label + ":\n")
-        self.output.append("    ;/if block\n")
+        self.output.append("    ;; --- /if block ---\n")
 
     def generate_while(self, while_stmt: NodeStmtWhile) -> None:
-        self.output.append("    ;while loop\n")
+        self.output.append("    ;; --- while loop ---\n")
         end_label = self.create_label()
         reset_label = self.create_label()
         self.loop_end_labels.append(end_label)
@@ -395,11 +395,11 @@ class Generator(ErrorHandler):
         
         self.output.append("    jmp " + reset_label + "\n")
         self.output.append(end_label  + ":\n")
-        self.output.append("    ;/while loop\n")
+        self.output.append("    ;; --- /while loop ---\n")
         self.loop_end_labels.pop()
 
     def generate_do_while(self, do_while_stmt: NodeStmtDoWhile) -> None:
-        self.output.append("    ;do while loop\n")
+        self.output.append("    ;; --- do while loop ---\n")
         end_label = self.create_label()
         reset_label = self.create_label()
         self.loop_end_labels.append(end_label)
@@ -417,11 +417,11 @@ class Generator(ErrorHandler):
 
         self.output.append("    jmp " + reset_label + "\n")
         self.output.append(end_label  + ":\n")
-        self.output.append("    ;/do while loop\n")
+        self.output.append("    ;; --- /do while loop ---\n")
         self.loop_end_labels.pop()
 
     def generate_for(self, for_stmt: NodeStmtFor) -> None:
-        self.output.append("    ;for loop\n")
+        self.output.append("    ;; --- for loop ---\n")
         end_label = self.create_label()
         reset_label = self.create_label()
         self.loop_end_labels.append(end_label)
@@ -446,10 +446,11 @@ class Generator(ErrorHandler):
         self.output.append("    add rsp, " + str(8) + "\n")
         self.stack_size -= self.stack_item_sizes.pop() # does this to remove the variable after the i loop ends
         self.variables.popitem()
-        self.output.append("    ;/for loop\n")
+        self.output.append("    ;; --- /for loop ---\n")
         self.loop_end_labels.pop()
 
     def generate_print(self, print_stmt: NodeStmtPrint) -> None:
+        self.output.append("    ;; --- print char ---\n")
         if isinstance(print_stmt.content, NodeExpr):
             self.generate_expression(print_stmt.content)
         elif isinstance(print_stmt.content, NodeTermChar): # type: ignore (using an else branch to catch errors)
@@ -458,7 +459,6 @@ class Generator(ErrorHandler):
             raise ValueError("unreachable")
         
         expr_loc = f"rsp"
-        self.output.append("    ; printing\n")
         self.output.append("    mov rax, 1\n")
         self.output.append("    mov rdi, 1\n")
         self.output.append(f"    mov rsi, {expr_loc}\n")
@@ -467,7 +467,7 @@ class Generator(ErrorHandler):
         pushed_res = self.stack_item_sizes.pop() #it removes the printed expression because it causes a mess in the stack when looping
         self.output.append("    add rsp, " + str(pushed_res) + "\n") #removes the printed expression from the stack
         self.stack_size -= pushed_res #lowers the stack size
-        self.output.append("    ; /printing\n")
+        self.output.append("    ;; --- /print char ---\n")
 
     def generate_statement(self, statement: NodeStmt) -> None:
         """
@@ -502,7 +502,7 @@ class Generator(ErrorHandler):
 
         elif isinstance(statement.stmt_var, NodeStmtBreak):
             if self.loop_end_labels:
-                self.output.append("    ; break \n")
+                self.output.append("    ;; --- break --- \n")
                 self.output.append("    jmp " + self.loop_end_labels[-1] + "\n")
             else:
                 self.raise_error("Syntax", "cant break out of a loop when not inside one")
@@ -518,5 +518,5 @@ class Generator(ErrorHandler):
         self.output.append("_start:\n")
         for stmt in self.main_program.stmts:
             self.generate_statement(stmt)
-        self.output.append("    ; default exit\n    mov rax, 60\n    mov rdi, 0\n    syscall" )
+        self.output.append("    ;; --- default exit ---\n    mov rax, 60\n    mov rdi, 0\n    syscall" )
         return "".join(self.output)

@@ -1,6 +1,11 @@
 from dataclasses import dataclass
 from typing import Union, Optional
 
+# primitive type, contains a size of object in bytes (8 bits)
+size_bytes = int
+
+size_words = str
+
 @dataclass(slots=True)
 class Token:
     type: str
