@@ -65,6 +65,7 @@ class Generator(ErrorHandler):
         """
         returns a name of the correctly sized register based on the current top of the stack
         """
+        assert len(self.stack_item_sizes) > 0, "Stack underflow"
         size = self.stack_item_sizes[-1]
         return self.reg_lookup_table[size][idx]
 
@@ -309,14 +310,20 @@ class Generator(ErrorHandler):
         if let_stmt.type_.type == tt.let:
             var_size: str = "QWORD"
             byte_size: int = 8
+            #TODO: maybe handle incorrect types in the parser instead
             if isinstance(let_stmt.expr.var, NodeLogicExpr):
-                self.raise_error("Unexpected", "what ")
+                self.raise_error("Type", "cannot assign a boolean expression to `int`")
+            elif isinstance(let_stmt.expr.var, NodeTerm) and isinstance(let_stmt.expr.var.var, NodeTermBool):
+                self.raise_error("Type", "cannot assign `bool` to `int`", let_stmt.expr.var.var.bool)
             self.generate_expression(let_stmt.expr)
         elif let_stmt.type_.type == tt.bool_def:
             var_size: str = "WORD"
             byte_size: int = 2
             if isinstance(let_stmt.expr.var, NodeBinExpr):
-                self.raise_error("Unexpected", "what ")
+                self.raise_error("Type", "cannot assign `int` to `bool`")
+            elif let_stmt.expr.var is not None and isinstance(let_stmt.expr.var.var, NodeTermInt):
+                self.raise_error("Type", "cannot assign `int` to `bool`") # add guarding for other int expression (parenthesis and stuff)
+
             self.generate_expression(let_stmt.expr)
         else:
             raise ValueError("Unreachable")
