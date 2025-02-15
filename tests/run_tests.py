@@ -2,7 +2,7 @@ import subprocess as sbp
 import os
 import time
 
-*folders, _ = os.listdir("./tests")
+folders = tuple(filter(lambda x: not x.endswith(".py") , os.listdir("./tests")))
 success_count = 0
 test_count = len(folders)
 

@@ -1,7 +1,7 @@
 #TODO: fix the end lines acting weird while parsing, with if statements, scopes, etc.
 #TODO: implement proper parsing for booleans and boolean expressions
 from comptypes import * #uh-oh a wildcard import
-from hdztokentypes import TokenType, get_prec_level
+from hdztokentypes import TokenType, get_prec_level, COMPARISONS
 from hdzerrors import ErrorHandler
 
 
@@ -130,11 +130,7 @@ class Parser(ErrorHandler):
                 expr_lhs2.var = expr_lhs.var
                 mod = NodeBinExprMod(lhs=expr_lhs2, rhs=expr_rhs)
                 expr.var = mod # type: ignore (typechecking is being weird)
-            elif op.type in (
-                    TokenType.IS_EQUAL, TokenType.IS_NOT_EQUAL, 
-                    TokenType.LARGER_THAN, TokenType.LESS_THAN, 
-                    TokenType.LARGER_THAN_OR_EQ, TokenType.LESS_THAN_OR_EQ
-                    ):
+            elif op.type in COMPARISONS:
                 expr_lhs2.var = expr_lhs.var
                 comp = NodeBinExprComp(lhs=expr_lhs2, rhs=expr_rhs, comp_sign=op)
                 expr.var = comp # type: ignore (typechecking is being weird)

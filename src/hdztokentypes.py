@@ -52,15 +52,7 @@ class TokenType(Enum):
     NOT = auto()
 
 # strings of tokens must be what is used in the hadzik syntax
-WORD_TO_TOKEN_TYPE: dict[str, TokenType] = {
-    "(": TokenType.LEFT_PAREN,
-    ")": TokenType.RIGHT_PAREN,
-    "{": TokenType.LEFT_CURLY,
-    "}": TokenType.RIGHT_CURLY,
-
-    ",": TokenType.COMMA,
-    "\n": TokenType.ENDLINE,
-
+KEYWORD_TO_TOKEN_TYPE: dict[str, TokenType] = {
     "vychod": TokenType.EXIT,
     "hutor": TokenType.PRINT,
 
@@ -78,28 +70,16 @@ WORD_TO_TOKEN_TYPE: dict[str, TokenType] = {
     "pravda": TokenType.TRUE,
     "klamstvo": TokenType.FALSE,
 
-    "+": TokenType.PLUS,
-    "-": TokenType.MINUS,
-    "*": TokenType.STAR,
-    "/": TokenType.SLASH,
-    "%": TokenType.PERCENT,
-    "=": TokenType.EQUALS,
-
-    "==": TokenType.IS_EQUAL,
-    "!=": TokenType.IS_NOT_EQUAL,
-    "<": TokenType.LESS_THAN,
-    ">": TokenType.LARGER_THAN,
-    "<=": TokenType.LESS_THAN_OR_EQ,
-    ">=": TokenType.LARGER_THAN_OR_EQ,
-    "!=": TokenType.IS_NOT_EQUAL,
-    
-    "++": TokenType.INCREMENT,
-    "--": TokenType.DECREMENT,
-
     "aj": TokenType.AND,
     "abo": TokenType.OR,
     "ne": TokenType.NOT,
 }
+
+assert len(KEYWORD_TO_TOKEN_TYPE) == 16, "exhaustive keyword matching in KEYWORD_TO_TOKEN_TYPE"
+
+COMPARISONS: tuple[TokenType, ...] = (TokenType.IS_EQUAL, TokenType.IS_NOT_EQUAL, TokenType.LARGER_THAN, TokenType.LESS_THAN, TokenType.LARGER_THAN_OR_EQ, TokenType.LESS_THAN_OR_EQ)
+
+assert len(COMPARISONS) == 6, "all comparsions should be in COMPARISONS"
 
 def get_prec_level(token_type: TokenType) -> int | None:
     """
@@ -108,10 +88,7 @@ def get_prec_level(token_type: TokenType) -> int | None:
     """
     if token_type == TokenType.AND or token_type == TokenType.OR:
         return 0
-    elif token_type in (
-        TokenType.IS_EQUAL, TokenType.IS_NOT_EQUAL, 
-        TokenType.LARGER_THAN, TokenType.LESS_THAN, 
-        TokenType.LARGER_THAN_OR_EQ, TokenType.LESS_THAN_OR_EQ):
+    elif token_type in COMPARISONS:
         return 1
     elif token_type == TokenType.PLUS or token_type == TokenType.MINUS:
         return 2

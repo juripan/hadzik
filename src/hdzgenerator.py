@@ -37,17 +37,18 @@ class Generator(ErrorHandler):
         
         self.reg_lookup_table: dict[int, tuple[str, ...]] = {2: self.registers_16bit, 8: self.registers_64bit}
     
-    def push_stack(self, reg: str):
+    def push_stack(self, loc: str):
         """
         adds a push instruction to the output and updates the stack size 
         """
-        if reg in self.registers_64bit or reg.startswith("QWORD"):
+        if loc in self.registers_64bit or loc.startswith("QWORD"):
             size: size_bytes = 8
-        elif reg in self.registers_16bit or reg.startswith("WORD"):
+        elif loc in self.registers_16bit or loc.startswith("WORD"):
             size: size_bytes = 2
         else:
             raise ValueError("invalid register")
-        self.output.append("    push " + reg + "\n")
+        
+        self.output.append("    push " + loc + "\n")
         self.stack_size += size
         self.stack_item_sizes.append(size)
         if ErrorHandler.debug_mode:

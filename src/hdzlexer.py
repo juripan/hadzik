@@ -1,4 +1,4 @@
-from hdztokentypes import TokenType, WORD_TO_TOKEN_TYPE
+from hdztokentypes import TokenType, KEYWORD_TO_TOKEN_TYPE
 from hdzerrors import ErrorHandler
 from comptypes import Token
 
@@ -20,8 +20,8 @@ class Tokenizer(ErrorHandler):
         """
         sees if a keyword is in the tokens list, otherwise makes an identifier
         """
-        if potential_keyword in WORD_TO_TOKEN_TYPE:
-            return Token(type=WORD_TO_TOKEN_TYPE[potential_keyword], value=None, line=self.line_number, col=self.column_number)
+        if potential_keyword in KEYWORD_TO_TOKEN_TYPE:
+            return Token(type=KEYWORD_TO_TOKEN_TYPE[potential_keyword], value=None, line=self.line_number, col=self.column_number)
         else:
             return Token(type=TokenType.IDENT, value=potential_keyword, line=self.line_number, col=self.column_number)
     
