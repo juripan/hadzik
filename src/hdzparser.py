@@ -410,7 +410,6 @@ class Parser(ErrorHandler):
             self.next_token()
             statement = NodeStmtBreak()
         else:
-            print(self.current_token)
             self.raise_error("Syntax", "invalid statement form", self.current_token)
         
         assert statement is not None, "statement should never be None, handled by the if statements above"

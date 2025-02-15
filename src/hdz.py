@@ -11,22 +11,27 @@ non_flags: tuple[str, ...] = tuple(filter(lambda x: x[0] != "-", sys.argv))[1:]
 
 if "-s" in all_flags:
     ErrorHandler.dialect_errors = True
+if "-d" in all_flags:
+    ErrorHandler.debug_mode = True
 
 file_path: str = non_flags[0]
 
 if not file_path.endswith(".hdz"):
-    print("File extension is missing or invalid (file extension must be .hdz)")
+    print("File extension is missing or invalid (file extension must be .hdz)", file=sys.stderr)
     exit(1)
 
 with open(file_path, "r") as f:
     content: str = f.read()
 
 tokens = Tokenizer(content).tokenize()
-print(tokens)
 parse_tree = Parser(tokens, content).parse_program()
-# print(parse_tree)
 final_asm = Generator(parse_tree, content).generate_program()
 
+if ErrorHandler.debug_mode:
+    print(tokens)
+    print("-" * 130)
+    print(parse_tree)
+    print("-" * 130)
 
 if "-n" in all_flags and len(non_flags) > 1:
     filepath_no_extension = non_flags[1]

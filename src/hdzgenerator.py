@@ -50,7 +50,8 @@ class Generator(ErrorHandler):
         self.output.append("    push " + reg + "\n")
         self.stack_size += size
         self.stack_item_sizes.append(size)
-        print("push", self.stack_size, self.stack_item_sizes, self.variables)
+        if ErrorHandler.debug_mode:
+            print("push", self.stack_size, self.stack_item_sizes, self.variables)
 
     def pop_stack(self, reg: str):
         """
@@ -58,7 +59,8 @@ class Generator(ErrorHandler):
         """
         self.output.append("    pop " + reg + "\n")
         self.stack_size -= self.stack_item_sizes.pop() # removes and gives the last items size
-        print("pop", self.stack_size, self.stack_item_sizes, self.variables)
+        if ErrorHandler.debug_mode:
+            print("pop", self.stack_size, self.stack_item_sizes, self.variables)
     
     def get_reg(self, idx: int) -> str:
         """
@@ -112,7 +114,8 @@ class Generator(ErrorHandler):
         generates a term, a term being a variable or a number, 
         gets pushed on to of the stack
         """
-        print(term.var)
+        if ErrorHandler.debug_mode:
+            print(term.var)
         if isinstance(term.var, NodeTermInt):
             assert term.var.int_lit.value is not None, "term.var.int_lit.value shouldn't be None, probably a parsing error"
             

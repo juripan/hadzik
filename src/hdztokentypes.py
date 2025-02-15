@@ -1,4 +1,5 @@
 from enum import Enum, auto
+#TODO: merge this with comptypes file, maybe add more specific tuples like (comparisons, math_operations, etc.)
 
 class TokenType(Enum):
     LEFT_PAREN = auto()

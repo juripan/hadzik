@@ -2,7 +2,10 @@ from comptypes import Token
 
 class ErrorHandler:
     dialect_errors: bool = False
+    debug_mode: bool = False
+
     translate: dict[str, str] = {"Syntax": "NapisanePlano", "Value": "HodnotaPlana", "Generator": "VyrobaPlana", "expected": "tu malo buc toto", "Parsing": "DzelenePlane"}
+    
     def __init__(self, file: str) -> None:
         self.file_content: str = file
         self.line_number: int = 1
@@ -19,7 +22,7 @@ class ErrorHandler:
         
         error_line = self.find_line()
         print(error_line)
-        if self.column_number != -1:
+        if curr_token:
             print("^".rjust(self.column_number))
             print(f"{"\033[31m"}{type}Error{"\033[0m"}: (line {self.line_number} column {self.column_number}) {details}" 
                     if not self.dialect_errors else f"Joj bysťu {"\033[31m"}{self.translate[type]}{"\033[0m"}: (lajna {self.line_number} stlupik {self.column_number}) {details}")
