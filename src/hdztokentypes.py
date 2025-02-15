@@ -1,76 +1,120 @@
-left_paren = "("
-right_paren = ")"
-left_curly = "{"
-right_curly = "}"
-dash = "dash"
+from enum import Enum, auto
 
-end_line = "end line"
+class TokenType(Enum):
+    LEFT_PAREN = auto()
+    RIGHT_PAREN = auto()
+    LEFT_CURLY = auto()
+    RIGHT_CURLY = auto()
+    
+    COMMA = auto()
+    ENDLINE = auto()
 
-exit_ = "vychod" # names of keywords must be what is used in the hadzik syntax
-print_ = "hutor"
+    EXIT = auto()
+    PRINT = auto()
 
-let = "naj"
-bool_def = "bul"
+    LET = auto()
+    BOOL_DEF = auto()
 
-if_ = "kec"
-elif_ = "ikec"
-else_ = "inac"
-while_ = "kim"
-do = "zrob"
-for_ = "furt"
-break_ = "konec"
+    IF = auto()
+    ELIF = auto()
+    ELSE = auto()
+    WHILE = auto()
+    DO = auto()
+    FOR = auto()
+    BREAK = auto()
 
-identifier = "identifier"
-char_lit = "character"
-int_lit = "integer"
-true = "pravda"
-false = "klamstvo"
-floating_number = "float"
+    IDENT = auto()
+    CHAR_LIT = auto()
+    INT_LIT = auto()
+    TRUE = auto()
+    FALSE = auto()
 
-plus = "+"
-minus = "-"
-star = "*"
-slash = "/"
-percent = "%"
-equals = "="
+    PLUS = auto()
+    MINUS = auto()
+    STAR = auto()
+    SLASH = auto()
+    PERCENT = auto()
+    EQUALS = auto()
 
-is_equal = "=="
-is_not_equal = "!="
-larger_than = ">"
-less_than = "<"
-larger_than_or_eq = ">="
-less_than_or_eq = "<="
+    IS_EQUAL = auto()
+    IS_NOT_EQUAL = auto()
+    LARGER_THAN = auto()
+    LESS_THAN = auto()
+    LARGER_THAN_OR_EQ = auto()
+    LESS_THAN_OR_EQ = auto()
 
-increment = "increment"
-decrement = "decrement"
+    INCREMENT = auto()
+    DECREMENT = auto()
 
-and_ = "aj"
-or_ = "abo"
-not_ = "ne"
+    AND = auto()
+    OR = auto()
+    NOT = auto()
 
-all_token_types = (
-    left_paren, right_paren, left_curly, right_curly, dash,
-    end_line,  
-    exit_, print_, let, bool_def, if_, elif_, else_, while_, do, for_, break_,
-    identifier, int_lit, floating_number,
-    plus, minus, star, slash, percent, equals, 
-    is_equal, is_not_equal, larger_than, less_than, larger_than_or_eq, less_than_or_eq,
-    increment, decrement,
-    and_, or_, not_, true, false,
-)
+# strings of tokens must be what is used in the hadzik syntax
+WORD_TO_TOKEN_TYPE: dict[str, TokenType] = {
+    "(": TokenType.LEFT_PAREN,
+    ")": TokenType.RIGHT_PAREN,
+    "{": TokenType.LEFT_CURLY,
+    "}": TokenType.RIGHT_CURLY,
 
-def get_prec_level(token_type: str) -> int | None:
+    ",": TokenType.COMMA,
+    "\n": TokenType.ENDLINE,
+
+    "vychod": TokenType.EXIT,
+    "hutor": TokenType.PRINT,
+
+    "naj": TokenType.LET,
+    "bul": TokenType.BOOL_DEF,
+
+    "kec": TokenType.IF,
+    "ikec": TokenType.ELIF,
+    "inac": TokenType.ELSE,
+    "kim": TokenType.WHILE,
+    "zrob": TokenType.DO,
+    "furt": TokenType.FOR,
+    "konec": TokenType.BREAK,
+
+    "pravda": TokenType.TRUE,
+    "klamstvo": TokenType.FALSE,
+
+    "+": TokenType.PLUS,
+    "-": TokenType.MINUS,
+    "*": TokenType.STAR,
+    "/": TokenType.SLASH,
+    "%": TokenType.PERCENT,
+    "=": TokenType.EQUALS,
+
+    "==": TokenType.IS_EQUAL,
+    "!=": TokenType.IS_NOT_EQUAL,
+    "<": TokenType.LESS_THAN,
+    ">": TokenType.LARGER_THAN,
+    "<=": TokenType.LESS_THAN_OR_EQ,
+    ">=": TokenType.LARGER_THAN_OR_EQ,
+    "!=": TokenType.IS_NOT_EQUAL,
+    
+    "++": TokenType.INCREMENT,
+    "--": TokenType.DECREMENT,
+
+    "aj": TokenType.AND,
+    "abo": TokenType.OR,
+    "ne": TokenType.NOT,
+}
+
+def get_prec_level(token_type: TokenType) -> int | None:
     """
     returns the precedence level of the token, 
     returns None if that token doesn't have a precedence level (token isn't a binary operator or a logical operator)
     """
-    if token_type == and_ or token_type == or_:
+    if token_type == TokenType.AND or token_type == TokenType.OR:
         return 0
-    elif token_type in (is_equal, is_not_equal, larger_than, less_than, larger_than_or_eq, less_than_or_eq):
+    elif token_type in (
+        TokenType.IS_EQUAL, TokenType.IS_NOT_EQUAL, 
+        TokenType.LARGER_THAN, TokenType.LESS_THAN, 
+        TokenType.LARGER_THAN_OR_EQ, TokenType.LESS_THAN_OR_EQ):
         return 1
-    elif token_type == plus or token_type == minus:
+    elif token_type == TokenType.PLUS or token_type == TokenType.MINUS:
         return 2
-    elif token_type == star or token_type == slash or token_type == percent:
+    elif token_type == TokenType.STAR or token_type == TokenType.SLASH or token_type == TokenType.PERCENT:
         return 3
     else:
         return None

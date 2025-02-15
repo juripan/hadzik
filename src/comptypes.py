@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Union, Optional
+from hdztokentypes import TokenType
 
 # primitive type, contains a size of object in bytes (8 bits)
 size_bytes = int
@@ -8,7 +9,7 @@ size_words = str
 
 @dataclass(slots=True)
 class Token:
-    type: str
+    type: TokenType
     line: int
     col: int
     value: Optional[str] = None

@@ -10,6 +10,8 @@
 __pycache__/
 # Vscode spellchecker settings
 .vscode/
+# testing features in asm before adding to the language
+asm_testing/
 # Object and assembly files created by compilation
 *.o
 *.asm

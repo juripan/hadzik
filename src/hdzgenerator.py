@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 from hdzerrors import ErrorHandler
 from comptypes import *
-import hdztokentypes as tt
+from hdztokentypes import TokenType 
 
 
 class Generator(ErrorHandler):
@@ -16,7 +16,6 @@ class Generator(ErrorHandler):
         self.stack_size: size_bytes = 0 # 8 bytes (half of a word) as a unit
         self.stack_item_sizes: list[size_bytes] = [] # same as above
 
-        #TODO: make it a OrderedDict of lists with tuples, lists contain all of the different variables index the current scopes version by -1 (allows for shadowing)
         self.variables: OrderedDict[str, tuple[int, size_words, size_bytes]] = OrderedDict() #tuples content is location and word size and size in bytes
         self.scopes: list[int] = []
         
@@ -162,17 +161,17 @@ class Generator(ErrorHandler):
         self.pop_stack("rax")
         self.pop_stack("rbx")
         self.output.append("    cmp rax, rbx\n")
-        if comparison.comp_sign.type == tt.is_equal:
+        if comparison.comp_sign.type == TokenType.IS_EQUAL:
             self.output.append("    sete al\n")
-        elif comparison.comp_sign.type == tt.is_not_equal:
+        elif comparison.comp_sign.type == TokenType.IS_NOT_EQUAL:
             self.output.append("    setne al\n")
-        elif comparison.comp_sign.type == tt.larger_than:
+        elif comparison.comp_sign.type == TokenType.LARGER_THAN:
             self.output.append("    setg al\n")
-        elif comparison.comp_sign.type == tt.less_than:
+        elif comparison.comp_sign.type == TokenType.LESS_THAN:
             self.output.append("    setl al\n")
-        elif comparison.comp_sign.type == tt.larger_than_or_eq:
+        elif comparison.comp_sign.type == TokenType.LARGER_THAN_OR_EQ:
             self.output.append("    setge al\n")
-        elif comparison.comp_sign.type == tt.less_than_or_eq:
+        elif comparison.comp_sign.type == TokenType.LESS_THAN_OR_EQ:
             self.output.append("    setle al\n")
         else:
             self.raise_error("Syntax", "Invalid comparison expression", comparison.comp_sign)
@@ -190,9 +189,9 @@ class Generator(ErrorHandler):
         self.pop_stack("rbx")
         self.output.append("    mov rcx, rax\n")
         self.output.append("    test rbx, rbx\n")
-        if logic_expr.logical_operator.type == tt.and_:
+        if logic_expr.logical_operator.type == TokenType.AND:
             self.output.append("    cmovz rcx, rbx\n")
-        elif logic_expr.logical_operator.type == tt.or_:
+        elif logic_expr.logical_operator.type == TokenType.OR:
             self.output.append("    cmovnz rcx, rbx\n")
         else:
             self.raise_error("Syntax", "Invalid logic expression", logic_expr.logical_operator)
@@ -307,18 +306,18 @@ class Generator(ErrorHandler):
             self.raise_error("Value", f"variable has been already declared: {let_stmt.ident.value}", curr_token=let_stmt.ident)
         location: int = self.stack_size # stack size changes after generating the expression, thats why its saved here
 
-        if let_stmt.type_.type == tt.let:
-            var_size: str = "QWORD"
-            byte_size: int = 8
+        if let_stmt.type_.type == TokenType.LET:
+            var_size: size_words = "QWORD"
+            byte_size: size_bytes = 8
             #TODO: maybe handle incorrect types in the parser instead
             if isinstance(let_stmt.expr.var, NodeLogicExpr):
                 self.raise_error("Type", "cannot assign a boolean expression to `int`")
             elif isinstance(let_stmt.expr.var, NodeTerm) and isinstance(let_stmt.expr.var.var, NodeTermBool):
                 self.raise_error("Type", "cannot assign `bool` to `int`", let_stmt.expr.var.var.bool)
             self.generate_expression(let_stmt.expr)
-        elif let_stmt.type_.type == tt.bool_def:
-            var_size: str = "WORD"
-            byte_size: int = 2
+        elif let_stmt.type_.type == TokenType.BOOL_DEF:
+            var_size: size_words = "WORD"
+            byte_size: size_bytes = 2
             if isinstance(let_stmt.expr.var, NodeBinExpr):
                 self.raise_error("Type", "cannot assign `int` to `bool`")
             elif let_stmt.expr.var is not None and isinstance(let_stmt.expr.var.var, NodeTermInt):
