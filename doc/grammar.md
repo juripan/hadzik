@@ -3,7 +3,6 @@ $$
     [\text{Program}] &\to
     \begin{cases}
     [\text{Stmt}]^*\\
-    \text{newline}^* \leftarrow \text{new line for accurate error throwing during code generation}
     \end{cases}\\
 
     [Stmt] &\to
@@ -18,6 +17,7 @@ $$
         zrob [\text{Scope}] kim ([\text{Expr}])\\
         furt ([\text{IdentDef}], [\text{CompExpr}], [\text{IdentAssign}])[\text{Scope}]\\
         konec \leftarrow \text{only inside a loop}\\
+        \text{newline}
     \end{cases}\\
 
     [\text{IdentDef}] &\to

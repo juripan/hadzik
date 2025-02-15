@@ -16,7 +16,7 @@ class Generator(ErrorHandler):
         self.stack_size: size_bytes = 0 # 8 bytes (half of a word) as a unit
         self.stack_item_sizes: list[size_bytes] = [] # same as above
 
-        self.variables: OrderedDict[str, tuple[int, size_words, size_bytes]] = OrderedDict() #tuples content is location and word size and size in bytes
+        self.variables: OrderedDict[str, VariableContext] = OrderedDict()
         self.scopes: list[int] = []
         
         self.label_count: int = 0
@@ -129,7 +129,8 @@ class Generator(ErrorHandler):
 
             if term.var.ident.value not in self.variables.keys():
                 self.raise_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
-            location, word_size, byte_size = self.variables[term.var.ident.value]
+            var_ctx: VariableContext = self.variables[term.var.ident.value]
+            location, word_size, byte_size = var_ctx.loc, var_ctx.size_w, var_ctx.size_b
             self.push_stack(f"{word_size} [rsp + {self.stack_size - location - byte_size}]") # QWORD 64 bits (word = 16 bits)
             if term.negative:
                 self.pop_stack("rbx")
@@ -311,7 +312,7 @@ class Generator(ErrorHandler):
         location: int = self.stack_size # stack size changes after generating the expression, thats why its saved here
 
         if let_stmt.type_.type == TokenType.LET:
-            var_size: size_words = "QWORD"
+            word_size: size_words = "QWORD"
             byte_size: size_bytes = 8
             #TODO: maybe handle incorrect types in the parser instead
             if isinstance(let_stmt.expr.var, NodeLogicExpr):
@@ -320,7 +321,7 @@ class Generator(ErrorHandler):
                 self.raise_error("Type", "cannot assign `bool` to `int`", let_stmt.expr.var.var.bool)
             self.generate_expression(let_stmt.expr)
         elif let_stmt.type_.type == TokenType.BOOL_DEF:
-            var_size: size_words = "WORD"
+            word_size: size_words = "WORD"
             byte_size: size_bytes = 2
             if isinstance(let_stmt.expr.var, NodeBinExpr):
                 self.raise_error("Type", "cannot assign `int` to `bool`")
@@ -331,7 +332,8 @@ class Generator(ErrorHandler):
         else:
             raise ValueError("Unreachable")
         
-        self.variables.update({let_stmt.ident.value : (location, var_size, byte_size)}) # type: ignore (freaking out over nothing)
+        assert let_stmt.ident.value is not None, "var name shouldn't be None here"
+        self.variables.update({let_stmt.ident.value : VariableContext(location, word_size, byte_size)})
 
     def generate_reassign(self, reassign_stmt: NodeStmtReassign):
         self.output.append("    ;; --- var reassign ---\n")
@@ -344,11 +346,13 @@ class Generator(ErrorHandler):
         if isinstance(reassign_stmt.var, NodeStmtReassignEq):
             self.generate_expression(reassign_stmt.var.expr)
             self.pop_stack("rax")
-            location, _, byte_size = self.variables[reassign_stmt.var.ident.value]
+            var_ctx = self.variables[reassign_stmt.var.ident.value]
+            location, byte_size = var_ctx.loc, var_ctx.size_b
             self.output.append(f"    mov [rsp + {self.stack_size - location - byte_size}], rax\n")
         elif isinstance(reassign_stmt.var, (NodeStmtReassignInc, NodeStmtReassignDec)): # type: ignore (using an else branch to catch errors)
-            location, size, byte_size = self.variables[reassign_stmt.var.ident.value]
-            self.push_stack(f"{size} [rsp + {self.stack_size - location - byte_size}]") # QWORD 64 bits (word = 16 bits)
+            var_ctx = self.variables[reassign_stmt.var.ident.value]
+            location, size_words, byte_size = var_ctx.loc, var_ctx.size_w, var_ctx.size_b
+            self.push_stack(f"{size_words} [rsp + {self.stack_size - location - byte_size}]") # QWORD 64 bits (word = 16 bits)
             self.pop_stack("rax")
             self.output.append("    inc rax\n" 
                                 if isinstance(reassign_stmt.var, NodeStmtReassignInc) 

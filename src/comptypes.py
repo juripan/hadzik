@@ -2,10 +2,11 @@ from dataclasses import dataclass
 from typing import Union, Optional
 from hdztokentypes import TokenType
 
-# primitive type, contains a size of object in bytes (8 bits)
-size_bytes = int
 
-size_words = str
+#################
+## Lexer types ###################################################
+#################
+
 
 @dataclass(slots=True)
 class Token:
@@ -13,6 +14,12 @@ class Token:
     line: int
     col: int
     value: Optional[str] = None
+
+
+##################
+## Parser types ###################################################
+##################
+
 
 @dataclass(slots=True)
 class NodeExpr: # type: ignore (has to be predeclared)
@@ -108,7 +115,11 @@ class NodeBinExprLogic:
 
 @dataclass(slots=True)
 class NodeBinExpr:
-    var: Union[NodeBinExprAdd, NodeBinExprMulti, NodeBinExprSub, NodeBinExprDiv, NodeBinExprMod, None]
+    var: Union[
+        NodeBinExprAdd, NodeBinExprMulti, 
+        NodeBinExprSub, NodeBinExprDiv, 
+        NodeBinExprMod, None
+    ]
 
 @dataclass(slots=True)
 class NodeLogicExpr:
@@ -214,14 +225,40 @@ class NodeStmtPrint:
 
 
 @dataclass(slots=True)
-class NodeStmt: #TODO: make the str into a Newline type or EmptyStmt type
-    stmt_var: Union[NodeStmtLet, NodeStmtExit, NodeScope, NodeStmtIf, NodeStmtReassign, NodeStmtWhile, NodeStmtDoWhile, NodeStmtBreak, NodeStmtFor, NodeStmtPrint, str]
+class NodeStmtEmpty: #empty line that only contains endline token
+    pass
+
+
+@dataclass(slots=True)
+class NodeStmt:
+    stmt_var: Union[
+        NodeStmtLet, NodeStmtExit, NodeScope, 
+        NodeStmtIf, NodeStmtReassign, NodeStmtWhile, 
+        NodeStmtDoWhile, NodeStmtBreak, NodeStmtFor, NodeStmtPrint, NodeStmtEmpty
+        ]
 
 
 @dataclass(slots=True)
 class NodeScope:
     stmts: list[NodeStmt]
 
+
 @dataclass(slots=True)
 class NodeProgram:
     stmts: list[NodeStmt]
+
+
+#####################
+## Generator types ###################################################
+#####################
+
+# primitive type, contains a size of object in bytes (8 bits)
+size_bytes = int
+# primitive type, contains a size of object in words (WORD, QWORD, etc.)
+size_words = str
+
+@dataclass(slots=True)
+class VariableContext:
+    loc: int
+    size_w: size_words
+    size_b: size_bytes

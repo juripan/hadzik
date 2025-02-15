@@ -24,14 +24,15 @@ with open(file_path, "r") as f:
     content: str = f.read()
 
 tokens = Tokenizer(content).tokenize()
-parse_tree = Parser(tokens, content).parse_program()
-final_asm = Generator(parse_tree, content).generate_program()
-
 if ErrorHandler.debug_mode:
     print(tokens)
     print("-" * 130)
+parse_tree = Parser(tokens, content).parse_program()
+if ErrorHandler.debug_mode:
     print(parse_tree)
     print("-" * 130)
+final_asm = Generator(parse_tree, content).generate_program()
+
 
 if "-n" in all_flags and len(non_flags) > 1:
     filepath_no_extension = non_flags[1]

@@ -381,9 +381,6 @@ class Parser(ErrorHandler):
         statement = None
         if self.current_token is None:
             return None
-        elif self.current_token.type == TokenType.ENDLINE:
-            statement = "new_line"
-            self.next_token()
         elif self.current_token.type == TokenType.EXIT:
             statement = self.parse_exit()
         elif self.current_token.type == TokenType.PRINT:
@@ -405,6 +402,9 @@ class Parser(ErrorHandler):
         elif self.current_token.type == TokenType.BREAK:
             self.next_token()
             statement = NodeStmtBreak()
+        elif self.current_token.type == TokenType.ENDLINE:
+            statement = NodeStmtEmpty()
+            self.next_token()
         else:
             self.raise_error("Syntax", "invalid statement form", self.current_token)
         

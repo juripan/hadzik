@@ -79,7 +79,7 @@ assert len(KEYWORD_TO_TOKEN_TYPE) == 16, "exhaustive keyword matching in KEYWORD
 
 COMPARISONS: tuple[TokenType, ...] = (TokenType.IS_EQUAL, TokenType.IS_NOT_EQUAL, TokenType.LARGER_THAN, TokenType.LESS_THAN, TokenType.LARGER_THAN_OR_EQ, TokenType.LESS_THAN_OR_EQ)
 
-assert len(COMPARISONS) == 6, "all comparsions should be in COMPARISONS"
+assert len(COMPARISONS) == 6, "all comparisons should be in COMPARISONS"
 
 def get_prec_level(token_type: TokenType) -> int | None:
     """
