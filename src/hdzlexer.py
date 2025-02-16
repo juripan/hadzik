@@ -1,4 +1,4 @@
-from hdztokentypes import TokenType, KEYWORD_TO_TOKEN_TYPE
+import hdztokentypes as tt
 from hdzerrors import ErrorHandler
 from comptypes import Token
 
@@ -20,10 +20,10 @@ class Tokenizer(ErrorHandler):
         """
         sees if a keyword is in the tokens list, otherwise makes an identifier
         """
-        if potential_keyword in KEYWORD_TO_TOKEN_TYPE:
-            return Token(type=KEYWORD_TO_TOKEN_TYPE[potential_keyword], value=None, line=self.line_number, col=self.column_number)
+        if potential_keyword in tt.KEYWORD_TO_TOKEN_TYPE:
+            return Token(type=tt.KEYWORD_TO_TOKEN_TYPE[potential_keyword], value=None, line=self.line_number, col=self.column_number)
         else:
-            return Token(type=TokenType.IDENT, value=potential_keyword, line=self.line_number, col=self.column_number)
+            return Token(type=tt.IDENT, value=potential_keyword, line=self.line_number, col=self.column_number)
     
     def advance(self):
         """
@@ -63,7 +63,7 @@ class Tokenizer(ErrorHandler):
                 while self.current_char.isnumeric():  # or self.current_char == ".":
                     buffer += self.current_char
                     self.advance()
-                type_of_number = TokenType.INT_LIT  # if "." not in buffer else tt.floating_number
+                type_of_number = tt.INT_LIT  # if "." not in buffer else tt.floating_number
                 tokens.append(Token(type=type_of_number, value=buffer, line=self.line_number, col=self.column_number))
                 buffer = ""
             
@@ -79,36 +79,36 @@ class Tokenizer(ErrorHandler):
                         ascii_value = ord(self.current_char)    
                 else:
                     ascii_value = ord(self.current_char)
-                tokens.append(Token(type=TokenType.CHAR_LIT, value=str(ascii_value), line=self.line_number, col=self.column_number))
+                tokens.append(Token(type=tt.CHAR_LIT, value=str(ascii_value), line=self.line_number, col=self.column_number))
                 self.advance()
                 if self.current_char is None or self.current_char != "'": # type: ignore
                     self.raise_error("Syntax", "expected \"'\"")
                 self.advance()
             
             elif char == "=" and self.look_ahead() == "=":
+                tokens.append(Token(type=tt.IS_EQUAL, line=self.line_number, col=self.column_number))
                 self.advance()
                 self.advance()
-                tokens.append(Token(type=TokenType.IS_EQUAL, line=self.line_number, col=self.column_number))
             elif char == "!" and self.look_ahead() == "=":
+                tokens.append(Token(type=tt.IS_NOT_EQUAL, line=self.line_number, col=self.column_number))
                 self.advance()
                 self.advance()
-                tokens.append(Token(type=TokenType.IS_NOT_EQUAL, line=self.line_number, col=self.column_number))
             elif char == ">" and self.look_ahead() == "=":
+                tokens.append(Token(type=tt.LARGER_THAN_OR_EQ, line=self.line_number, col=self.column_number))
                 self.advance()
                 self.advance()
-                tokens.append(Token(type=TokenType.LARGER_THAN_OR_EQ, line=self.line_number, col=self.column_number))
             elif char == "<" and self.look_ahead() == "=":
+                tokens.append(Token(type=tt.LESS_THAN_OR_EQ, line=self.line_number, col=self.column_number))
                 self.advance()
                 self.advance()
-                tokens.append(Token(type=TokenType.LESS_THAN_OR_EQ, line=self.line_number, col=self.column_number))
             elif char == "+" and self.look_ahead() == "+":
+                tokens.append(Token(type=tt.INCREMENT, line=self.line_number, col=self.column_number))
                 self.advance()
                 self.advance()
-                tokens.append(Token(type=TokenType.INCREMENT, line=self.line_number, col=self.column_number))
             elif char == "-" and self.look_ahead() == "-":
+                tokens.append(Token(type=tt.DECREMENT, line=self.line_number, col=self.column_number))
                 self.advance()
                 self.advance()
-                tokens.append(Token(type=TokenType.DECREMENT, line=self.line_number, col=self.column_number))
             elif char == "/" and self.look_ahead() == "/":
                 self.advance()
                 while self.current_char not in ("\n", None):
@@ -125,49 +125,49 @@ class Tokenizer(ErrorHandler):
                     self.line_number, self.column_number = cache
                     self.raise_error("Syntax", "unclosed multiline comment")
             elif char == "\n":
-                tokens.append(Token(type=TokenType.ENDLINE, line=self.line_number, col=self.column_number))
+                tokens.append(Token(type=tt.ENDLINE, line=self.line_number, col=self.column_number))
                 self.advance()
             elif char == " ":
                 self.advance()
             elif char == "(":
                 self.advance()
-                tokens.append(Token(type=TokenType.LEFT_PAREN, line=self.line_number, col=self.column_number))
+                tokens.append(Token(type=tt.LEFT_PAREN, line=self.line_number, col=self.column_number))
             elif char == ")":
                 self.advance()
-                tokens.append(Token(type=TokenType.RIGHT_PAREN, line=self.line_number, col=self.column_number))
+                tokens.append(Token(type=tt.RIGHT_PAREN, line=self.line_number, col=self.column_number))
             elif char == "{":
                 self.advance()
-                tokens.append(Token(type=TokenType.LEFT_CURLY, line=self.line_number, col=self.column_number))
+                tokens.append(Token(type=tt.LEFT_CURLY, line=self.line_number, col=self.column_number))
             elif char == "}":
                 self.advance()
-                tokens.append(Token(type=TokenType.RIGHT_CURLY, line=self.line_number, col=self.column_number))
+                tokens.append(Token(type=tt.RIGHT_CURLY, line=self.line_number, col=self.column_number))
             elif char == ",":
                 self.advance()
-                tokens.append(Token(type=TokenType.COMMA, line=self.line_number, col=self.column_number))
+                tokens.append(Token(type=tt.COMMA, line=self.line_number, col=self.column_number))
             elif char == "=":
                 self.advance()
-                tokens.append(Token(type=TokenType.EQUALS, line=self.line_number, col=self.column_number))
+                tokens.append(Token(type=tt.EQUALS, line=self.line_number, col=self.column_number))
             elif char == ">":
                 self.advance()
-                tokens.append(Token(type=TokenType.LARGER_THAN, line=self.line_number, col=self.column_number))
+                tokens.append(Token(type=tt.LARGER_THAN, line=self.line_number, col=self.column_number))
             elif char == "<":
                 self.advance()
-                tokens.append(Token(type=TokenType.LESS_THAN, line=self.line_number, col=self.column_number))
+                tokens.append(Token(type=tt.LESS_THAN, line=self.line_number, col=self.column_number))
             elif char == "+":
                 self.advance()
-                tokens.append(Token(type=TokenType.PLUS, line=self.line_number, col=self.column_number))
+                tokens.append(Token(type=tt.PLUS, line=self.line_number, col=self.column_number))
             elif char == "-":
                 self.advance()
-                tokens.append(Token(type=TokenType.MINUS, line=self.line_number, col=self.column_number))
+                tokens.append(Token(type=tt.MINUS, line=self.line_number, col=self.column_number))
             elif char == "*":
                 self.advance()
-                tokens.append(Token(type=TokenType.STAR, line=self.line_number, col=self.column_number))
+                tokens.append(Token(type=tt.STAR, line=self.line_number, col=self.column_number))
             elif char == "/":
                 self.advance()
-                tokens.append(Token(type=TokenType.SLASH, line=self.line_number, col=self.column_number))
+                tokens.append(Token(type=tt.SLASH, line=self.line_number, col=self.column_number))
             elif char == "%":
                 self.advance()
-                tokens.append(Token(type=TokenType.PERCENT, line=self.line_number, col=self.column_number))
+                tokens.append(Token(type=tt.PERCENT, line=self.line_number, col=self.column_number))
             else:
                 self.raise_error("Syntax", "char not included in the lexer")
         return tokens

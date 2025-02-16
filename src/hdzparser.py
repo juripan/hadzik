@@ -1,7 +1,7 @@
 #TODO: fix the end lines acting weird while parsing, with if statements, scopes, etc.
 #TODO: implement proper parsing for booleans and boolean expressions
 from comptypes import * #uh-oh a wildcard import
-from hdztokentypes import TokenType, get_prec_level, COMPARISONS
+import hdztokentypes as tt
 from hdzerrors import ErrorHandler
 
 
@@ -21,7 +21,7 @@ class Parser(ErrorHandler):
     def get_token_at(self, offset: int = 0) -> Token | None:
         return self.all_tokens[self.index + offset] if self.index + offset < len(self.all_tokens) else None
     
-    def try_throw_error(self, token_type: TokenType, error_name: str, error_details: str) -> None:
+    def try_throw_error(self, token_type: token_type, error_name: str, error_details: str) -> None:
         """
         checks if the current token is none or if its type is not the token type given,
         raises an error if the condition is true
@@ -31,7 +31,7 @@ class Parser(ErrorHandler):
 
 
     def parse_char(self) -> NodeTermChar | None:
-        if self.current_token is not None and self.current_token.type == TokenType.CHAR_LIT:
+        if self.current_token is not None and self.current_token.type == tt.CHAR_LIT:
             char = self.current_token
             self.next_token()
             return NodeTermChar(char)
@@ -40,31 +40,31 @@ class Parser(ErrorHandler):
 
     def parse_term(self) -> NodeTerm | None:
         is_negative = False
-        if self.current_token is not None and self.current_token.type == TokenType.MINUS:
+        if self.current_token is not None and self.current_token.type == tt.MINUS:
             is_negative = True
             self.next_token()
 
-        if self.current_token is not None and self.current_token.type == TokenType.INT_LIT:
+        if self.current_token is not None and self.current_token.type == tt.INT_LIT:
             return NodeTerm(NodeTermInt(int_lit=self.current_token), is_negative)
-        elif self.current_token is not None and self.current_token.type == TokenType.IDENT:
+        elif self.current_token is not None and self.current_token.type == tt.IDENT:
             return NodeTerm(NodeTermIdent(ident=self.current_token), is_negative)
-        elif self.current_token is not None and self.current_token.type == TokenType.TRUE:
+        elif self.current_token is not None and self.current_token.type == tt.TRUE:
             self.current_token.value = "1"
             return NodeTerm(NodeTermBool(bool=self.current_token), is_negative)
-        elif self.current_token is not None and self.current_token.type == TokenType.FALSE:
+        elif self.current_token is not None and self.current_token.type == tt.FALSE:
             self.current_token.value = "0"
             return NodeTerm(NodeTermBool(bool=self.current_token), is_negative)
-        elif self.current_token is not None and self.current_token.type == TokenType.LEFT_PAREN:
+        elif self.current_token is not None and self.current_token.type == tt.LEFT_PAREN:
             self.next_token()
             expr = self.parse_expr()
             if expr is None:
                 self.raise_error("Value", "expected expression", self.current_token)
 
-            self.try_throw_error(TokenType.RIGHT_PAREN, "Syntax", "expected ')'")
+            self.try_throw_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
 
             assert expr is not None, "Should be handled in the if statement above"
             return NodeTerm(NodeTermParen(expr), is_negative)
-        elif self.current_token is not None and self.current_token.type == TokenType.NOT:
+        elif self.current_token is not None and self.current_token.type == tt.NOT:
             self.next_token()
             
             term = self.parse_term()
@@ -101,32 +101,32 @@ class Parser(ErrorHandler):
             expr_rhs = self.parse_expr(next_min_prec)
 
             if expr_rhs is None:
-                self.raise_error("Value", "unable to parse expression", self.current_token)
+                self.raise_error("Value", "invalid expression", self.current_token)
             assert expr_rhs is not None, "expression shouldn't be None, is handled in the above if statement"
 
             expr = NodeBinExpr(None) if op.type in (
-                TokenType.PLUS, TokenType.MINUS, TokenType.STAR, TokenType.SLASH, TokenType.PERCENT
+                tt.PLUS, tt.MINUS, tt.STAR, tt.SLASH, tt.PERCENT
                 ) else NodeLogicExpr(None)
             
             expr_lhs2 = NodeExpr(None) # prevents a recursion error, god knows why but it makes it work
             
-            if op.type == TokenType.PLUS:
+            if op.type == tt.PLUS:
                 expr_lhs2.var = expr_lhs.var
                 add = NodeBinExprAdd(lhs=expr_lhs2, rhs=expr_rhs)
                 expr.var = add # type: ignore (typechecking is being weird)
-            elif op.type == TokenType.STAR:
+            elif op.type == tt.STAR:
                 expr_lhs2.var = expr_lhs.var
                 multi = NodeBinExprMulti(lhs=expr_lhs2, rhs=expr_rhs)
                 expr.var = multi # type: ignore (typechecking is being weird)
-            elif op.type == TokenType.MINUS:
+            elif op.type == tt.MINUS:
                 expr_lhs2.var = expr_lhs.var
                 sub = NodeBinExprSub(lhs=expr_lhs2, rhs=expr_rhs)
                 expr.var = sub # type: ignore (typechecking is being weird)
-            elif op.type == TokenType.SLASH:
+            elif op.type == tt.SLASH:
                 expr_lhs2.var = expr_lhs.var
                 div = NodeBinExprDiv(lhs=expr_lhs2, rhs=expr_rhs)
                 expr.var = div # type: ignore (typechecking is being weird)
-            elif op.type == TokenType.PERCENT:
+            elif op.type == tt.PERCENT:
                 expr_lhs2.var = expr_lhs.var
                 mod = NodeBinExprMod(lhs=expr_lhs2, rhs=expr_rhs)
                 expr.var = mod # type: ignore (typechecking is being weird)
@@ -134,7 +134,7 @@ class Parser(ErrorHandler):
                 expr_lhs2.var = expr_lhs.var
                 comp = NodeBinExprComp(lhs=expr_lhs2, rhs=expr_rhs, comp_sign=op)
                 expr.var = comp # type: ignore (typechecking is being weird)
-            elif op.type == TokenType.AND or op.type == TokenType.OR:
+            elif op.type == tt.AND or op.type == tt.OR:
                 expr_lhs2.var = expr_lhs.var
                 log = NodeBinExprLogic(lhs=expr_lhs2, rhs=expr_rhs, logical_operator=op)
                 expr.var = log # type: ignore (typechecking is being weird)
@@ -147,15 +147,15 @@ class Parser(ErrorHandler):
         type_def = self.current_token
         self.next_token() # removes type def
 
-        self.try_throw_error(TokenType.IDENT, "Syntax", "expected valid identifier")
+        self.try_throw_error(tt.IDENT, "Syntax", "expected valid identifier")
         ident = self.current_token
         self.next_token()
 
-        self.try_throw_error(TokenType.EQUALS, "Syntax", "expected '='")
+        self.try_throw_error(tt.EQUALS, "Syntax", "expected '='")
         self.next_token()
 
         assert type_def is not None, "type_def should never be None"
-        if type_def.type in (TokenType.LET, TokenType.BOOL_DEF):
+        if type_def.type in (tt.LET, tt.BOOL_DEF):
             value = self.parse_expr()
         else:
             value = None
@@ -164,7 +164,7 @@ class Parser(ErrorHandler):
         if value is None:
             self.raise_error("Syntax", "invalid expression", self.current_token)
 
-        if self.current_token is not None and self.current_token.type not in (TokenType.ENDLINE, TokenType.COMMA, TokenType.RIGHT_CURLY):
+        if self.current_token is not None and self.current_token.type not in (tt.ENDLINE, tt.COMMA, tt.RIGHT_CURLY):
             self.raise_error("Syntax", "expected endline", self.current_token) #TODO: make this more accurate
 
         assert ident is not None, "Identifier should never be None"
@@ -174,7 +174,7 @@ class Parser(ErrorHandler):
     def parse_exit(self) -> NodeStmtExit:
         self.next_token() # removes exit token
         
-        self.try_throw_error(TokenType.LEFT_PAREN, "Syntax", "expected '('")
+        self.try_throw_error(tt.LEFT_PAREN, "Syntax", "expected '('")
         self.next_token()
 
         expr = self.parse_expr()
@@ -184,37 +184,37 @@ class Parser(ErrorHandler):
         
         assert expr is not None, "expr shouldn't be None, handled in the above if statement"
 
-        self.try_throw_error(TokenType.RIGHT_PAREN, "Syntax", "expected ')'")
+        self.try_throw_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
         self.next_token()
         
-        if self.current_token is not None and self.current_token.type not in (TokenType.ENDLINE, TokenType.RIGHT_CURLY, TokenType.RIGHT_PAREN):
+        if self.current_token is not None and self.current_token.type not in (tt.ENDLINE, tt.RIGHT_CURLY, tt.RIGHT_PAREN):
             self.raise_error("Syntax", "expected endline", self.current_token)
 
         return NodeStmtExit(expr=expr)
 
     def parse_scope(self) -> NodeScope:
-        if self.current_token is not None and self.current_token.type == TokenType.ENDLINE:
+        if self.current_token is not None and self.current_token.type == tt.ENDLINE:
             self.next_token()
         
-        self.try_throw_error(TokenType.LEFT_CURLY, "Syntax", "expected '{'")
+        self.try_throw_error(tt.LEFT_CURLY, "Syntax", "expected '{'")
         self.next_token()  # left curly
 
         scope = NodeScope(stmts=[])
         while stmt := self.parse_statement():
             scope.stmts.append(stmt)
-            if self.current_token and self.current_token.type == TokenType.RIGHT_CURLY:
+            if self.current_token and self.current_token.type == tt.RIGHT_CURLY:
                 self.next_token() # right curly
                 break
         else:
             self.raise_error("Syntax", "expected '}'", self.current_token)
         
-        if self.current_token and self.current_token.type == TokenType.ENDLINE:
+        if self.current_token and self.current_token.type == tt.ENDLINE:
             self.next_token()
 
         return scope
 
     def parse_ifpred(self) -> NodeIfPred | None:
-        if self.current_token is not None and self.current_token.type == TokenType.ELIF:
+        if self.current_token is not None and self.current_token.type == tt.ELIF:
             self.next_token()
             
             expr = self.parse_expr()
@@ -231,7 +231,7 @@ class Parser(ErrorHandler):
             ifpred = self.parse_ifpred()
 
             return NodeIfPred(NodeIfPredElif(expr, scope, ifpred))
-        elif self.current_token is not None and self.current_token.type == TokenType.ELSE:
+        elif self.current_token is not None and self.current_token.type == tt.ELSE:
             self.next_token()
             
             scope = self.parse_scope()
@@ -251,7 +251,7 @@ class Parser(ErrorHandler):
         
         scope = self.parse_scope()
 
-        while self.current_token is not None and self.current_token.type == TokenType.ENDLINE:
+        while self.current_token is not None and self.current_token.type == tt.ENDLINE:
             self.next_token()
 
         ifpred = self.parse_ifpred()
@@ -272,12 +272,12 @@ class Parser(ErrorHandler):
     def parse_for_loop(self) -> NodeStmtFor:
         self.next_token()
 
-        self.try_throw_error(TokenType.LEFT_PAREN, "Syntax", "expected '('")
+        self.try_throw_error(tt.LEFT_PAREN, "Syntax", "expected '('")
         self.next_token()
 
         ident_def = self.parse_let()
 
-        self.try_throw_error(TokenType.COMMA, "Syntax", "expected ','")
+        self.try_throw_error(tt.COMMA, "Syntax", "expected ','")
         self.next_token()
 
         expr = self.parse_expr()
@@ -292,12 +292,12 @@ class Parser(ErrorHandler):
         if not isinstance(condition, NodeBinExprComp):
             self.raise_error("Syntax", "invalid condition", self.current_token)
 
-        self.try_throw_error(TokenType.COMMA, "Syntax", "expected ','")
+        self.try_throw_error(tt.COMMA, "Syntax", "expected ','")
         self.next_token()
 
         assign = self.parse_reassign()
         
-        self.try_throw_error(TokenType.RIGHT_PAREN, "Syntax", "expected ')'")
+        self.try_throw_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
         self.next_token()
 
         scope = self.parse_scope()
@@ -308,10 +308,10 @@ class Parser(ErrorHandler):
 
         scope = self.parse_scope()
         
-        self.try_throw_error(TokenType.WHILE, "Syntax", "expected 'kim'")
+        self.try_throw_error(tt.WHILE, "Syntax", "expected 'kim'")
         self.next_token()
 
-        self.try_throw_error(TokenType.LEFT_PAREN, "Syntax", "expected '('")
+        self.try_throw_error(tt.LEFT_PAREN, "Syntax", "expected '('")
         self.next_token()
 
         expr = self.parse_expr()
@@ -320,26 +320,26 @@ class Parser(ErrorHandler):
         
         assert expr is not None, "expr shouldn't be None here, handled by the previous if condition"
 
-        self.try_throw_error(TokenType.RIGHT_PAREN, "Syntax", "expected ')'")
+        self.try_throw_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
         self.next_token()
 
         return NodeStmtDoWhile(scope, expr)
 
     def parse_reassign(self) -> NodeStmtReassign:
-        self.try_throw_error(TokenType.IDENT, "Syntax", "expected identifier")
+        self.try_throw_error(tt.IDENT, "Syntax", "expected identifier")
         ident = self.current_token
         self.next_token()
         
         assert ident is not None, "identifier shouldn't be None here, triggered the parse_reassign function"
         
-        if self.current_token is not None and self.current_token.type == TokenType.INCREMENT:
+        if self.current_token is not None and self.current_token.type == tt.INCREMENT:
             self.next_token()
             return NodeStmtReassign(var=NodeStmtReassignInc(ident))
-        elif self.current_token is not None and self.current_token.type == TokenType.DECREMENT:
+        elif self.current_token is not None and self.current_token.type == tt.DECREMENT:
             self.next_token()
             return NodeStmtReassign(var=NodeStmtReassignDec(ident))
 
-        self.try_throw_error(TokenType.EQUALS, "Syntax", "expected '='")
+        self.try_throw_error(tt.EQUALS, "Syntax", "expected '='")
         self.next_token()
 
         expr = self.parse_expr()
@@ -348,7 +348,7 @@ class Parser(ErrorHandler):
         
         assert expr is not None, "expr shouldn't be None here, handled by the previous if condition"
         
-        if self.current_token is not None and self.current_token.type not in (TokenType.ENDLINE, TokenType.RIGHT_CURLY, TokenType.RIGHT_PAREN):
+        if self.current_token is not None and self.current_token.type not in (tt.ENDLINE, tt.RIGHT_CURLY, tt.RIGHT_PAREN):
             self.raise_error("Syntax", "expected endline", self.current_token)
         
         return NodeStmtReassign(var=NodeStmtReassignEq(ident, expr))
@@ -356,10 +356,10 @@ class Parser(ErrorHandler):
     def parse_print(self) -> NodeStmtPrint:
         self.next_token() # removes print token
 
-        self.try_throw_error(TokenType.LEFT_PAREN, "Syntax", "expected '('")
+        self.try_throw_error(tt.LEFT_PAREN, "Syntax", "expected '('")
         self.next_token()
 
-        if self.current_token is not None and self.current_token.type == TokenType.CHAR_LIT:
+        if self.current_token is not None and self.current_token.type == tt.CHAR_LIT:
             cont = self.parse_char()
         else:
             cont = self.parse_expr()
@@ -369,10 +369,10 @@ class Parser(ErrorHandler):
         
         assert cont is not None, "content shouldn't be None, handled by the previous if statement"
 
-        self.try_throw_error(TokenType.RIGHT_PAREN, "Syntax", "expected ')'")
+        self.try_throw_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
         self.next_token()
         
-        if self.current_token is not None and self.current_token.type not in (TokenType.ENDLINE, TokenType.RIGHT_CURLY):
+        if self.current_token is not None and self.current_token.type not in (tt.ENDLINE, tt.RIGHT_CURLY):
             self.raise_error("Syntax", "expected endline", self.current_token)
         
         return NodeStmtPrint(cont)
@@ -381,28 +381,28 @@ class Parser(ErrorHandler):
         statement = None
         if self.current_token is None:
             return None
-        elif self.current_token.type == TokenType.EXIT:
+        elif self.current_token.type == tt.EXIT:
             statement = self.parse_exit()
-        elif self.current_token.type == TokenType.PRINT:
+        elif self.current_token.type == tt.PRINT:
             statement = self.parse_print()
-        elif self.current_token.type in (TokenType.LET, TokenType.BOOL_DEF):
+        elif self.current_token.type in (tt.LET, tt.BOOL_DEF):
             statement = self.parse_let()
-        elif self.current_token.type == TokenType.LEFT_CURLY:
+        elif self.current_token.type == tt.LEFT_CURLY:
             statement = self.parse_scope()
-        elif self.current_token.type == TokenType.IF:
+        elif self.current_token.type == tt.IF:
             statement = self.parse_if()
-        elif self.current_token.type == TokenType.IDENT:
+        elif self.current_token.type == tt.IDENT:
             statement = self.parse_reassign()
-        elif self.current_token.type == TokenType.WHILE:
+        elif self.current_token.type == tt.WHILE:
             statement = self.parse_while()
-        elif self.current_token.type == TokenType.FOR:
+        elif self.current_token.type == tt.FOR:
             statement = self.parse_for_loop()
-        elif self.current_token.type == TokenType.DO:
+        elif self.current_token.type == tt.DO:
             statement = self.parse_do_while()
-        elif self.current_token.type == TokenType.BREAK:
+        elif self.current_token.type == tt.BREAK:
             self.next_token()
             statement = NodeStmtBreak()
-        elif self.current_token.type == TokenType.ENDLINE:
+        elif self.current_token.type == tt.ENDLINE:
             statement = NodeStmtEmpty()
             self.next_token()
         else:

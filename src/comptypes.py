@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Union, Optional
-from hdztokentypes import TokenType
+from hdztokentypes import *
 
 
 #################
@@ -10,7 +10,7 @@ from hdztokentypes import TokenType
 
 @dataclass(slots=True)
 class Token:
-    type: TokenType
+    type: token_type
     line: int
     col: int
     value: Optional[str] = None

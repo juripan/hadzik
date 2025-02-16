@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 from hdzerrors import ErrorHandler
 from comptypes import *
-from hdztokentypes import TokenType 
+import hdztokentypes as tt
 
 
 class Generator(ErrorHandler):
@@ -166,17 +166,17 @@ class Generator(ErrorHandler):
         self.pop_stack("rax")
         self.pop_stack("rbx")
         self.output.append("    cmp rax, rbx\n")
-        if comparison.comp_sign.type == TokenType.IS_EQUAL:
+        if comparison.comp_sign.type == tt.IS_EQUAL:
             self.output.append("    sete al\n")
-        elif comparison.comp_sign.type == TokenType.IS_NOT_EQUAL:
+        elif comparison.comp_sign.type == tt.IS_NOT_EQUAL:
             self.output.append("    setne al\n")
-        elif comparison.comp_sign.type == TokenType.LARGER_THAN:
+        elif comparison.comp_sign.type == tt.LARGER_THAN:
             self.output.append("    setg al\n")
-        elif comparison.comp_sign.type == TokenType.LESS_THAN:
+        elif comparison.comp_sign.type == tt.LESS_THAN:
             self.output.append("    setl al\n")
-        elif comparison.comp_sign.type == TokenType.LARGER_THAN_OR_EQ:
+        elif comparison.comp_sign.type == tt.LARGER_THAN_OR_EQ:
             self.output.append("    setge al\n")
-        elif comparison.comp_sign.type == TokenType.LESS_THAN_OR_EQ:
+        elif comparison.comp_sign.type == tt.LESS_THAN_OR_EQ:
             self.output.append("    setle al\n")
         else:
             self.raise_error("Syntax", "Invalid comparison expression", comparison.comp_sign)
@@ -194,9 +194,9 @@ class Generator(ErrorHandler):
         self.pop_stack("rbx")
         self.output.append("    mov rcx, rax\n")
         self.output.append("    test rbx, rbx\n")
-        if logic_expr.logical_operator.type == TokenType.AND:
+        if logic_expr.logical_operator.type == tt.AND:
             self.output.append("    cmovz rcx, rbx\n")
-        elif logic_expr.logical_operator.type == TokenType.OR:
+        elif logic_expr.logical_operator.type == tt.OR:
             self.output.append("    cmovnz rcx, rbx\n")
         else:
             self.raise_error("Syntax", "Invalid logic expression", logic_expr.logical_operator)
@@ -311,7 +311,7 @@ class Generator(ErrorHandler):
             self.raise_error("Value", f"variable has been already declared: {let_stmt.ident.value}", curr_token=let_stmt.ident)
         location: int = self.stack_size # stack size changes after generating the expression, thats why its saved here
 
-        if let_stmt.type_.type == TokenType.LET:
+        if let_stmt.type_.type == tt.LET:
             word_size: size_words = "QWORD"
             byte_size: size_bytes = 8
             #TODO: maybe handle incorrect types in the parser instead
@@ -320,7 +320,7 @@ class Generator(ErrorHandler):
             elif isinstance(let_stmt.expr.var, NodeTerm) and isinstance(let_stmt.expr.var.var, NodeTermBool):
                 self.raise_error("Type", "cannot assign `bool` to `int`", let_stmt.expr.var.var.bool)
             self.generate_expression(let_stmt.expr)
-        elif let_stmt.type_.type == TokenType.BOOL_DEF:
+        elif let_stmt.type_.type == tt.BOOL_DEF:
             word_size: size_words = "WORD"
             byte_size: size_bytes = 2
             if isinstance(let_stmt.expr.var, NodeBinExpr):
