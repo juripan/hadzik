@@ -296,13 +296,11 @@ class Generator(ErrorHandler):
             self.generate_scope(pred.var.scope)
             self.output.append("    jmp " + end_label + "\n")
             self.output.append(label + ":\n")
-            self.output.append("    ;; --- /elif ---\n")
             if pred.var.pred is not None:
                 self.generate_if_predicate(pred.var.pred, end_label)
         elif isinstance(pred.var, NodeIfPredElse): # type: ignore (here just so the else can catch mistakes)
             self.output.append("    ;; --- else ---\n")
             self.generate_scope(pred.var.scope)
-            self.output.append("    ;; --- /else ---\n")
         else:
             raise ValueError("Unreachable")
 
@@ -360,7 +358,6 @@ class Generator(ErrorHandler):
             self.output.append(f"    mov [rsp + {self.stack_size - location - byte_size}], rax\n")
         else:
             raise ValueError("Unreachable")
-        self.output.append("    ;; --- /var reassign ---\n")
 
     def generate_exit(self, exit_stmt: NodeStmtExit) -> None:
         self.generate_expression(exit_stmt.expr)
@@ -389,7 +386,6 @@ class Generator(ErrorHandler):
             self.output.append(end_label + ":\n")
         else:
             self.output.append(label + ":\n")
-        self.output.append("    ;; --- /if block ---\n")
 
     def generate_while(self, while_stmt: NodeStmtWhile) -> None:
         self.output.append("    ;; --- while loop ---\n")
@@ -409,7 +405,6 @@ class Generator(ErrorHandler):
         
         self.output.append("    jmp " + reset_label + "\n")
         self.output.append(end_label  + ":\n")
-        self.output.append("    ;; --- /while loop ---\n")
         self.loop_end_labels.pop()
 
     def generate_do_while(self, do_while_stmt: NodeStmtDoWhile) -> None:
@@ -431,7 +426,6 @@ class Generator(ErrorHandler):
 
         self.output.append("    jmp " + reset_label + "\n")
         self.output.append(end_label  + ":\n")
-        self.output.append("    ;; --- /do while loop ---\n")
         self.loop_end_labels.pop()
 
     def generate_for(self, for_stmt: NodeStmtFor) -> None:
@@ -460,7 +454,6 @@ class Generator(ErrorHandler):
         self.output.append("    add rsp, " + str(8) + "\n")
         self.stack_size -= self.stack_item_sizes.pop() # does this to remove the variable after the i loop ends
         self.variables.popitem()
-        self.output.append("    ;; --- /for loop ---\n")
         self.loop_end_labels.pop()
 
     def generate_print(self, print_stmt: NodeStmtPrint) -> None:
@@ -481,11 +474,10 @@ class Generator(ErrorHandler):
         pushed_res = self.stack_item_sizes.pop() #it removes the printed expression because it causes a mess in the stack when looping
         self.output.append("    add rsp, " + str(pushed_res) + "\n") #removes the printed expression from the stack
         self.stack_size -= pushed_res #lowers the stack size
-        self.output.append("    ;; --- /print char ---\n")
 
     def generate_statement(self, statement: NodeStmt) -> None:
         """
-        generates a statement based on the node given
+        generates a statement based on the node passed in
         """
         if isinstance(statement.stmt_var, NodeStmtExit):
             self.generate_exit(statement.stmt_var)
@@ -521,16 +513,18 @@ class Generator(ErrorHandler):
             else:
                 self.raise_error("Syntax", "cant break out of a loop when not inside one")
 
-    def generate_program(self) -> str:
+    def generate_program(self) -> list[str]:
         """
         generates the whole assembly based on the nodes that are given,
-        returns a string that contains the assembly
+        returns a list of strings that contains the assembly instructions
         """
-        self.output.append("section .data\n")
-        self.output.append("section .bss\n")
         self.output.append("section .text\n    global _start\n")
         self.output.append("_start:\n")
+
         for stmt in self.main_program.stmts:
             self.generate_statement(stmt)
-        self.output.append("    ;; --- default exit ---\n    mov rax, 60\n    mov rdi, 0\n    syscall" )
-        return "".join(self.output)
+
+        self.output.append("    ;; --- default exit ---\n    mov rax, 60\n    mov rdi, 0\n    syscall\n" )
+        self.output.append("section .data\n")
+        self.output.append("section .bss\n")
+        return self.output

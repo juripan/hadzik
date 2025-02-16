@@ -36,7 +36,7 @@ class Tokenizer(ErrorHandler):
         self.column_number += 1
         self.current_char = self.file_content[self.index] if self.index < len(self.file_content) else None
 
-    def look_ahead(self,step: int = 1) -> str | None:
+    def look_ahead(self, step: int = 1) -> str | None:
         """
         looks ahead step characters from the current character
         """

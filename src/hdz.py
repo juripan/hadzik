@@ -41,7 +41,7 @@ else:
 
 
 with open("./" + filepath_no_extension + ".asm", "w") as f:
-    f.write(final_asm)
+    f.writelines(final_asm)
 
 os.system("nasm -felf64 " + filepath_no_extension + ".asm")
 os.system("ld " + filepath_no_extension + ".o -o " + filepath_no_extension)
