@@ -106,7 +106,7 @@ class Parser(ErrorHandler):
 
             expr = NodeBinExpr(None) if op.type in (
                 tt.PLUS, tt.MINUS, tt.STAR, tt.SLASH, tt.PERCENT
-                ) else NodeLogicExpr(None)
+                ) else NodeExprBool(None)
             
             expr_lhs2 = NodeExpr(None) # prevents a recursion error, god knows why but it makes it work
             
@@ -132,11 +132,11 @@ class Parser(ErrorHandler):
                 expr.var = mod # type: ignore (typechecking is being weird)
             elif op.type in COMPARISONS:
                 expr_lhs2.var = expr_lhs.var
-                comp = NodeBinExprComp(lhs=expr_lhs2, rhs=expr_rhs, comp_sign=op)
+                comp = NodePredExpr(lhs=expr_lhs2, rhs=expr_rhs, comp_sign=op)
                 expr.var = comp # type: ignore (typechecking is being weird)
             elif op.type == tt.AND or op.type == tt.OR:
                 expr_lhs2.var = expr_lhs.var
-                log = NodeBinExprLogic(lhs=expr_lhs2, rhs=expr_rhs, logical_operator=op)
+                log = NodeExprLogic(lhs=expr_lhs2, rhs=expr_rhs, logical_operator=op)
                 expr.var = log # type: ignore (typechecking is being weird)
             else:
                 raise ValueError("unreachable! in parse_expr()")
@@ -289,7 +289,7 @@ class Parser(ErrorHandler):
 
         condition = expr.var.var # gets the NodeTermComp
 
-        if not isinstance(condition, NodeBinExprComp):
+        if not isinstance(condition, NodePredExpr):
             self.raise_error("Syntax", "invalid condition", self.current_token)
 
         self.try_throw_error(tt.COMMA, "Syntax", "expected ','")

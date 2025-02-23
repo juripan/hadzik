@@ -100,14 +100,14 @@ class NodeBinExprMulti:
 
 
 @dataclass(slots=True)
-class NodeBinExprComp:
+class NodePredExpr:
     comp_sign: Token
     lhs: NodeExpr
     rhs: NodeExpr
 
 
 @dataclass(slots=True)
-class NodeBinExprLogic:
+class NodeExprLogic:
     logical_operator: Token
     lhs: NodeExpr
     rhs: NodeExpr
@@ -122,12 +122,12 @@ class NodeBinExpr:
     ]
 
 @dataclass(slots=True)
-class NodeLogicExpr:
-    var: Union[NodeBinExprComp, NodeBinExprLogic, None]
+class NodeExprBool:
+    var: Union[NodePredExpr, NodeExprLogic, None]
 
 @dataclass(slots=True)
 class NodeExpr:
-    var: Union[NodeTerm, NodeBinExpr, NodeLogicExpr, None]
+    var: Union[NodeTerm, NodeBinExpr, NodeExprBool, None]
 
 
 @dataclass(slots=True)
@@ -209,7 +209,7 @@ class NodeStmtDoWhile:
 @dataclass(slots=True)
 class NodeStmtFor:
     ident_def: NodeStmtLet
-    condition: NodeBinExprComp
+    condition: NodePredExpr
     ident_assign: NodeStmtReassign
     scope: NodeScope
 

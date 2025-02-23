@@ -31,7 +31,7 @@ parse_tree = Parser(tokens, content).parse_program()
 if ErrorHandler.debug_mode:
     print(parse_tree)
     print("-" * 130)
-final_asm = Generator(parse_tree, content).generate_program()
+final_asm = Generator(parse_tree, content).gen_program()
 
 
 if "-n" in all_flags and len(non_flags) > 1:
