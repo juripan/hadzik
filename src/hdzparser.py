@@ -14,7 +14,7 @@ class Parser(ErrorHandler):
         self.current_token: Token | None = None
         self.next_token()
 
-    def next_token(self):
+    def next_token(self) -> Token | None:
         self.index += 1
         self.current_token = self.all_tokens[self.index] if self.index < len(self.all_tokens) else None
 
@@ -287,7 +287,7 @@ class Parser(ErrorHandler):
         assert expr is not None, "expr shouldn't be None, handled in the previous if statement"
         assert expr.var is not None, "expr.var shouldn't be None, handled in the previous if statement"
 
-        condition = expr.var.var # gets the NodeTermComp
+        condition = expr.var.var # gets the NodePredExpr
 
         if not isinstance(condition, NodePredExpr):
             self.raise_error("Syntax", "invalid condition", self.current_token)
@@ -377,11 +377,10 @@ class Parser(ErrorHandler):
         
         return NodeStmtPrint(cont)
     
-    def parse_statement(self) -> NodeStmt | None:
+    def parse_statement(self) -> NodeStmt:
+        assert self.current_token is not None, "was checked in the parse_program while loop"
         statement = None
-        if self.current_token is None:
-            return None
-        elif self.current_token.type == tt.EXIT:
+        if self.current_token.type == tt.EXIT:
             statement = self.parse_exit()
         elif self.current_token.type == tt.PRINT:
             statement = self.parse_print()
@@ -415,6 +414,5 @@ class Parser(ErrorHandler):
         program: NodeProgram = NodeProgram(stmts=[])
         while self.current_token is not None:
             stmt = self.parse_statement()
-            assert stmt is not None, "statement should not be None, only if there is a None token"
             program.stmts.append(stmt)
         return program
