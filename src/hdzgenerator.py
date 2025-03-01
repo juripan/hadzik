@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 from hdzerrors import ErrorHandler
 from comptypes import *
 import hdztokentypes as tt
@@ -16,8 +14,8 @@ class Generator(ErrorHandler):
         self.stack_size: size_bytes = 0 # 8 bytes (half of a word) as a unit
         self.stack_item_sizes: list[size_bytes] = [] # same as above
 
-        self.variables: OrderedDict[str, VariableContext] = OrderedDict()
-        self.scopes: list[int] = []
+        self.variables: list[VariableContext] = []
+        self.scopes: list[int] = [0]
         
         self.label_count: int = 0
         self.loop_end_labels: list[str] = []
@@ -102,7 +100,7 @@ class Generator(ErrorHandler):
         self.output.append("    add rsp, " + str(popped_size) + "\n")
         self.stack_size -= popped_size
         for _ in range(pop_count):
-            self.variables.popitem()
+            self.variables.pop()
             self.stack_item_sizes.pop()
         del self.scopes[-1]
 
@@ -127,10 +125,10 @@ class Generator(ErrorHandler):
         elif isinstance(term.var, NodeTermIdent):
             assert term.var.ident.value is not None, "term.var.ident.value shouldn't be None, probably a parsing error"
 
-            if term.var.ident.value not in self.variables.keys():
+            found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == term.var.ident.value, self.variables)) # type: ignore (says types are unknown even though they are known)
+            if not found_vars:
                 self.raise_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
-            var_ctx: VariableContext = self.variables[term.var.ident.value]
-            location, word_size, byte_size = var_ctx.loc, var_ctx.size_w, var_ctx.size_b
+            location, word_size, byte_size = found_vars[-1].loc, found_vars[-1].size_w, found_vars[-1].size_b
             self.push_stack(f"{word_size} [rsp + {self.stack_size - location - byte_size}]") # QWORD 64 bits (word = 16 bits)
             if term.negative:
                 self.pop_stack("rbx")
@@ -305,8 +303,9 @@ class Generator(ErrorHandler):
             raise ValueError("Unreachable")
 
     def gen_let(self, let_stmt: NodeStmtLet):
-        if let_stmt.ident.value in self.variables.keys(): #TODO: make it only check the current scope (allow shadowing of variables)
-            self.raise_error("Value", f"variable has been already declared: {let_stmt.ident.value}", curr_token=let_stmt.ident)
+        found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == let_stmt.ident.value, self.variables[self.scopes[-1]::]))
+        if found_vars:
+            self.raise_error("Value", f"variable has been already declared in this scope: {let_stmt.ident.value}", curr_token=let_stmt.ident)
         location: int = self.stack_size # stack size changes after generating the expression, thats why its saved here
 
         if let_stmt.type_.type == tt.LET:
@@ -331,24 +330,26 @@ class Generator(ErrorHandler):
             raise ValueError("Unreachable")
         
         assert let_stmt.ident.value is not None, "var name shouldn't be None here"
-        self.variables.update({let_stmt.ident.value : VariableContext(location, word_size, byte_size)})
+        self.variables.append(VariableContext(let_stmt.ident.value, location, word_size, byte_size))
 
     def gen_reassign(self, reassign_stmt: NodeStmtReassign):
         self.output.append("    ;; --- var reassign ---\n")
 
         assert reassign_stmt.var.ident.value is not None, "has to be a string, probably a mistake in parsing"
         
-        if reassign_stmt.var.ident.value not in self.variables.keys():
+        found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == reassign_stmt.var.ident.value, self.variables))
+        
+        if not found_vars:
             self.raise_error("Value", "undeclared identifier: " + reassign_stmt.var.ident.value, reassign_stmt.var.ident)
         
         if isinstance(reassign_stmt.var, NodeStmtReassignEq):
             self.gen_expression(reassign_stmt.var.expr)
             self.pop_stack("rax")
-            var_ctx = self.variables[reassign_stmt.var.ident.value]
+            var_ctx = found_vars[-1]
             location, byte_size = var_ctx.loc, var_ctx.size_b
             self.output.append(f"    mov [rsp + {self.stack_size - location - byte_size}], rax\n")
         elif isinstance(reassign_stmt.var, (NodeStmtReassignInc, NodeStmtReassignDec)): # type: ignore (using an else branch to catch errors)
-            var_ctx = self.variables[reassign_stmt.var.ident.value]
+            var_ctx = found_vars[-1]
             location, size_words, byte_size = var_ctx.loc, var_ctx.size_w, var_ctx.size_b
             self.push_stack(f"{size_words} [rsp + {self.stack_size - location - byte_size}]") # QWORD 64 bits (word = 16 bits)
             self.pop_stack("rax")
@@ -453,7 +454,7 @@ class Generator(ErrorHandler):
         self.output.append(end_label  + ":\n")
         self.output.append("    add rsp, " + str(8) + "\n")
         self.stack_size -= self.stack_item_sizes.pop() # does this to remove the variable after the i loop ends
-        self.variables.popitem()
+        self.variables.pop()
         self.loop_end_labels.pop()
 
     def gen_print(self, print_stmt: NodeStmtPrint) -> None:

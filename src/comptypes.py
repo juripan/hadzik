@@ -259,6 +259,7 @@ size_words = str
 
 @dataclass(slots=True)
 class VariableContext:
+    name: str
     loc: int
     size_w: size_words
     size_b: size_bytes
