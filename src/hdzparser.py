@@ -7,13 +7,14 @@ from hdzerrors import ErrorHandler
 
 
 class Parser(ErrorHandler):
+    index: int = -1
+    column_number = -1 # -1 means that theres no column number tracked
+    current_token: Token | None = None
+
     def __init__(self, tokens: list[Token], file_content: str):
         super().__init__(file_content)
-        self.index: int = -1
-        self.column_number = -1 # -1 means that theres no column number tracked
         self.all_tokens: list[Token] = tokens
-        self.current_token: Token | None = None
-        self.next_token()
+        self.next_token() # here to set the first token
 
     def next_token(self) -> Token | None:
         self.index += 1

@@ -10,11 +10,12 @@ def is_valid_keyword_content(char: str) -> bool:
 
 
 class Tokenizer(ErrorHandler):
+    current_char: str | None = None
+    index: int = -1
+    
     def __init__(self, file_content: str) -> None:
         super().__init__(file_content)
-        self.current_char: str | None = None
-        self.index: int = -1
-        self.advance()
+        self.advance() # sets the current char
 
     def search_for_keyword(self, potential_keyword: str) -> Token:
         """
@@ -48,7 +49,7 @@ class Tokenizer(ErrorHandler):
             char: str = self.current_char
             buffer = ""
 
-            if char.isalpha() or char == "_": #makes keywords, if not a keyword makes an identifier
+            if char.isalpha() or char == "_": # makes keywords, if not a keyword makes an identifier
                 buffer += char
                 self.advance()
                 while is_valid_keyword_content(self.current_char):
@@ -57,7 +58,7 @@ class Tokenizer(ErrorHandler):
                 tokens.append(self.search_for_keyword(buffer))
                 buffer = ""
             
-            elif char.isnumeric(): #makes numbers, ints only for now
+            elif char.isnumeric(): # makes numbers, ints only for now
                 buffer += char
                 self.advance()
                 while self.current_char.isnumeric():  # or self.current_char == ".":

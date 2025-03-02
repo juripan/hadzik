@@ -4,39 +4,39 @@ import hdztokentypes as tt
 
 
 class Generator(ErrorHandler):
+    output: list[str] = []
+    stack_size: size_bytes = 0 # 8 bytes (half of a word) as a unit
+    stack_item_sizes: list[size_bytes] = [] # same as above
+
+    variables: list[VariableContext] = [] # stores all variables on the stack
+    scopes: list[int] = [0] # stores the amount of variables in the scope
+    
+    label_count: int = 0
+    loop_end_labels: list[str] = []
+
+    registers_64bit: tuple[str, ...] = ("rax", "rbx", "rcx", "rdx",  
+                                        "rsi", "rdi", "rsp", "rbp", 
+                                        "r8", "r9", "r10", "r11", 
+                                        "r12", "r13", "r14", "r15")
+    
+    registers_16bit: tuple[str, ...] = ("ax", "bx", "cx", "dx", 
+                                        "si", "di", "sp", "bp", 
+                                        "r8w", "r9w", "r10w", "r11w", 
+                                        "r12w", "r13w", "r14w", "r15w")
+    
+    reg_lookup_table: dict[int, tuple[str, ...]] = {
+        2: registers_16bit, 
+        8: registers_64bit
+    }
+    
     def __init__(self, program: NodeProgram, file_content: str) -> None:
         super().__init__(file_content)
         self.main_program: NodeProgram = program
-        self.output: list[str] = []
 
-        self.column_number = -1
-        
-        self.stack_size: size_bytes = 0 # 8 bytes (half of a word) as a unit
-        self.stack_item_sizes: list[size_bytes] = [] # same as above
-
-        self.variables: list[VariableContext] = [] # stores all variables on the stack
-        self.scopes: list[int] = [0] # stores the amount of variables in the scope
-        
-        self.label_count: int = 0
-        self.loop_end_labels: list[str] = []
+        self.column_number = -1 #not sure why its here, don't touch just in case
         
         # self.data_section_index: int = 1
         # self.bss_section_index: int = 2
-
-        self.registers_64bit: tuple[str, ...] = ("rax", "rbx", "rcx", "rdx",  
-                                                "rsi", "rdi", "rsp", "rbp", 
-                                                "r8", "r9", "r10", "r11", 
-                                                "r12", "r13", "r14", "r15")
-        
-        self.registers_16bit: tuple[str, ...] = ("ax", "bx", "cx", "dx", 
-                                                "si", "di", "sp", "bp", 
-                                                "r8w", "r9w", "r10w", "r11w", 
-                                                "r12w", "r13w", "r14w", "r15w")
-        
-        self.reg_lookup_table: dict[int, tuple[str, ...]] = {
-            2: self.registers_16bit, 
-            8: self.registers_64bit
-        }
     
     def push_stack(self, loc: str):
         """
