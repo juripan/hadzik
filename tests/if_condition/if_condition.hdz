@@ -1,0 +1,11 @@
+naj x = 8
+
+kec x < 8{
+    hutor('A')
+} ikec x < 10 {
+    hutor('B')
+} inac {
+    hutor('C')
+}
+
+vychod(x)

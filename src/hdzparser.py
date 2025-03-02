@@ -227,7 +227,7 @@ class Parser(ErrorHandler):
             
             scope = self.parse_scope()
 
-            while self.current_token is not None and self.current_token.type == tt.end_line: # type: ignore (typechecker doesn't see I modify the value with method calls)
+            while self.current_token is not None and self.current_token.type == tt.ENDLINE: # type: ignore (current token can be None)
                 self.next_token()
 
             ifpred = self.parse_ifpred()
