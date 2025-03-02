@@ -1,0 +1,13 @@
+naj x = 8
+naj y = 12
+x++
+
+{
+    naj x = 20
+    x = x + 1
+    kec x == 21 {
+        y++
+    }
+}
+
+vychod(y)

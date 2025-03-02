@@ -210,7 +210,7 @@ class Generator(ErrorHandler):
         """
         generates a binary expression that gets pushed on top of the stack
         """
-        first_reg = self.get_reg(0) #note could cause problems with overwriting results
+        first_reg = self.get_reg(0) #! note could cause problems with overwriting results
         second_reg = self.get_reg(1)
 
         if isinstance(bin_expr.var, NodeBinExprAdd):
@@ -239,7 +239,7 @@ class Generator(ErrorHandler):
             self.gen_expression(bin_expr.var.lhs)
             self.pop_stack(first_reg)
             self.pop_stack(second_reg)
-            self.output.append(f"    idiv {second_reg}\n") #NOTE: idiv is used because div only works with unsigned numbers
+            self.output.append(f"    idiv {second_reg}\n") #! NOTE: idiv is used because div only works with unsigned numbers
             self.push_stack(first_reg)
         elif isinstance(bin_expr.var, NodeBinExprMod):
             self.gen_expression(bin_expr.var.rhs)
