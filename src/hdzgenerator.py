@@ -14,14 +14,14 @@ class Generator(ErrorHandler):
         self.stack_size: size_bytes = 0 # 8 bytes (half of a word) as a unit
         self.stack_item_sizes: list[size_bytes] = [] # same as above
 
-        self.variables: list[VariableContext] = []
-        self.scopes: list[int] = [0]
+        self.variables: list[VariableContext] = [] # stores all variables on the stack
+        self.scopes: list[int] = [0] # stores the amount of variables in the scope
         
         self.label_count: int = 0
         self.loop_end_labels: list[str] = []
         
-        self.data_section_index: int = 1
-        self.bss_section_index: int = 2
+        # self.data_section_index: int = 1
+        # self.bss_section_index: int = 2
 
         self.registers_64bit: tuple[str, ...] = ("rax", "rbx", "rcx", "rdx",  
                                                 "rsi", "rdi", "rsp", "rbp", 
@@ -33,7 +33,10 @@ class Generator(ErrorHandler):
                                                 "r8w", "r9w", "r10w", "r11w", 
                                                 "r12w", "r13w", "r14w", "r15w")
         
-        self.reg_lookup_table: dict[int, tuple[str, ...]] = {2: self.registers_16bit, 8: self.registers_64bit}
+        self.reg_lookup_table: dict[int, tuple[str, ...]] = {
+            2: self.registers_16bit, 
+            8: self.registers_64bit
+        }
     
     def push_stack(self, loc: str):
         """
@@ -44,7 +47,7 @@ class Generator(ErrorHandler):
         elif loc in self.registers_16bit or loc.startswith("WORD"):
             size: size_bytes = 2
         else:
-            raise ValueError("invalid register")
+            raise ValueError("Invalid register / WORD size")
         
         self.output.append("    push " + loc + "\n")
         self.stack_size += size
@@ -333,8 +336,6 @@ class Generator(ErrorHandler):
         self.variables.append(VariableContext(let_stmt.ident.value, location, word_size, byte_size))
 
     def gen_reassign(self, reassign_stmt: NodeStmtReassign):
-        self.output.append("    ;; --- var reassign ---\n")
-
         assert reassign_stmt.var.ident.value is not None, "has to be a string, probably a mistake in parsing"
         
         found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == reassign_stmt.var.ident.value, self.variables))
@@ -343,12 +344,14 @@ class Generator(ErrorHandler):
             self.raise_error("Value", "undeclared identifier: " + reassign_stmt.var.ident.value, reassign_stmt.var.ident)
         
         if isinstance(reassign_stmt.var, NodeStmtReassignEq):
+            self.output.append("    ;; --- var reassign ---\n")
             self.gen_expression(reassign_stmt.var.expr)
             self.pop_stack("rax")
             var_ctx = found_vars[-1]
             location, byte_size = var_ctx.loc, var_ctx.size_b
             self.output.append(f"    mov [rsp + {self.stack_size - location - byte_size}], rax\n")
         elif isinstance(reassign_stmt.var, (NodeStmtReassignInc, NodeStmtReassignDec)): # type: ignore (using an else branch to catch errors)
+            self.output.append("    ;; --- var inc / dec ---\n")
             var_ctx = found_vars[-1]
             location, size_words, byte_size = var_ctx.loc, var_ctx.size_w, var_ctx.size_b
             self.push_stack(f"{size_words} [rsp + {self.stack_size - location - byte_size}]") # QWORD 64 bits (word = 16 bits)

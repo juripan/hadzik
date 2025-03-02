@@ -45,7 +45,6 @@ with open("./" + filepath_no_extension + ".asm", "w") as f:
 
 os.system("nasm -felf64 " + filepath_no_extension + ".asm")
 os.system("ld " + filepath_no_extension + ".o -o " + filepath_no_extension)
-print("Done!")
 
 if "-r" in all_flags:
     print("Program output".center(80, "-"))
