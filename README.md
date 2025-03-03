@@ -17,7 +17,7 @@ All current design principles are subject to change
 
 ## Quick start:
 ```
-$ python3 <path to 'hdz.py'> <path to your '.hdz' file> <flags> <custom path if using the -n flag>
+$ python3 <path to 'hdz.py'> <path to your '.hdz' file> <flags> <custom path if using -n flag>
 ```
 
 ## Flags:
@@ -28,7 +28,7 @@ Flags that are used when running the compiler in the console (more are going to 
 $ python3 hdz.py path/file.hdz -s
 ```
 
-+ -r - after compilation is done runs the compiled file and prints its exit code
++ -r - after compilation is done runs the compiled file and prints its output
 ```
 $ python3 hdz.py path/file.hdz -r
 ```
@@ -41,6 +41,10 @@ $ python3 hdz.py path/file.hdz -n new_path/file2
 + -d - dumps all of the compiler debug information available to the console
 ```
 $ python3 hdz.py path/file.hdz -d
+```
++ --help - displays user manual
+```
+$ python3 hdz.py --help
 ```
 
 Order of flags doesn't matter just the order of paths:

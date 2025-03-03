@@ -102,6 +102,7 @@ class Generator(ErrorHandler):
         popped_size: int = sum(self.stack_item_sizes[-pop_count:])
         self.output.append("    add rsp, " + str(popped_size) + "\n")
         self.stack_size -= popped_size
+
         for _ in range(pop_count):
             self.variables.pop()
             self.stack_item_sizes.pop()
@@ -131,6 +132,7 @@ class Generator(ErrorHandler):
             found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == term.var.ident.value, self.variables)) # type: ignore (says types are unknown even though they are known)
             if not found_vars:
                 self.raise_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
+            
             location, word_size, byte_size = found_vars[-1].loc, found_vars[-1].size_w, found_vars[-1].size_b
             self.push_stack(f"{word_size} [rsp + {self.stack_size - location - byte_size}]") # QWORD 64 bits (word = 16 bits)
             if term.negative:

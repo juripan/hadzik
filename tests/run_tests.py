@@ -13,11 +13,9 @@ def testing(folder: str, out_hadzik: str):
 
     if out_record == out_hadzik:
         print(f"{"\033[92m"}[SUCCESS]{"\033[0m"} \nExpected: {out_record} \nGot: {out_hadzik}")
-        print("---------------------------------------------------------")
         success_count += 1
     else:
         print(f"{"\033[31m"}[FAIL]{"\033[0m"} \nExpected: {out_record} \nGot: {out_hadzik}")
-        print("---------------------------------------------------------")
 
 
 def record(name: str, output: str):
