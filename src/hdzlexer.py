@@ -2,13 +2,6 @@ import hdztokentypes as tt
 from hdzerrors import ErrorHandler
 from comptypes import Token
 
-def is_valid_keyword_content(char: str) -> bool:
-    """
-    used for checking the remaining character in an identifier / keyword
-    """
-    return char.isalpha() or char.isdigit() or char == "_"
-
-
 class Tokenizer(ErrorHandler):
     current_char: str | None = None
     index: int = -1
@@ -25,6 +18,13 @@ class Tokenizer(ErrorHandler):
             return Token(type=tt.KEYWORD_TO_TOKEN_TYPE[potential_keyword], value=None, line=self.line_number, col=self.column_number)
         else:
             return Token(type=tt.IDENT, value=potential_keyword, line=self.line_number, col=self.column_number)
+    
+    @staticmethod
+    def is_valid_keyword_content(char: str) -> bool:
+        """
+        used for checking the remaining character in an identifier / keyword
+        """
+        return char.isalpha() or char.isdigit() or char == "_"
     
     def advance(self):
         """
@@ -52,7 +52,7 @@ class Tokenizer(ErrorHandler):
             if char.isalpha() or char == "_": # makes keywords, if not a keyword makes an identifier
                 buffer += char
                 self.advance()
-                while is_valid_keyword_content(self.current_char):
+                while self.is_valid_keyword_content(self.current_char):
                     buffer += self.current_char
                     self.advance()
                 tokens.append(self.search_for_keyword(buffer))

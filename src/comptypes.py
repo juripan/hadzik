@@ -245,7 +245,7 @@ class NodeScope:
 
 @dataclass(slots=True)
 class NodeProgram:
-    stmts: list[NodeStmt]
+    stmts: list[Optional[NodeStmt]]
 
 
 #####################

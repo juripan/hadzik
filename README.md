@@ -42,6 +42,7 @@ $ python3 hdz.py path/file.hdz -n new_path/file2
 ```
 $ python3 hdz.py path/file.hdz -d
 ```
+
 + --help - displays user manual
 ```
 $ python3 hdz.py --help
@@ -56,7 +57,7 @@ $ python3 hdz.py path/file.hdz -s -r new_path/file2 -n
 ## Dependencies:
 all of the dependencies are listed in the Docker file but for more transparency I will list them here also
 + Python 3.12.3
-+ libraries: sys, os, collections
++ libraries: sys, os, dataclasses, typing
 + NASM version 2.16.01
 + GNU ld 2.42
 

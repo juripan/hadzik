@@ -208,7 +208,7 @@ class Parser(ErrorHandler):
                 self.next_token() # right curly
                 break
         else:
-            self.raise_error("Syntax", "expected '}'", self.current_token)
+            self.raise_error("Syntax", "expected '}'", self.all_tokens[-1])
         
         if self.current_token and self.current_token.type == tt.ENDLINE:
             self.next_token()
@@ -379,8 +379,9 @@ class Parser(ErrorHandler):
         
         return NodeStmtPrint(cont)
     
-    def parse_statement(self) -> NodeStmt:
-        assert self.current_token is not None, "was checked in the parse_program while loop"
+    def parse_statement(self) -> NodeStmt | None:
+        if self.current_token is None:
+            return None
         statement = None
         if self.current_token.type == tt.EXIT:
             statement = self.parse_exit()
