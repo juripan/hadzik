@@ -14,6 +14,20 @@ class Parser(ErrorHandler):
     def __init__(self, tokens: list[Token], file_content: str):
         super().__init__(file_content)
         self.all_tokens: list[Token] = tokens
+        self.map_parse_func: dict[int, function]  = {
+            tt.EXIT: self.parse_exit,
+            tt.PRINT: self.parse_print,
+            tt.LET: self.parse_let,
+            tt.BOOL_DEF: self.parse_let,
+            tt.LEFT_CURLY: self.parse_scope,
+            tt.IF: self.parse_if,
+            tt.IDENT: self.parse_reassign,
+            tt.WHILE: self.parse_while,
+            tt.FOR: self.parse_for_loop,
+            tt.DO: self.parse_do_while,
+            tt.BREAK: self.parse_break,
+            tt.ENDLINE: self.parse_endline,
+        }
         self.next_token() # here to set the first token
 
     def next_token(self) -> Token | None:
@@ -198,6 +212,7 @@ class Parser(ErrorHandler):
         if self.current_token is not None and self.current_token.type == tt.ENDLINE:
             self.next_token()
         
+        start_curly = self.current_token
         self.try_throw_error(tt.LEFT_CURLY, "Syntax", "expected '{'")
         self.next_token()  # left curly
 
@@ -208,7 +223,7 @@ class Parser(ErrorHandler):
                 self.next_token() # right curly
                 break
         else:
-            self.raise_error("Syntax", "expected '}'", self.all_tokens[-1])
+            self.raise_error("Syntax", "unclosed scope starting here", start_curly)
         
         if self.current_token and self.current_token.type == tt.ENDLINE:
             self.next_token()
@@ -379,39 +394,29 @@ class Parser(ErrorHandler):
         
         return NodeStmtPrint(cont)
     
+    def parse_break(self):
+        self.next_token()
+        return NodeStmtBreak()
+
+    def parse_endline(self):
+        self.next_token()
+        return NodeStmtEmpty()
+    
     def parse_statement(self) -> NodeStmt | None:
         if self.current_token is None:
             return None
         statement = None
-        if self.current_token.type == tt.EXIT:
-            statement = self.parse_exit()
-        elif self.current_token.type == tt.PRINT:
-            statement = self.parse_print()
-        elif self.current_token.type in (tt.LET, tt.BOOL_DEF):
-            statement = self.parse_let()
-        elif self.current_token.type == tt.LEFT_CURLY:
-            statement = self.parse_scope()
-        elif self.current_token.type == tt.IF:
-            statement = self.parse_if()
-        elif self.current_token.type == tt.IDENT:
-            statement = self.parse_reassign()
-        elif self.current_token.type == tt.WHILE:
-            statement = self.parse_while()
-        elif self.current_token.type == tt.FOR:
-            statement = self.parse_for_loop()
-        elif self.current_token.type == tt.DO:
-            statement = self.parse_do_while()
-        elif self.current_token.type == tt.BREAK:
-            self.next_token()
-            statement = NodeStmtBreak()
-        elif self.current_token.type == tt.ENDLINE:
-            statement = NodeStmtEmpty()
-            self.next_token()
-        else:
-            self.raise_error("Syntax", "invalid statement form", self.current_token)
+        
+        parse_func: function | None = self.map_parse_func.get(self.current_token.type)
+        
+        if parse_func is None:
+            self.raise_error("Syntax", "invalid statement start", self.current_token)
+        assert parse_func is not None, "shouldn't be None here"
+
+        statement = parse_func() # type: ignore (I know the type but the checker keeps panicking)
         
         assert statement is not None, "statement should never be None, handled by the if statements above"
-        return NodeStmt(stmt_var=statement)
+        return NodeStmt(stmt_var=statement) # type: ignore (I know the type but the checker keeps panicking)
 
     def parse_program(self) -> NodeProgram:
         program: NodeProgram = NodeProgram(stmts=[])
