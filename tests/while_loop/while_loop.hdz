@@ -1,0 +1,5 @@
+naj x = 0
+kim(x < 20){
+    x++
+}
+vychod(x)

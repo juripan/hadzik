@@ -1,0 +1,9 @@
+naj x = 8
+naj y = 2
+
+naj sum = x + y
+naj mult = sum * 2
+naj sub = mult - 5
+naj div = sub / 2
+
+vychod(div)

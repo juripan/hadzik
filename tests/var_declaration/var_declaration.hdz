@@ -1,2 +1,3 @@
 naj x = 45
-vychod(x)
+naj y = x
+vychod(y)

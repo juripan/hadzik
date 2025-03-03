@@ -1,0 +1,1 @@
+stdout: ABCDEFGHIJKLMNOPQRSTUVWXYZ| stderr: | returncode: 0
