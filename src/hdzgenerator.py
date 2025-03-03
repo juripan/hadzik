@@ -528,6 +528,7 @@ class Generator(ErrorHandler):
         self.output.append("_start:\n")
 
         for stmt in self.main_program.stmts:
+            assert stmt is not None, "None statement shouldn't be here"
             self.gen_statement(stmt)
 
         self.output.append("    ;; --- default exit ---\n    mov rax, 60\n    mov rdi, 0\n    syscall\n" )

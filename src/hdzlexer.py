@@ -52,7 +52,7 @@ class Tokenizer(ErrorHandler):
             if char.isalpha() or char == "_": # makes keywords, if not a keyword makes an identifier
                 buffer += char
                 self.advance()
-                while self.is_valid_keyword_content(self.current_char):
+                while self.current_char is not None and self.is_valid_keyword_content(self.current_char): # type: ignore (doesn't think it can be None but definitely can)
                     buffer += self.current_char
                     self.advance()
                 tokens.append(self.search_for_keyword(buffer))
@@ -61,7 +61,7 @@ class Tokenizer(ErrorHandler):
             elif char.isnumeric(): # makes numbers, ints only for now
                 buffer += char
                 self.advance()
-                while self.current_char.isnumeric():  # or self.current_char == ".":
+                while self.current_char is not None and self.current_char.isnumeric():  # type: ignore (can be definitely None)
                     buffer += self.current_char
                     self.advance()
                 type_of_number = tt.INT_LIT  # if "." not in buffer else tt.floating_number
