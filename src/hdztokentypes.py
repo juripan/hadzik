@@ -1,64 +1,63 @@
-#TODO: merge this with comptypes file, maybe add more specific tuples like (comparisons, math_operations, etc.)
 
 token_type = int
 
-# used for enum values
-_num: token_type = -1
 
-def auto() -> token_type:
-    global _num
-    _num += 1
-    return _num
+def auto_generator():
+    num: token_type = 0
+    while num < 50:
+        yield num
+        num += 1
 
+auto = auto_generator()
 
-LEFT_PAREN = auto()
-RIGHT_PAREN = auto()
-LEFT_CURLY = auto()
-RIGHT_CURLY = auto()
+LEFT_PAREN = next(auto)
+RIGHT_PAREN = next(auto)
+LEFT_CURLY = next(auto)
+RIGHT_CURLY = next(auto)
 
-COMMA = auto()
-ENDLINE = auto()
+COMMA = next(auto)
+ENDLINE = next(auto)
 
-EXIT = auto()
-PRINT = auto()
+EXIT = next(auto)
+PRINT = next(auto)
 
-LET = auto()
-BOOL_DEF = auto()
+LET = next(auto)
+BOOL_DEF = next(auto)
 
-IF = auto()
-ELIF = auto()
-ELSE = auto()
-WHILE = auto()
-DO = auto()
-FOR = auto()
-BREAK = auto()
+IF = next(auto)
+ELIF = next(auto)
+ELSE = next(auto)
+WHILE = next(auto)
+DO = next(auto)
+FOR = next(auto)
+BREAK = next(auto)
 
-IDENT = auto()
-CHAR_LIT = auto()
-INT_LIT = auto()
-TRUE = auto()
-FALSE = auto()
+IDENT = next(auto)
+CHAR_LIT = next(auto)
+INT_LIT = next(auto)
+TRUE = next(auto)
+FALSE = next(auto)
 
-PLUS = auto()
-MINUS = auto()
-STAR = auto()
-SLASH = auto()
-PERCENT = auto()
-EQUALS = auto()
+PLUS = next(auto)
+MINUS = next(auto)
+STAR = next(auto)
+SLASH = next(auto)
+PERCENT = next(auto)
+EQUALS = next(auto)
 
-IS_EQUAL = auto()
-IS_NOT_EQUAL = auto()
-LARGER_THAN = auto()
-LESS_THAN = auto()
-LARGER_THAN_OR_EQ = auto()
-LESS_THAN_OR_EQ = auto()
+IS_EQUAL = next(auto)
+IS_NOT_EQUAL = next(auto)
+LARGER_THAN = next(auto)
+LESS_THAN = next(auto)
+LARGER_THAN_OR_EQ = next(auto)
+LESS_THAN_OR_EQ = next(auto)
 
-INCREMENT = auto()
-DECREMENT = auto()
+INCREMENT = next(auto)
+DECREMENT = next(auto)
 
-AND = auto()
-OR = auto()
-NOT = auto()
+AND = next(auto)
+OR = next(auto)
+NOT = next(auto)
 
 # strings of tokens must be what is used in the hadzik syntax
 KEYWORD_TO_TOKEN_TYPE: dict[str, token_type] = {
@@ -88,7 +87,6 @@ assert len(KEYWORD_TO_TOKEN_TYPE) == 16, "exhaustive keyword matching in KEYWORD
 
 COMPARISONS: tuple[token_type, ...] = (IS_EQUAL, IS_NOT_EQUAL, LARGER_THAN, LESS_THAN, LARGER_THAN_OR_EQ, LESS_THAN_OR_EQ)
 
-assert len(COMPARISONS) == 6, "all comparisons should be in COMPARISONS"
 
 def get_prec_level(tt: token_type) -> int | None:
     """
