@@ -12,15 +12,15 @@ from hdzerrors import ErrorHandler
 def hdz_help():
     print(
     """Usage:
-$ python3 <path to 'hdz.py'> <path to your '.hdz' file> <flags> <custom path if using -n flag>
-or using the shebang:
-$ <path to 'hdz.py'> <path to your '.hdz' file> <flags> <custom path if using -n flag>
+    $ python3 <path to 'hdz.py'> <path to your '.hdz' file> <flags> <custom path if using -n flag>
+Or running it like an executable:
+    $ <path with './' to 'hdz.py'> <path to your '.hdz' file> <flags> <custom path if using -n flag>
 Flags:
---help - displays user manual
--s - switches on the east slovak error messages
--r - after compilation is done runs the compiled file and prints its output
--n - determine a path and name of the compiled file
--d - dumps all of the compiler debug information available to the console""")
+    --help - displays user manual
+    -s - switches on the east slovak error messages
+    -r - after compilation is done runs the compiled file and prints its output
+    -n - determine a path and name of the compiled file
+    -d - dumps all of the compiler debug information available to the console""")
     exit(0)
 
 
@@ -64,8 +64,7 @@ def main():
     non_flags: tuple[str, ...] = tuple(filter(lambda x: x[0] != "-", sys.argv))[1:]
 
     if len(sys.argv) < 2:
-        print("Missing arguments run '--help' to show usage", file=sys.stderr)
-        exit(1)
+        hdz_help()
 
     if "--help" in all_flags:
         hdz_help()
@@ -76,7 +75,7 @@ def main():
 
     file_path: str = non_flags[0]
     if not file_path.endswith(".hdz"):
-        print("File extension is missing or invalid (file extension must be .hdz)", file=sys.stderr)
+        print("ERROR: File extension is missing or invalid (file extension must be .hdz)", file=sys.stderr)
         exit(1)
 
     if "-n" in all_flags and len(non_flags) <= 1:
