@@ -31,7 +31,14 @@ def hdz_run(executable: str):
     print(f"Program exited with: {exit_code % 255}") # exit code 1 is 256 for some reason
 
 
-def hdz_to_asm(hdz_src: str) -> list[str]:
+def hdz_to_asm(file_path: str) -> list[str]:
+    try:
+        with open(file_path, "r") as f:
+            hdz_src: str = f.read()
+    except FileNotFoundError:
+        print("ERROR: Nonexistent file / file path", file=sys.stderr)
+        exit(1)
+    
     tokens = Tokenizer(hdz_src).tokenize()
     if ErrorHandler.debug_mode:
         print(tokens)
@@ -44,9 +51,12 @@ def hdz_to_asm(hdz_src: str) -> list[str]:
     return final_asm
 
 
-def asm_to_bin(filepath: str):
-    os.system("nasm -felf64 " + filepath + ".asm")
-    os.system("ld " + filepath + ".o -o " + filepath)
+def asm_to_bin(filepath_no_hdz: str, content: list[str]):
+    with open("./" + filepath_no_hdz + ".asm", "w") as f:
+        f.writelines(content)
+    
+    os.system("nasm -felf64 " + filepath_no_hdz + ".asm")
+    os.system("ld " + filepath_no_hdz + ".o -o " + filepath_no_hdz)
 
 
 def main():
@@ -69,20 +79,17 @@ def main():
         print("File extension is missing or invalid (file extension must be .hdz)", file=sys.stderr)
         exit(1)
 
-    if "-n" in all_flags and len(non_flags) > 1:
+    if "-n" in all_flags and len(non_flags) <= 1:
+        print("ERROR: Missing file path when using the 'n' flag", file=sys.stderr)
+        exit(1)
+    elif "-n" in all_flags:
         filepath_no_hdz = non_flags[1]
     else:
-        filepath_no_hdz = file_path.rsplit(".")[0] # removes the file extension
-
-    with open(file_path, "r") as f:
-        hdz_src: str = f.read()
+        filepath_no_hdz = file_path.rsplit(".", 1)[0] # removes the file extension
     
-    final_asm = hdz_to_asm(hdz_src)
-
-    with open("./" + filepath_no_hdz + ".asm", "w") as f:
-        f.writelines(final_asm)
+    final_asm = hdz_to_asm(file_path)
     
-    asm_to_bin(filepath_no_hdz)
+    asm_to_bin(filepath_no_hdz, final_asm)
 
     if "-r" in all_flags:
         hdz_run(filepath_no_hdz)
