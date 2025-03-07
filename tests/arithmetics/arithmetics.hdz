@@ -4,6 +4,7 @@ naj y = 2
 naj sum = x + y
 naj mult = sum * 2
 naj sub = mult - 5
-naj div = sub / 2
+naj div = sub / -(2 + 8) // -1
+naj res = div + 2
 
-vychod(div)
+vychod(res)

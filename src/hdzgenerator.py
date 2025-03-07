@@ -119,13 +119,13 @@ class Generator(ErrorHandler):
         """
         if ErrorHandler.debug_mode:
             print(term.var)
+        
         if isinstance(term.var, NodeTermInt):
             assert term.var.int_lit.value is not None, "term.var.int_lit.value shouldn't be None, probably a parsing error"
             
             if term.negative:
                 term.var.int_lit.value = "-" + term.var.int_lit.value
-            self.output.append(f"    mov rax, {term.var.int_lit.value}\n")
-            self.push_stack("rax")
+            self.push_stack(f"QWORD {term.var.int_lit.value}")
         elif isinstance(term.var, NodeTermIdent):
             assert term.var.ident.value is not None, "term.var.ident.value shouldn't be None, probably a parsing error"
 
@@ -137,18 +137,17 @@ class Generator(ErrorHandler):
             self.push_stack(f"{word_size} [rsp + {self.stack_size - location - byte_size}]") # QWORD 64 bits (word = 16 bits)
             if term.negative:
                 self.pop_stack("rbx")
-                self.output.append("    mov rax, -1\n")
-                self.output.append("    mul rbx\n")
+                self.output.append("    xor rax, rax\n")
+                self.output.append("    sub rax, rbx\n")
                 self.push_stack("rax")
         elif isinstance(term.var, NodeTermBool):
-            self.output.append(f"    mov ax, {term.var.bool.value}\n")
-            self.push_stack("ax")
+            self.push_stack(f"WORD {term.var.bool.value}")
         elif isinstance(term.var, NodeTermParen):
             self.gen_expression(term.var.expr)
             if term.negative:
                 self.pop_stack("rbx")
-                self.output.append("    mov rax, -1\n")
-                self.output.append("    mul rbx\n")
+                self.output.append("    xor rax, rax\n")
+                self.output.append("    sub rax, rbx\n")
                 self.push_stack("rax")
         elif isinstance(term.var, NodeTermNot):
             self.gen_term(term.var.term) # type: ignore (type checking freaking out)

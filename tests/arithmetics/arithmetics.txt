@@ -1,1 +1,1 @@
-stdout: | stderr: | returncode: 7
+stdout: | stderr: | returncode: 1
