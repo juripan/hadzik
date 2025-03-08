@@ -53,19 +53,25 @@ class Generator(ErrorHandler):
         # self.data_section_index: int = 1
         # self.bss_section_index: int = 2
     
-    def push_stack(self, loc: str):
+    def push_stack(self, loc: str, size_words: str = ""):
         """
         adds a push instruction to the output and updates the stack size 
         """
         #TODO: replace the push instruction with mov so 32 bit and 8 bit values are usable
-        if loc in self.registers_64bit or loc.startswith("QWORD"):
+        if loc in self.registers_64bit or loc.startswith("QWORD") or size_words == "QWORD":
             size: size_bytes = 8
-        elif loc in self.registers_16bit or loc.startswith("WORD"):
+            reg = "rax"
+        elif loc in self.registers_16bit or loc.startswith("WORD") or size_words == "WORD":
             size: size_bytes = 2
+            reg = "ax"
         else:
             raise ValueError("Invalid register / WORD size")
         
-        self.output.append(f"    push {loc}\n")
+        if "WORD" not in loc:
+            self.output.append(f"    mov {size_words}[rbp - {self.stack_size}], {loc} ;push\n")
+        else:
+            self.output.append(f"    mov {reg}, {loc}\n")
+            self.output.append(f"    mov {size_words}[rbp - {self.stack_size}], {reg} ;push\n")
         self.stack_size += size
         self.stack_item_sizes.append(size)
         if ErrorHandler.debug_mode:
@@ -76,8 +82,8 @@ class Generator(ErrorHandler):
         adds a pop instruction to the output and updates the stack size 
         """
         #TODO: replace the pop instruction with mov so 32 bit and 8 bit values are usable
-        self.output.append(f"    pop {reg}\n")
         self.stack_size -= self.stack_item_sizes.pop() # removes and gives the last items size
+        self.output.append(f"    mov {reg}, [rbp - {self.stack_size}] ;pop\n")
         if ErrorHandler.debug_mode:
             print("pop", self.stack_size, self.stack_item_sizes, self.variables)
     
@@ -117,7 +123,6 @@ class Generator(ErrorHandler):
             return # nothing to remove, if its not here then slice accepts all of the stack -> list[0:] == list
 
         popped_size: int = sum(self.stack_item_sizes[-pop_count:])
-        self.output.append(f"    add rsp, {popped_size}\n")
         self.stack_size -= popped_size
 
         for _ in range(pop_count):
@@ -142,7 +147,7 @@ class Generator(ErrorHandler):
             
             if term.negative:
                 term.var.int_lit.value = "-" + term.var.int_lit.value
-            self.push_stack(f"QWORD {term.var.int_lit.value}")
+            self.push_stack(term.var.int_lit.value, "QWORD")
         elif isinstance(term.var, NodeTermIdent):
             assert term.var.ident.value is not None, "term.var.ident.value shouldn't be None, probably a parsing error"
 
@@ -150,15 +155,16 @@ class Generator(ErrorHandler):
             if not found_vars:
                 self.raise_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
             
-            location, word_size, byte_size = found_vars[-1].loc, found_vars[-1].size_w, found_vars[-1].size_b
-            self.push_stack(f"{word_size} [rsp + {self.stack_size - location - byte_size}]") # QWORD 64 bits (word = 16 bits)
+            location, word_size, _ = found_vars[-1].loc, found_vars[-1].size_w, found_vars[-1].size_b
+            self.push_stack(f"{word_size} [rbp - {location}]") # QWORD 64 bits (word = 16 bits)
             if term.negative:
                 self.pop_stack("rbx")
                 self.output.append("    xor rax, rax\n")
                 self.output.append("    sub rax, rbx\n")
                 self.push_stack("rax")
         elif isinstance(term.var, NodeTermBool):
-            self.push_stack(f"WORD {term.var.bool.value}")
+            assert term.var.bool.value is not None, "shouldnt be None here"
+            self.push_stack(term.var.bool.value, "WORD")
         elif isinstance(term.var, NodeTermParen):
             self.gen_expression(term.var.expr)
             if term.negative:
@@ -365,18 +371,18 @@ class Generator(ErrorHandler):
             self.gen_expression(reassign_stmt.var.expr)
             self.pop_stack("rax")
             var_ctx = found_vars[-1]
-            location, byte_size = var_ctx.loc, var_ctx.size_b
-            self.output.append(f"    mov [rsp + {self.stack_size - location - byte_size}], rax\n")
+            location, _ = var_ctx.loc, var_ctx.size_b
+            self.output.append(f"    mov [rbp - {location}], rax\n")
         elif isinstance(reassign_stmt.var, (NodeStmtReassignInc, NodeStmtReassignDec)): # type: ignore (using an else branch to catch errors)
             self.output.append("    ;; --- var inc / dec ---\n")
             var_ctx = found_vars[-1]
-            location, size_words, byte_size = var_ctx.loc, var_ctx.size_w, var_ctx.size_b
-            self.push_stack(f"{size_words} [rsp + {self.stack_size - location - byte_size}]") # QWORD 64 bits (word = 16 bits)
+            location, size_words, _ = var_ctx.loc, var_ctx.size_w, var_ctx.size_b
+            self.push_stack(f"{size_words} [rbp - {location}]") # QWORD 64 bits (word = 16 bits)
             self.pop_stack("rax")
             self.output.append("    inc rax\n" 
                                 if isinstance(reassign_stmt.var, NodeStmtReassignInc) 
                                 else "    dec rax\n")
-            self.output.append(f"    mov [rsp + {self.stack_size - location - byte_size}], rax\n")
+            self.output.append(f"    mov [rbp - {location}], rax\n")
         else:
             raise ValueError("Unreachable")
 
@@ -472,7 +478,6 @@ class Generator(ErrorHandler):
 
         self.output.append(f"    jmp {reset_label}\n")
         self.output.append(f"{end_label}:\n")
-        self.output.append(f"    add rsp, {8}\n") #TODO: might need removal when refactoring the push and pop instructions
         self.stack_size -= self.stack_item_sizes.pop() # does this to remove the variable after the i loop ends
         self.variables.pop()
         self.loop_end_labels.pop()
@@ -486,14 +491,13 @@ class Generator(ErrorHandler):
         else:
             raise ValueError("unreachable")
         
-        expr_loc = f"rsp"
+        expr_loc = f"[rbp - {self.stack_size - self.stack_item_sizes[-1]}]"
         self.output.append("    mov rax, 1\n")
         self.output.append("    mov rdi, 1\n")
-        self.output.append(f"    mov rsi, {expr_loc}\n")
+        self.output.append(f"    lea rsi, {expr_loc}\n")
         self.output.append("    mov rdx, 1\n")
         self.output.append("    syscall\n")
         pushed_res = self.stack_item_sizes.pop() #it removes the printed expression because it causes a mess in the stack when looping
-        self.output.append(f"    add rsp, {pushed_res}\n") #TODO: might need removal when refactoring the push and pop instructions
         self.stack_size -= pushed_res #lowers the stack size
 
     def gen_statement(self, statement: NodeStmt) -> None:
@@ -531,7 +535,7 @@ class Generator(ErrorHandler):
         returns a list of strings that contains the assembly instructions
         """
         self.output.append("section .text\n    global _start\n")
-        self.output.append("_start:\n")
+        self.output.append("_start:\n    mov rbp, rsp\n")
 
         for stmt in self.main_program.stmts:
             assert stmt is not None, "None statement shouldn't make it here"
