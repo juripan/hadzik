@@ -23,6 +23,13 @@ class Generator(ErrorHandler):
         "r8", "r9", "r10", "r11", 
         "r12", "r13", "r14", "r15"
     )
+
+    registers_32bit: tuple[str, ...] = (
+        "eax", "ebx", "ecx", "edx",  
+        "esi", "edi", "esp", "ebp", 
+        "r8d", "r9d", "r10d", "r11d", 
+        "r12d", "r13d", "r14d", "r15d"
+    )
     
     registers_16bit: tuple[str, ...] = (
         "ax", "bx", "cx", "dx", 
@@ -32,8 +39,9 @@ class Generator(ErrorHandler):
     )
     
     reg_lookup_table: dict[int, tuple[str, ...]] = {
-        2: registers_16bit, 
-        8: registers_64bit
+        2: registers_16bit,
+        4: registers_32bit,
+        8: registers_64bit,
     }
     
     def __init__(self, program: NodeProgram, file_content: str) -> None:
@@ -57,7 +65,7 @@ class Generator(ErrorHandler):
         else:
             raise ValueError("Invalid register / WORD size")
         
-        self.output.append("    push " + loc + "\n")
+        self.output.append(f"    push {loc}\n")
         self.stack_size += size
         self.stack_item_sizes.append(size)
         if ErrorHandler.debug_mode:
@@ -68,7 +76,7 @@ class Generator(ErrorHandler):
         adds a pop instruction to the output and updates the stack size 
         """
         #TODO: replace the pop instruction with mov so 32 bit and 8 bit values are usable
-        self.output.append("    pop " + reg + "\n")
+        self.output.append(f"    pop {reg}\n")
         self.stack_size -= self.stack_item_sizes.pop() # removes and gives the last items size
         if ErrorHandler.debug_mode:
             print("pop", self.stack_size, self.stack_item_sizes, self.variables)
@@ -86,7 +94,7 @@ class Generator(ErrorHandler):
         returns a name for a new label based on the amount of labels already created
         """
         self.label_count += 1
-        return "label" + str(self.label_count)
+        return f"label{self.label_count}"
 
     def begin_scope(self) -> None:
         """
@@ -109,7 +117,7 @@ class Generator(ErrorHandler):
             return # nothing to remove, if its not here then slice accepts all of the stack -> list[0:] == list
 
         popped_size: int = sum(self.stack_item_sizes[-pop_count:])
-        self.output.append("    add rsp, " + str(popped_size) + "\n")
+        self.output.append(f"    add rsp, {popped_size}\n")
         self.stack_size -= popped_size
 
         for _ in range(pop_count):
@@ -302,10 +310,10 @@ class Generator(ErrorHandler):
             self.pop_stack(first_reg)
             self.output.append(f"    test {first_reg}, {first_reg}\n")
             
-            self.output.append("    jz " + label + "\n")
+            self.output.append(f"    jz {label}\n")
             self.gen_scope(pred.var.scope)
-            self.output.append("    jmp " + end_label + "\n")
-            self.output.append(label + ":\n")
+            self.output.append(f"    jmp {end_label}\n")
+            self.output.append(f"{label}:\n")
             if pred.var.pred is not None:
                 self.gen_if_predicate(pred.var.pred, end_label)
         elif isinstance(pred.var, NodeIfPredElse): # type: ignore (here just so the else can catch mistakes)
@@ -350,7 +358,7 @@ class Generator(ErrorHandler):
         found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == reassign_stmt.var.ident.value, self.variables))
         
         if not found_vars:
-            self.raise_error("Value", "undeclared identifier: " + reassign_stmt.var.ident.value, reassign_stmt.var.ident)
+            self.raise_error("Value", f"undeclared identifier: {reassign_stmt.var.ident.value}", reassign_stmt.var.ident)
         
         if isinstance(reassign_stmt.var, NodeStmtReassignEq):
             self.output.append("    ;; --- var reassign ---\n")
@@ -388,17 +396,17 @@ class Generator(ErrorHandler):
         self.pop_stack(first_reg)
         self.output.append(f"    test {first_reg}, {first_reg}\n")
 
-        self.output.append("    jz " + label + "\n")
+        self.output.append(f"    jz {label}\n")
         self.gen_scope(if_stmt.scope)
         
         if if_stmt.ifpred is not None:
             end_label = self.create_label()
-            self.output.append("    jmp " + end_label + "\n")
-            self.output.append(label + ":\n")
+            self.output.append(f"    jmp {end_label}\n")
+            self.output.append(f"{label}:\n")
             self.gen_if_predicate(if_stmt.ifpred, end_label)
-            self.output.append(end_label + ":\n")
+            self.output.append(f"{end_label}:\n")
         else:
-            self.output.append(label + ":\n")
+            self.output.append(f"{label}:\n")
 
     def gen_while(self, while_stmt: NodeStmtWhile) -> None:
         self.output.append("    ;; --- while loop ---\n")
@@ -406,7 +414,7 @@ class Generator(ErrorHandler):
         reset_label = self.create_label()
         self.loop_end_labels.append(end_label)
 
-        self.output.append(reset_label  + ":\n")
+        self.output.append(f"{reset_label}:\n")
 
         self.gen_expression(while_stmt.expr)
         first_reg = self.get_reg(0)
@@ -416,8 +424,8 @@ class Generator(ErrorHandler):
 
         self.gen_scope(while_stmt.scope)
         
-        self.output.append("    jmp " + reset_label + "\n")
-        self.output.append(end_label  + ":\n")
+        self.output.append(f"    jmp {reset_label}\n")
+        self.output.append(f"{end_label}:\n")
         self.loop_end_labels.pop()
 
     def gen_do_while(self, do_while_stmt: NodeStmtDoWhile) -> None:
@@ -426,7 +434,7 @@ class Generator(ErrorHandler):
         reset_label = self.create_label()
         self.loop_end_labels.append(end_label)
 
-        self.output.append(reset_label  + ":\n")
+        self.output.append(f"{reset_label}:\n")
 
         self.gen_scope(do_while_stmt.scope)
 
@@ -437,8 +445,8 @@ class Generator(ErrorHandler):
         self.output.append(f"    test {first_reg}, {first_reg}\n")
         self.output.append(f"    jz {end_label}\n")
 
-        self.output.append("    jmp " + reset_label + "\n")
-        self.output.append(end_label  + ":\n")
+        self.output.append(f"    jmp {reset_label}\n")
+        self.output.append(f"{end_label}:\n")
         self.loop_end_labels.pop()
 
     def gen_for(self, for_stmt: NodeStmtFor) -> None:
@@ -449,7 +457,7 @@ class Generator(ErrorHandler):
 
         self.gen_let(for_stmt.ident_def)
 
-        self.output.append(reset_label  + ":\n")
+        self.output.append(f"{reset_label}:\n")
 
         self.gen_predicate_expression(for_stmt.condition)
 
@@ -462,9 +470,9 @@ class Generator(ErrorHandler):
         
         self.gen_reassign(for_stmt.ident_assign)
 
-        self.output.append("    jmp " + reset_label + "\n")
-        self.output.append(end_label  + ":\n")
-        self.output.append("    add rsp, " + str(8) + "\n")
+        self.output.append(f"    jmp {reset_label}\n")
+        self.output.append(f"{end_label}:\n")
+        self.output.append(f"    add rsp, {8}\n") #TODO: might need removal when refactoring the push and pop instructions
         self.stack_size -= self.stack_item_sizes.pop() # does this to remove the variable after the i loop ends
         self.variables.pop()
         self.loop_end_labels.pop()
@@ -485,7 +493,7 @@ class Generator(ErrorHandler):
         self.output.append("    mov rdx, 1\n")
         self.output.append("    syscall\n")
         pushed_res = self.stack_item_sizes.pop() #it removes the printed expression because it causes a mess in the stack when looping
-        self.output.append("    add rsp, " + str(pushed_res) + "\n") #removes the printed expression from the stack
+        self.output.append(f"    add rsp, {pushed_res}\n") #TODO: might need removal when refactoring the push and pop instructions
         self.stack_size -= pushed_res #lowers the stack size
 
     def gen_statement(self, statement: NodeStmt) -> None:
@@ -513,7 +521,7 @@ class Generator(ErrorHandler):
         elif isinstance(statement.stmt_var, NodeStmtBreak):
             if self.loop_end_labels:
                 self.output.append("    ;; --- break --- \n")
-                self.output.append("    jmp " + self.loop_end_labels[-1] + "\n")
+                self.output.append(f"    jmp {self.loop_end_labels[-1]}\n")
             else:
                 self.raise_error("Syntax", "cant break out of a loop when not inside one")
 
