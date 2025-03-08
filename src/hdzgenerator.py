@@ -204,7 +204,6 @@ class Generator(ErrorHandler):
             self.raise_error("Syntax", "Invalid logic expression", logic_expr.logical_operator)
         self.output.append("    test rcx, rcx\n")
         self.output.append("    setne al\n")
-        #self.output.append("    movzx rax, al\n")
         self.push_stack("ax")
 
     def gen_binary_expression(self, bin_expr: NodeBinExpr) -> None:
@@ -486,31 +485,22 @@ class Generator(ErrorHandler):
         """
         if isinstance(statement.stmt_var, NodeStmtExit):
             self.gen_exit(statement.stmt_var)
-
         elif isinstance(statement.stmt_var, NodeStmtLet):
             self.gen_let(statement.stmt_var)
-        
         elif isinstance(statement.stmt_var, NodeScope):
             self.gen_scope(statement.stmt_var)
-        
         elif isinstance(statement.stmt_var, NodeStmtIf):
             self.gen_if_statement(statement.stmt_var)
-
         elif isinstance(statement.stmt_var, NodeStmtReassign):
             self.gen_reassign(statement.stmt_var)
-
         elif isinstance(statement.stmt_var, NodeStmtWhile):
             self.gen_while(statement.stmt_var)
-        
         elif isinstance(statement.stmt_var, NodeStmtDoWhile):
             self.gen_do_while(statement.stmt_var)
-        
         elif isinstance(statement.stmt_var, NodeStmtFor):
             self.gen_for(statement.stmt_var)
-        
         elif isinstance(statement.stmt_var, NodeStmtPrint):
             self.gen_print(statement.stmt_var)
-
         elif isinstance(statement.stmt_var, NodeStmtBreak):
             if self.loop_end_labels:
                 self.output.append("    ;; --- break --- \n")
@@ -527,7 +517,7 @@ class Generator(ErrorHandler):
         self.output.append("_start:\n")
 
         for stmt in self.main_program.stmts:
-            assert stmt is not None, "None statement shouldn't be here"
+            assert stmt is not None, "None statement shouldn't make it here"
             self.gen_statement(stmt)
 
         self.output.append("    ;; --- default exit ---\n    mov rax, 60\n    mov rdi, 0\n    syscall\n" )

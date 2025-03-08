@@ -1,0 +1,9 @@
+naj x = 0
+
+kim 1 {
+    kec x == 5{
+        konec
+    }
+    x++
+}
+vychod(x)
