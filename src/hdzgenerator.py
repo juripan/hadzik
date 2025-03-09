@@ -37,8 +37,16 @@ class Generator(ErrorHandler):
         "r8w", "r9w", "r10w", "r11w", 
         "r12w", "r13w", "r14w", "r15w"
     )
+
+    registers_8bit: tuple[str, ...] = (
+        "al", "bl", "cl", "dl", 
+        "sil", "dil", "spl", "bpl", 
+        "r8b", "r9b", "r10b", "r11b", 
+        "r12b", "r13b", "r14b", "r15b"
+    )
     
     reg_lookup_table: dict[int, tuple[str, ...]] = {
+        1: registers_8bit,
         2: registers_16bit,
         4: registers_32bit,
         8: registers_64bit,
@@ -60,9 +68,15 @@ class Generator(ErrorHandler):
         if loc in self.registers_64bit or loc.startswith("QWORD") or size_words == "QWORD":
             size: size_bytes = 8
             reg = "rax"
+        elif loc in self.registers_32bit or loc.startswith("DWORD") or size_words == "DWORD":
+            size: size_bytes = 4
+            reg = "eax"
         elif loc in self.registers_16bit or loc.startswith("WORD") or size_words == "WORD":
             size: size_bytes = 2
             reg = "ax"
+        elif loc in self.registers_8bit or loc.startswith("BYTE") or size_words == "BYTE":
+            size: size_bytes = 2
+            reg = "al"
         else:
             raise ValueError("Invalid register / WORD size")
         
@@ -145,7 +159,7 @@ class Generator(ErrorHandler):
             
             if term.negative:
                 term.var.int_lit.value = "-" + term.var.int_lit.value
-            self.push_stack(term.var.int_lit.value, "QWORD")
+            self.push_stack(term.var.int_lit.value, "DWORD")
         elif isinstance(term.var, NodeTermIdent):
             assert term.var.ident.value is not None, "term.var.ident.value shouldn't be None, probably a parsing error"
 
@@ -153,7 +167,7 @@ class Generator(ErrorHandler):
             if not found_vars:
                 self.raise_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
             
-            location, word_size, _ = found_vars[-1].loc, found_vars[-1].size_w, found_vars[-1].size_b
+            location, word_size = found_vars[-1].loc, found_vars[-1].size_w
             self.push_stack(f"{word_size} [rbp - {location}]") # QWORD 64 bits (word = 16 bits)
             if term.negative:
                 ra = self.get_reg(0)
@@ -302,8 +316,8 @@ class Generator(ErrorHandler):
             self.gen_bool_expression(expression.var)
     
     def gen_char(self, char: NodeTermChar) -> None:
-        self.output.append(f"    mov rax, {char.char.value}\n")
-        self.push_stack("rax")
+        assert char.char.value is not None, "char should have value here"
+        self.push_stack(char.char.value, "BYTE")
 
     def gen_scope(self, scope: NodeScope) -> None:
         self.begin_scope()
@@ -343,8 +357,8 @@ class Generator(ErrorHandler):
         location: int = self.stack_size # stack size changes after generating the expression, thats why its saved here
 
         if let_stmt.type_.type == tt.LET:
-            word_size: size_words = "QWORD"
-            byte_size: size_bytes = 8
+            word_size: size_words = "DWORD"
+            byte_size: size_bytes = 4
             #TODO: maybe handle incorrect types in the parser instead
             if isinstance(let_stmt.expr.var, NodeExprBool):
                 self.raise_error("Type", "cannot assign a boolean expression to `int`")

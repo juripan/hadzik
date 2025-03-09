@@ -2,7 +2,7 @@
 
 ## Variables
 ### Declaration:
-+ naj \*ident\* = \*value\* - creates a 64-bit integer with a given value on the stack
++ naj \*ident\* = \*value\* - creates a 32-bit integer with a given value on the stack
 ```
 naj y = 5
 ```
