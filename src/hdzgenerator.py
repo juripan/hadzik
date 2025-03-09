@@ -57,7 +57,6 @@ class Generator(ErrorHandler):
         """
         adds a push instruction to the output and updates the stack size 
         """
-        #TODO: replace the push instruction with mov so 32 bit and 8 bit values are usable
         if loc in self.registers_64bit or loc.startswith("QWORD") or size_words == "QWORD":
             size: size_bytes = 8
             reg = "rax"
@@ -81,7 +80,6 @@ class Generator(ErrorHandler):
         """
         adds a pop instruction to the output and updates the stack size 
         """
-        #TODO: replace the pop instruction with mov so 32 bit and 8 bit values are usable
         self.stack_size -= self.stack_item_sizes.pop() # removes and gives the last items size
         self.output.append(f"    mov {reg}, [rbp - {self.stack_size}] ;pop\n")
         if ErrorHandler.debug_mode:
@@ -158,28 +156,33 @@ class Generator(ErrorHandler):
             location, word_size, _ = found_vars[-1].loc, found_vars[-1].size_w, found_vars[-1].size_b
             self.push_stack(f"{word_size} [rbp - {location}]") # QWORD 64 bits (word = 16 bits)
             if term.negative:
-                self.pop_stack("rbx")
-                self.output.append("    xor rax, rax\n")
-                self.output.append("    sub rax, rbx\n")
-                self.push_stack("rax")
+                ra = self.get_reg(0)
+                rb = self.get_reg(1)
+                self.pop_stack(rb)
+                self.output.append(f"    xor {ra}, {ra}\n")
+                self.output.append(f"    sub {ra}, {rb}\n")
+                self.push_stack(ra)
         elif isinstance(term.var, NodeTermBool):
             assert term.var.bool.value is not None, "shouldnt be None here"
             self.push_stack(term.var.bool.value, "WORD")
         elif isinstance(term.var, NodeTermParen):
             self.gen_expression(term.var.expr)
             if term.negative:
-                self.pop_stack("rbx")
-                self.output.append("    xor rax, rax\n")
-                self.output.append("    sub rax, rbx\n")
-                self.push_stack("rax")
+                ra = self.get_reg(0)
+                rb = self.get_reg(1)
+                self.pop_stack(rb)
+                self.output.append(f"    xor {ra}, {ra}\n")
+                self.output.append(f"    sub {ra}, {rb}\n")
+                self.push_stack(ra)
         elif isinstance(term.var, NodeTermNot):
             self.gen_term(term.var.term) # type: ignore (type checking freaking out)
-            self.pop_stack("rbx")
-            self.output.append("    xor eax, eax\n")
-            self.output.append("    test rbx, rbx\n")
+            ra = self.get_reg(0)
+            rb = self.get_reg(1)
+            self.pop_stack(rb)
+            self.output.append(f"    xor {ra}, {ra}\n")
+            self.output.append(f"    test {rb}, {rb}\n")
             self.output.append("    sete al\n")
-            self.output.append("    movzx rax, al\n")
-            self.push_stack("rax")
+            self.push_stack(ra)
     
     def gen_predicate_expression(self, comparison: NodePredExpr) -> None:
         """
@@ -188,9 +191,11 @@ class Generator(ErrorHandler):
         """
         self.gen_expression(comparison.rhs)
         self.gen_expression(comparison.lhs)
-        self.pop_stack("rax")
-        self.pop_stack("rbx")
-        self.output.append("    cmp rax, rbx\n")
+        ra = self.get_reg(0)
+        rb = self.get_reg(1)
+        self.pop_stack(ra)
+        self.pop_stack(rb)
+        self.output.append(f"    cmp {ra}, {rb}\n")
         if comparison.comp_sign.type == tt.IS_EQUAL:
             self.output.append("    sete al\n")
         elif comparison.comp_sign.type == tt.IS_NOT_EQUAL:
@@ -205,7 +210,7 @@ class Generator(ErrorHandler):
             self.output.append("    setle al\n")
         else:
             self.raise_error("Syntax", "Invalid comparison expression", comparison.comp_sign)
-        #self.output.append("    movzx rax, al\n")
+        self.output.append(f"    movzx ax, al\n")
         self.push_stack("ax")
 
     def gen_logical_expression(self, logic_expr: NodeExprLogic) -> None:
@@ -215,60 +220,63 @@ class Generator(ErrorHandler):
         """
         self.gen_expression(logic_expr.rhs)
         self.gen_expression(logic_expr.lhs)
-        self.pop_stack("rax")
-        self.pop_stack("rbx")
-        self.output.append("    mov rcx, rax\n")
-        self.output.append("    test rbx, rbx\n")
+        ra = self.get_reg(0)
+        rb = self.get_reg(1)
+        self.pop_stack(ra)
+        self.pop_stack(rb)
+        self.output.append(f"    mov cx, {ra}\n")
+        self.output.append(f"    test {rb}, {rb}\n")
         if logic_expr.logical_operator.type == tt.AND:
-            self.output.append("    cmovz rcx, rbx\n")
+            self.output.append(f"    cmovz cx, {rb}\n")
         elif logic_expr.logical_operator.type == tt.OR:
-            self.output.append("    cmovnz rcx, rbx\n")
+            self.output.append(f"    cmovnz cx, {rb}\n")
         else:
             self.raise_error("Syntax", "Invalid logic expression", logic_expr.logical_operator)
-        self.output.append("    test rcx, rcx\n")
+        self.output.append(f"    test {ra}, {ra}\n")
         self.output.append("    setne al\n")
-        self.push_stack("ax")
+        self.output.append(f"    movzx {ra}, al\n")
+        self.push_stack(ra)
 
     def gen_binary_expression(self, bin_expr: NodeBinExpr) -> None:
         """
         generates a binary expression that gets pushed on top of the stack
         """
-        first_reg = self.get_reg(0) #! note could cause problems with overwriting results
-        second_reg = self.get_reg(1)
+        ra = self.get_reg(0) #! note could cause problems with overwriting results
+        rb = self.get_reg(1)
 
         if isinstance(bin_expr.var, NodeBinExprAdd):
             self.gen_expression(bin_expr.var.rhs)
             self.gen_expression(bin_expr.var.lhs)
-            self.pop_stack(first_reg)
-            self.pop_stack(second_reg)
-            self.output.append(f"    add {first_reg}, {second_reg}\n")
-            self.push_stack(first_reg)
+            self.pop_stack(ra)
+            self.pop_stack(rb)
+            self.output.append(f"    add {ra}, {rb}\n")
+            self.push_stack(ra)
         elif isinstance(bin_expr.var, NodeBinExprMulti):
             self.gen_expression(bin_expr.var.rhs)
             self.gen_expression(bin_expr.var.lhs)
-            self.pop_stack(first_reg)
-            self.pop_stack(second_reg)
-            self.output.append(f"    mul {second_reg}\n")
-            self.push_stack(first_reg)
+            self.pop_stack(ra)
+            self.pop_stack(rb)
+            self.output.append(f"    mul {rb}\n")
+            self.push_stack(ra)
         elif isinstance(bin_expr.var, NodeBinExprSub):
             self.gen_expression(bin_expr.var.rhs)
             self.gen_expression(bin_expr.var.lhs)
-            self.pop_stack(first_reg)
-            self.pop_stack(second_reg)
-            self.output.append(f"    sub {first_reg}, {second_reg}\n")
-            self.push_stack(first_reg)
+            self.pop_stack(ra)
+            self.pop_stack(rb)
+            self.output.append(f"    sub {ra}, {rb}\n")
+            self.push_stack(ra)
         elif isinstance(bin_expr.var, NodeBinExprDiv):
             self.gen_expression(bin_expr.var.rhs)
             self.gen_expression(bin_expr.var.lhs)
-            self.pop_stack(first_reg)
-            self.pop_stack(second_reg)
-            self.output.append(f"    idiv {second_reg}\n") #! NOTE: idiv is used because div only works with unsigned numbers
-            self.push_stack(first_reg)
+            self.pop_stack(ra)
+            self.pop_stack(rb)
+            self.output.append(f"    idiv {rb}\n") #! NOTE: idiv is used because div only works with unsigned numbers
+            self.push_stack(ra)
         elif isinstance(bin_expr.var, NodeBinExprMod):
             self.gen_expression(bin_expr.var.rhs)
             self.gen_expression(bin_expr.var.lhs)
-            self.pop_stack(first_reg)
-            self.pop_stack(second_reg)
+            self.pop_stack(ra)
+            self.pop_stack(rb)
             self.output.append("    mov rdx, 0\n")
             self.output.append("    cqo\n") # sign extends so the modulus result can be negative
             self.output.append("    idiv rbx\n")
@@ -369,20 +377,22 @@ class Generator(ErrorHandler):
         if isinstance(reassign_stmt.var, NodeStmtReassignEq):
             self.output.append("    ;; --- var reassign ---\n")
             self.gen_expression(reassign_stmt.var.expr)
-            self.pop_stack("rax")
+            ra = self.get_reg(0)
+            self.pop_stack(ra)
             var_ctx = found_vars[-1]
-            location, _ = var_ctx.loc, var_ctx.size_b
-            self.output.append(f"    mov [rbp - {location}], rax\n")
+            location = var_ctx.loc
+            self.output.append(f"    mov [rbp - {location}], {ra}\n")
         elif isinstance(reassign_stmt.var, (NodeStmtReassignInc, NodeStmtReassignDec)): # type: ignore (using an else branch to catch errors)
             self.output.append("    ;; --- var inc / dec ---\n")
             var_ctx = found_vars[-1]
-            location, size_words, _ = var_ctx.loc, var_ctx.size_w, var_ctx.size_b
+            location, size_words = var_ctx.loc, var_ctx.size_w
             self.push_stack(f"{size_words} [rbp - {location}]") # QWORD 64 bits (word = 16 bits)
-            self.pop_stack("rax")
-            self.output.append("    inc rax\n" 
+            ra = self.get_reg(0)
+            self.pop_stack(ra)
+            self.output.append(f"    inc {ra}\n" 
                                 if isinstance(reassign_stmt.var, NodeStmtReassignInc) 
-                                else "    dec rax\n")
-            self.output.append(f"    mov [rbp - {location}], rax\n")
+                                else f"    dec {ra}\n")
+            self.output.append(f"    mov [rbp - {location}], {ra}\n")
         else:
             raise ValueError("Unreachable")
 
@@ -390,7 +400,8 @@ class Generator(ErrorHandler):
         self.gen_expression(exit_stmt.expr)
         self.output.append("    ;; --- exit ---\n")
         self.output.append("    mov rax, 60\n")
-        self.pop_stack("rdi")
+        rdi = self.get_reg(5) # rdi / di is 5th register
+        self.pop_stack(rdi)
         self.output.append("    syscall\n")
 
     def gen_if_statement(self, if_stmt: NodeStmtIf) -> None:

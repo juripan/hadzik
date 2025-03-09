@@ -1,0 +1,14 @@
+naj x = 10
+naj y = 5
+naj t = -5
+
+kec (x > y aj y > t) aj x > t{
+    hutor('A')
+}
+kec x == 10 abo y == 10{
+    hutor('B')
+}
+
+kec ne(x == 15){
+    hutor('C')
+}
