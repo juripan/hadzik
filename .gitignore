@@ -12,6 +12,8 @@ __pycache__/
 .vscode/
 # testing features in asm before adding to the language
 asm_testing/
+# testing parsing expressions in a separate file before implementing
+testparsing.py
 # Object and assembly files created by compilation
 *.o
 *.asm
