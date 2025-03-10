@@ -6,7 +6,7 @@
 ```
 naj y = 5
 ```
-+ bul \*ident\* = \*value\* - creates a 16-bit boolean with a given value on the stack
++ bul \*ident\* = \*value\* - creates a 8-bit boolean with a given value on the stack
 ```
 bul x = pravda
 ```

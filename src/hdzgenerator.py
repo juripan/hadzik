@@ -75,12 +75,12 @@ class Generator(ErrorHandler):
             size: size_bytes = 2
             reg = "ax"
         elif loc in self.registers_8bit or loc.startswith("BYTE") or size_words == "BYTE":
-            size: size_bytes = 2
+            size: size_bytes = 1
             reg = "al"
         else:
             raise ValueError("Invalid register / WORD size")
         
-        if "WORD" not in loc:
+        if "[" not in loc:
             self.output.append(f"    mov {size_words}[rbp - {self.stack_size}], {loc} ;push\n")
         else:
             self.output.append(f"    mov {reg}, {loc}\n")
@@ -142,10 +142,6 @@ class Generator(ErrorHandler):
             self.stack_item_sizes.pop()
         del self.scopes[-1]
 
-    def gen_boolean(self, bool: NodeTermBool) -> None:
-        self.output.append(f"    mov ax, {bool.bool.value}\n")
-        self.push_stack("ax")
-
     def gen_term(self, term: NodeTerm) -> None:
         """
         generates a term, a term being a variable or a number, 
@@ -177,8 +173,8 @@ class Generator(ErrorHandler):
                 self.output.append(f"    sub {ra}, {rb}\n")
                 self.push_stack(ra)
         elif isinstance(term.var, NodeTermBool):
-            assert term.var.bool.value is not None, "shouldnt be None here"
-            self.push_stack(term.var.bool.value, "WORD")
+            assert term.var.bool.value is not None, "shouldn't be None here"
+            self.push_stack(term.var.bool.value, "BYTE")
         elif isinstance(term.var, NodeTermParen):
             self.gen_expression(term.var.expr)
             if term.negative:
@@ -224,8 +220,7 @@ class Generator(ErrorHandler):
             self.output.append("    setle al\n")
         else:
             self.raise_error("Syntax", "Invalid comparison expression", comparison.comp_sign)
-        self.output.append(f"    movzx ax, al\n")
-        self.push_stack("ax")
+        self.push_stack("al")
 
     def gen_logical_expression(self, logic_expr: NodeExprLogic) -> None:
         """
@@ -236,20 +231,25 @@ class Generator(ErrorHandler):
         self.gen_expression(logic_expr.lhs)
         ra = self.get_reg(0)
         rb = self.get_reg(1)
+        rc = "cl"
         self.pop_stack(ra)
         self.pop_stack(rb)
-        self.output.append(f"    mov cx, {ra}\n")
+        self.output.append(f"    mov {rc}, {ra}\n")
         self.output.append(f"    test {rb}, {rb}\n")
+
+        label = self.create_label()
         if logic_expr.logical_operator.type == tt.AND:
-            self.output.append(f"    cmovz cx, {rb}\n")
+            self.output.append(f"    jnz {label}\n")
+            self.output.append(f"    mov {rc}, {rb}\n")
         elif logic_expr.logical_operator.type == tt.OR:
-            self.output.append(f"    cmovnz cx, {rb}\n")
+            self.output.append(f"    jz {label}\n")
+            self.output.append(f"    mov {rc}, {rb}\n")
         else:
             self.raise_error("Syntax", "Invalid logic expression", logic_expr.logical_operator)
+        self.output.append(f"{label}:\n")
         self.output.append(f"    test {ra}, {ra}\n")
         self.output.append("    setne al\n")
-        self.output.append(f"    movzx {ra}, al\n")
-        self.push_stack(ra)
+        self.push_stack("al")
 
     def gen_binary_expression(self, bin_expr: NodeBinExpr) -> None:
         """
@@ -291,10 +291,11 @@ class Generator(ErrorHandler):
             self.gen_expression(bin_expr.var.lhs)
             self.pop_stack(ra)
             self.pop_stack(rb)
-            self.output.append("    mov rdx, 0\n")
+            self.output.append("    xor rdx, rdx\n")
             self.output.append("    cqo\n") # sign extends so the modulus result can be negative
-            self.output.append("    idiv rbx\n")
-            self.push_stack("rdx") # assembly stores the modulus in rdx after the standard division instruction
+            self.output.append(f"    idiv {rb}\n")
+            #TODO: make division be generic for any size
+            self.push_stack("edx") # assembly stores the modulus in rdx after the standard division instruction
         else:
             self.raise_error("Generator", "failed to generate binary expression")
 
@@ -357,6 +358,7 @@ class Generator(ErrorHandler):
         location: int = self.stack_size # stack size changes after generating the expression, thats why its saved here
 
         if let_stmt.type_.type == tt.LET:
+            self.output.append("    ;; --- let var declaration ---\n")
             word_size: size_words = "DWORD"
             byte_size: size_bytes = 4
             #TODO: maybe handle incorrect types in the parser instead
@@ -366,8 +368,9 @@ class Generator(ErrorHandler):
                 self.raise_error("Type", "cannot assign `bool` to `int`", let_stmt.expr.var.var.bool)
             self.gen_expression(let_stmt.expr)
         elif let_stmt.type_.type == tt.BOOL_DEF:
-            word_size: size_words = "WORD"
-            byte_size: size_bytes = 2
+            self.output.append("    ;; --- bul var declaration ---\n")
+            word_size: size_words = "BYTE"
+            byte_size: size_bytes = 1
             if isinstance(let_stmt.expr.var, NodeBinExpr):
                 self.raise_error("Type", "cannot assign `int` to `bool`")
             elif let_stmt.expr.var is not None and isinstance(let_stmt.expr.var.var, NodeTermInt):
@@ -415,7 +418,7 @@ class Generator(ErrorHandler):
         self.output.append("    ;; --- exit ---\n")
         self.output.append("    mov rax, 60\n")
         rdi = self.get_reg(5) # rdi / di is 5th register
-        self.pop_stack(rdi)
+        self.pop_stack(rdi) #TODO: fix for booleans
         self.output.append("    syscall\n")
 
     def gen_if_statement(self, if_stmt: NodeStmtIf) -> None:

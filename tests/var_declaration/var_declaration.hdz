@@ -1,3 +1,4 @@
 naj x = 45
+bul n = pravda
 naj y = x
-vychod(y)
+vychod(x)

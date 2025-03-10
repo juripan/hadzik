@@ -55,8 +55,9 @@ def asm_to_bin(filepath_no_hdz: str, content: list[str]):
     with open("./" + filepath_no_hdz + ".asm", "w") as f:
         f.writelines(content)
     
-    os.system("nasm -felf64 " + filepath_no_hdz + ".asm")
-    os.system("ld " + filepath_no_hdz + ".o -o " + filepath_no_hdz)
+    if os.system("nasm -felf64 " + filepath_no_hdz + ".asm") or os.system("ld " + filepath_no_hdz + ".o -o " + filepath_no_hdz):
+        print("ERROR: assembly failed", file=sys.stderr)
+        exit(1)
 
 
 def main():
