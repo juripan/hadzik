@@ -1,3 +1,5 @@
+<!--TODO: rewrite the expression grammar to reflect the implementation-->
+
 $$
 \begin{align*}
     [\text{Program}] &\to
@@ -22,13 +24,12 @@ $$
 
     [\text{IdentDef}] &\to
     \begin{cases}
-        naj \space \text{ident} = [\text{Expr}] | [\text{BinExpr}]\\
-        bul \space \text{ident} = [\text{Term}] | [\text{LogicExpr}]\\
+        naj \space \text{ident} = [\text{Expr}]\\
+        bul \space \text{ident} = [\text{LogicExpr}]\\
     \end{cases}\\
 
     [\text{IdentAssign}] &\to
     \begin{cases}
-        \text{ident} = [\text{Txt}]\\
         \text{ident} = [\text{Expr}]\\
         \text{ident}++\\
         \text{ident}--\\
