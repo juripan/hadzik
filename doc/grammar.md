@@ -10,7 +10,7 @@ $$
     [Stmt] &\to
     \begin{cases}
         vychod([\text{Expr}])\\
-        hutor([[\text{Expr}]] | [[\text{Txt}]]) \text{TODO rework this}\\
+        hutor(\text{char}) \\
         [\text{IdentDef}]\\
         [\text{IdentAssign}]\\
         [\text{Scope}]\\

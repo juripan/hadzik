@@ -357,7 +357,7 @@ class Generator(ErrorHandler):
             self.raise_error("Value", f"variable has been already declared in this scope: {let_stmt.ident.value}", curr_token=let_stmt.ident)
         location: int = self.stack_size # stack size changes after generating the expression, thats why its saved here
 
-        if let_stmt.type_.type == tt.LET:
+        if let_stmt.type_.type == tt.INT_DEF:
             self.output.append("    ;; --- let var declaration ---\n")
             word_size: size_words = "DWORD"
             byte_size: size_bytes = 4
@@ -418,7 +418,7 @@ class Generator(ErrorHandler):
         self.output.append("    ;; --- exit ---\n")
         self.output.append("    mov rax, 60\n")
         rdi = self.get_reg(5) # rdi / di is 5th register
-        self.pop_stack(rdi) #TODO: fix for booleans
+        self.pop_stack(rdi)
         self.output.append("    syscall\n")
 
     def gen_if_statement(self, if_stmt: NodeStmtIf) -> None:

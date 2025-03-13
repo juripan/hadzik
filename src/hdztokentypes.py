@@ -21,7 +21,7 @@ ENDLINE = next(auto)
 EXIT = next(auto)
 PRINT = next(auto)
 
-LET = next(auto)
+INT_DEF = next(auto)
 BOOL_DEF = next(auto)
 
 IF = next(auto)
@@ -64,7 +64,7 @@ KEYWORD_TO_TOKEN_TYPE: dict[str, token_type] = {
     "vychod": EXIT,
     "hutor": PRINT,
 
-    "naj": LET,
+    "naj": INT_DEF,
     "bul": BOOL_DEF,
 
     "kec": IF,

@@ -17,7 +17,7 @@ class Parser(ErrorHandler):
         self.map_parse_func: dict[int, function]  = {
             tt.EXIT: self.parse_exit,
             tt.PRINT: self.parse_print,
-            tt.LET: self.parse_let,
+            tt.INT_DEF: self.parse_let,
             tt.BOOL_DEF: self.parse_let,
             tt.LEFT_CURLY: self.parse_scope,
             tt.IF: self.parse_if,
@@ -171,7 +171,7 @@ class Parser(ErrorHandler):
         self.next_token()
 
         assert type_def is not None, "type_def should never be None"
-        if type_def.type in (tt.LET, tt.BOOL_DEF):
+        if type_def.type in (tt.INT_DEF, tt.BOOL_DEF):
             value = self.parse_expr()
         else:
             value = None
