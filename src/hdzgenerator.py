@@ -164,14 +164,11 @@ class Generator(ErrorHandler):
                 self.raise_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
             
             location, word_size = found_vars[-1].loc, found_vars[-1].size_w
+
             self.push_stack(f"{word_size} [rbp - {location}]") # QWORD 64 bits (word = 16 bits)
+            
             if term.negative:
-                ra = self.get_reg(0)
-                rb = self.get_reg(1)
-                self.pop_stack(rb)
-                self.output.append(f"    xor {ra}, {ra}\n")
-                self.output.append(f"    sub {ra}, {rb}\n")
-                self.push_stack(ra)
+                self.output.append(f"    neg {word_size}[rbp - {self.stack_size - self.stack_item_sizes[-1]}]\n")
         elif isinstance(term.var, NodeTermBool):
             assert term.var.bool.value is not None, "shouldn't be None here"
             self.push_stack(term.var.bool.value, "BYTE")
@@ -179,10 +176,8 @@ class Generator(ErrorHandler):
             self.gen_expression(term.var.expr)
             if term.negative:
                 ra = self.get_reg(0)
-                rb = self.get_reg(1)
-                self.pop_stack(rb)
-                self.output.append(f"    xor {ra}, {ra}\n")
-                self.output.append(f"    sub {ra}, {rb}\n")
+                self.pop_stack(ra)
+                self.output.append(f"    neg {ra}\n")
                 self.push_stack(ra)
         elif isinstance(term.var, NodeTermNot):
             self.gen_term(term.var.term) # type: ignore (type checking freaking out)
@@ -358,7 +353,7 @@ class Generator(ErrorHandler):
         location: int = self.stack_size # stack size changes after generating the expression, thats why its saved here
 
         if let_stmt.type_.type == tt.INT_DEF:
-            self.output.append("    ;; --- let var declaration ---\n")
+            self.output.append("    ;; --- int var declaration ---\n")
             word_size: size_words = "DWORD"
             byte_size: size_bytes = 4
             #TODO: maybe handle incorrect types in the parser instead

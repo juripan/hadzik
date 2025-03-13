@@ -2,9 +2,9 @@ naj x = 8
 naj y = 2
 
 naj sum = x + y
-naj mult = sum * 2
-naj sub = mult - 5
+naj mult = sum * 2 // 20
+naj sub = mult - 5 // 15
 naj div = sub / -(2 + 8) // -1
-naj res = div + 2
+naj res = div + 2 // 1
 
 vychod(res)
