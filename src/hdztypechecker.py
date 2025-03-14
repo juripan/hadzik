@@ -1,19 +1,25 @@
+
 # TODO: make a type checker that runs after parsing, before code generation
+# TODO: maybe a type checker could run during code generation, no need to rerun the same things twice
 
 from hdzerrors import ErrorHandler
 from comptypes import *
 
 class TypeChecker(ErrorHandler):
-    type_stack: list[token_type] = []
+    stack: list[token_type] = []
+    variables: list[tuple[str, token_type]] = [] # stores all variables and their types
 
     def __init__(self, program: NodeProgram, file_content: str) -> None:
         super().__init__(file_content)
         self.main_program = program
 
     def push_stack(self, tt: token_type):
-        self.type_stack.append(tt)
+        self.stack.append(tt)
 
+    def pop_stack(self):
+        return self.stack.pop()
 
+    
     def typecheck_program(self):
         for stmt in self.main_program.stmts:
             assert stmt is not None, "None statement shouldn't make it here"
@@ -73,5 +79,5 @@ class TypeChecker(ErrorHandler):
     def typecheck_exit(self, exit_stmt: NodeStmtExit):
         self.typecheck_expression(exit_stmt.expr)
 
-        if self.type_stack.pop() != INT_DEF:
+        if self.stack.pop() != INT_DEF:
             self.raise_error("Type", "expected type int, got {}")

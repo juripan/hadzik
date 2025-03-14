@@ -10,14 +10,13 @@ naj y = 5
 ```
 bul x = pravda
 ```
-
 ### Reassignment:
 + \*ident\* = \*value\* - assigns a different value to a variable
 ```
 x = nepravda
 ```
 
-### Built-ins
+## Built-ins
 + vychod(\*exit-code\*) - exits the program with the passed in exit code
 ```
 vychod(5)

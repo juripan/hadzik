@@ -295,7 +295,7 @@ class Generator(ErrorHandler):
             self.raise_error("Generator", "failed to generate binary expression")
 
     def gen_bool_expression(self, expression: NodeExprBool):
-        if isinstance(expression.var, NodePredExpr): 
+        if isinstance(expression.var, NodePredExpr):
             self.gen_predicate_expression(expression.var)
         elif isinstance(expression.var, NodeExprLogic):
             self.gen_logical_expression(expression.var)

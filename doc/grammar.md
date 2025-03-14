@@ -35,7 +35,10 @@ $$
         \text{ident}--\\
     \end{cases}\\
 
-    [\text{Scope}] &\to \{[\text{Stmt}]^*\}\\
+    [\text{Scope}] &\to 
+    \begin{cases}
+        \{[\text{Stmt}]^*\}\\
+    \end{cases}\\
 
     [\text{IfPred}] &\to
     \begin{cases}
@@ -47,7 +50,6 @@ $$
     [\text{Expr}] &\to
     \begin{cases}
         [\text{Term}]\\
-        -[\text{Term}]\\
         [\text{BinExpr}]\\
         [\text{LogicExpr}]\\
     \end{cases}\\
