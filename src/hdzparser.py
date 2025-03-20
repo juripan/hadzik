@@ -14,7 +14,7 @@ class Parser(ErrorHandler):
     def __init__(self, tokens: list[Token], file_content: str):
         super().__init__(file_content)
         self.all_tokens: list[Token] = tokens
-        self.map_parse_func: dict[int, function]  = {
+        self.map_parse_func: dict[token_type, function]  = {
             tt.EXIT: self.parse_exit,
             tt.PRINT: self.parse_print,
             tt.INT_DEF: self.parse_let,

@@ -1,63 +1,54 @@
 
-token_type = int
+token_type = str
 
+LEFT_PAREN = "("
+RIGHT_PAREN = ")"
+LEFT_CURLY = "{"
+RIGHT_CURLY = "}"
 
-def auto_generator():
-    num: token_type = 0
-    while num < 50:
-        yield num
-        num += 1
+COMMA = ","
+ENDLINE = "end line"
 
-auto = auto_generator()
+EXIT = "exit"
+PRINT = "hutor"
 
-LEFT_PAREN = next(auto)
-RIGHT_PAREN = next(auto)
-LEFT_CURLY = next(auto)
-RIGHT_CURLY = next(auto)
+INT_DEF = "naj"
+BOOL_DEF = "bul"
 
-COMMA = next(auto)
-ENDLINE = next(auto)
+IF = "kec"
+ELIF = "ikec"
+ELSE = "inac"
+WHILE = "kim"
+DO = "zrob"
+FOR = "furt"
+BREAK = "konec"
 
-EXIT = next(auto)
-PRINT = next(auto)
+IDENT = "indentifier"
+CHAR_LIT = "char"
+INT_LIT = "int"
+TRUE = "pravda"
+FALSE = "klamstvo"
 
-INT_DEF = next(auto)
-BOOL_DEF = next(auto)
+PLUS = "+"
+MINUS = "-"
+STAR = "*"
+SLASH = "/"
+PERCENT = "%"
+EQUALS = "="
 
-IF = next(auto)
-ELIF = next(auto)
-ELSE = next(auto)
-WHILE = next(auto)
-DO = next(auto)
-FOR = next(auto)
-BREAK = next(auto)
+IS_EQUAL = "=="
+IS_NOT_EQUAL = "!="
+LARGER_THAN = ">"
+LESS_THAN = "<"
+LARGER_THAN_OR_EQ = ">="
+LESS_THAN_OR_EQ = "<="
 
-IDENT = next(auto)
-CHAR_LIT = next(auto)
-INT_LIT = next(auto)
-TRUE = next(auto)
-FALSE = next(auto)
+INCREMENT = "++"
+DECREMENT = "--"
 
-PLUS = next(auto)
-MINUS = next(auto)
-STAR = next(auto)
-SLASH = next(auto)
-PERCENT = next(auto)
-EQUALS = next(auto)
-
-IS_EQUAL = next(auto)
-IS_NOT_EQUAL = next(auto)
-LARGER_THAN = next(auto)
-LESS_THAN = next(auto)
-LARGER_THAN_OR_EQ = next(auto)
-LESS_THAN_OR_EQ = next(auto)
-
-INCREMENT = next(auto)
-DECREMENT = next(auto)
-
-AND = next(auto)
-OR = next(auto)
-NOT = next(auto)
+AND = "aj"
+OR = "abo"
+NOT = "ne"
 
 # strings of tokens must be what is used in the hadzik syntax
 KEYWORD_TO_TOKEN_TYPE: dict[str, token_type] = {
@@ -82,8 +73,6 @@ KEYWORD_TO_TOKEN_TYPE: dict[str, token_type] = {
     "abo": OR,
     "ne": NOT,
 }
-
-assert len(KEYWORD_TO_TOKEN_TYPE) == 16, "exhaustive keyword matching in KEYWORD_TO_TOKEN_TYPE"
 
 COMPARISONS: tuple[token_type, ...] = (IS_EQUAL, IS_NOT_EQUAL, LARGER_THAN, LESS_THAN, LARGER_THAN_OR_EQ, LESS_THAN_OR_EQ)
 

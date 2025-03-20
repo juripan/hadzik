@@ -1,6 +1,5 @@
 
 # TODO: make a type checker that runs after parsing, before code generation
-# TODO: maybe a type checker could run during code generation, no need to rerun the same things twice
 
 from hdzerrors import ErrorHandler
 from comptypes import *
@@ -80,4 +79,4 @@ class TypeChecker(ErrorHandler):
         self.typecheck_expression(exit_stmt.expr)
 
         if self.stack.pop() != INT_DEF:
-            self.raise_error("Type", "expected type int, got {}")
+            self.raise_error("Type", "expected type `int`")
