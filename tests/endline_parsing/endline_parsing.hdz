@@ -1,0 +1,10 @@
+{naj x = 8}{
+    naj d = 12
+}{
+    naj x = 7}
+{
+    naj z = 78
+    
+}
+naj x = 8 
+vychod(x)

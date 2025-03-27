@@ -1,8 +1,7 @@
-from comptypes import * #uh-oh a wildcard import
+from comptypes import * # uh-oh a wildcard import
 import hdztokentypes as tt
 from hdzerrors import ErrorHandler
 
-#TODO: fix the end lines acting weird while parsing, with if statements, scopes, etc.
 #TODO: implement proper parsing for booleans and boolean expressions
 
 
@@ -180,9 +179,6 @@ class Parser(ErrorHandler):
         if value is None:
             self.raise_error("Syntax", "invalid expression", self.current_token)
 
-        if self.current_token is not None and self.current_token.type not in (tt.ENDLINE, tt.COMMA, tt.RIGHT_CURLY):
-            self.raise_error("Syntax", "expected endline", self.current_token) #TODO: make this more accurate
-
         assert ident is not None, "Identifier should never be None"
         assert value is not None, "Value should never be None, maybe a missing if value is None"
         return NodeStmtLet(ident, value, type_def)
@@ -202,9 +198,6 @@ class Parser(ErrorHandler):
 
         self.try_throw_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
         self.next_token()
-        
-        if self.current_token is not None and self.current_token.type not in (tt.ENDLINE, tt.RIGHT_CURLY, tt.RIGHT_PAREN):
-            self.raise_error("Syntax", "expected endline", self.current_token)
 
         return NodeStmtExit(expr=expr)
 
@@ -219,15 +212,16 @@ class Parser(ErrorHandler):
         scope = NodeScope(stmts=[])
         while stmt := self.parse_statement():
             scope.stmts.append(stmt)
+            if not isinstance(stmt.stmt_var, NodeStmtEmpty) \
+                    and self.current_token and self.current_token.type != tt.RIGHT_CURLY:
+                self.try_throw_error(tt.ENDLINE, "Syntax", "expected new line")
+                self.next_token()
             if self.current_token and self.current_token.type == tt.RIGHT_CURLY:
                 self.next_token() # right curly
                 break
         else:
             self.raise_error("Syntax", "unclosed scope starting here", start_curly)
         
-        if self.current_token and self.current_token.type == tt.ENDLINE:
-            self.next_token()
-
         return scope
 
     def parse_ifpred(self) -> NodeIfPred | None:
@@ -241,9 +235,6 @@ class Parser(ErrorHandler):
             assert expr is not None, "expr shouldn't be None, handled in the previous if statement"
             
             scope = self.parse_scope()
-
-            while self.current_token is not None and self.current_token.type == tt.ENDLINE: # type: ignore (current token can be None)
-                self.next_token()
 
             ifpred = self.parse_ifpred()
 
@@ -284,7 +275,7 @@ class Parser(ErrorHandler):
         assert expr is not None, "expr shouldn't be None, handled in the previous if statement"
 
         scope = self.parse_scope()
-        return NodeStmtWhile(expr=expr, scope=scope)
+        return NodeStmtWhile(expr, scope)
     
     def parse_for_loop(self) -> NodeStmtFor:
         self.next_token()
@@ -365,9 +356,6 @@ class Parser(ErrorHandler):
         
         assert expr is not None, "expr shouldn't be None here, handled by the previous if condition"
         
-        if self.current_token is not None and self.current_token.type not in (tt.ENDLINE, tt.RIGHT_CURLY, tt.RIGHT_PAREN):
-            self.raise_error("Syntax", "expected endline", self.current_token)
-        
         return NodeStmtReassign(var=NodeStmtReassignEq(ident, expr))
 
     def parse_print(self) -> NodeStmtPrint:
@@ -388,9 +376,6 @@ class Parser(ErrorHandler):
 
         self.try_throw_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
         self.next_token()
-        
-        if self.current_token is not None and self.current_token.type not in (tt.ENDLINE, tt.RIGHT_CURLY):
-            self.raise_error("Syntax", "expected endline", self.current_token)
         
         return NodeStmtPrint(cont)
     
@@ -422,5 +407,8 @@ class Parser(ErrorHandler):
         program: NodeProgram = NodeProgram(stmts=[])
         while self.current_token is not None:
             stmt = self.parse_statement()
+            if not isinstance(stmt.stmt_var, (NodeStmtEmpty, NodeScope)):  # type: ignore (shouldn't be a problem if its None)
+                self.try_throw_error(tt.ENDLINE, "Syntax", "expected new line")
+                self.next_token()
             program.stmts.append(stmt)
         return program
