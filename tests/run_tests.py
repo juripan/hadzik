@@ -17,13 +17,20 @@ def record(folders: tuple[str, ...]):
             f.write(output)
 
 
+def remove(folders: tuple[str, ...]):
+    for folder in folders:
+        os.remove(f"tests/{folder}/{folder}.o")
+        os.remove(f"tests/{folder}/{folder}.asm")
+        os.remove(f"tests/{folder}/{folder}")
+
+
 def recompile_and_run(test_name: str) -> str | sbp.CompletedProcess[str]:
     compilation = sbp.run(["./src/hdz.py", f"tests/{test_name}/{test_name}.hdz"], capture_output=True, text=True)
     
     while not os.path.exists(f"./tests/{test_name}/{test_name}"): # waits for the compilation to be done so it can run the file
         if compilation.returncode != 0: #TODO: fix compilation failing killing the program
             print(f"{"\033[31m"}[FAIL]{test_name}{"\033[0m"}\nfailed to compile")
-            return compilation
+            return compilation.stdout
         time.sleep(1)
     
     out_hadzik = sbp.run([f"./tests/{test_name}/{test_name}"], capture_output=True, text=True)
@@ -54,6 +61,8 @@ def main():
 
     if "rec" in sys.argv:
         record(folders)
+    elif "clean" in sys.argv:
+        remove(folders)
     else:
         testing(folders)
 

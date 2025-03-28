@@ -78,7 +78,7 @@ class Parser(ErrorHandler):
             self.try_throw_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
 
             assert expr is not None, "Should be handled in the if statement above"
-            return NodeTerm(NodeTermParen(expr), is_negative)
+            return NodeTerm(NodeTermParen(expr=expr), is_negative)
         elif self.current_token is not None and self.current_token.type == tt.NOT:
             self.next_token()
             
@@ -212,16 +212,19 @@ class Parser(ErrorHandler):
         scope = NodeScope(stmts=[])
         while stmt := self.parse_statement():
             scope.stmts.append(stmt)
-            if not isinstance(stmt.stmt_var, NodeStmtEmpty) \
+            if not isinstance(stmt.stmt_var, (NodeStmtEmpty, NodeStmtIf)) \
                     and self.current_token and self.current_token.type != tt.RIGHT_CURLY:
                 self.try_throw_error(tt.ENDLINE, "Syntax", "expected new line")
                 self.next_token()
             if self.current_token and self.current_token.type == tt.RIGHT_CURLY:
                 self.next_token() # right curly
-                break
+                return scope
         else:
             self.raise_error("Syntax", "unclosed scope starting here", start_curly)
         
+        if self.current_token and self.current_token.type == tt.RIGHT_CURLY:
+            print("AAAAAAAA")
+            self.next_token() # right curly (for empty statement with no statements inside)
         return scope
 
     def parse_ifpred(self) -> NodeIfPred | None:
@@ -394,6 +397,8 @@ class Parser(ErrorHandler):
         
         parse_func: function | None = self.map_parse_func.get(self.current_token.type)
         
+        if self.current_token.type == tt.RIGHT_CURLY: # here to handle fully empty scopes like this -> {{}}
+            return NodeStmt(stmt_var=NodeStmtEmpty())
         if parse_func is None:
             self.raise_error("Syntax", "invalid statement start", self.current_token)
         assert parse_func is not None, "shouldn't be None here"
@@ -407,7 +412,7 @@ class Parser(ErrorHandler):
         program: NodeProgram = NodeProgram(stmts=[])
         while self.current_token is not None:
             stmt = self.parse_statement()
-            if not isinstance(stmt.stmt_var, (NodeStmtEmpty, NodeScope)):  # type: ignore (shouldn't be a problem if its None)
+            if not isinstance(stmt.stmt_var, (NodeStmtEmpty, NodeScope, NodeStmtIf)) and self.current_token:  # type: ignore (shouldn't be a problem if its None)
                 self.try_throw_error(tt.ENDLINE, "Syntax", "expected new line")
                 self.next_token()
             program.stmts.append(stmt)
