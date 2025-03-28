@@ -1,5 +1,3 @@
-<!--TODO: rewrite the expression grammar to reflect the implementation-->
-
 $$
 \begin{align*}
     [\text{Program}] &\to
@@ -51,7 +49,7 @@ $$
     \begin{cases}
         [\text{Term}]\\
         [\text{BinExpr}]\\
-        [\text{LogicExpr}]\\
+        [\text{BoolExpr}]\\
     \end{cases}\\
 
     [\text{BinExpr}] &\to
@@ -63,7 +61,13 @@ $$
         [\text{Expr}] - [\text{Expr}] & \text{prec} = 2\\
     \end{cases}\\
 
-    [\text{LogicExpr}] &\to
+    [\text{BoolExpr}] &\to
+    \begin{cases}
+        [\text{PredExpr}]\\
+        [\text{LogicExpr}]\\
+    \end{cases}\\
+
+    [\text{PredExpr}] &\to
     \begin{cases}
         [\text{Expr}] == [\text{Expr}] & \text{prec} = 1\\
         [\text{Expr}] != [\text{Expr}] & \text{prec} = 1\\
@@ -71,6 +75,10 @@ $$
         [\text{Expr}] < [\text{Expr}] & \text{prec} = 1\\
         [\text{Expr}] <= [\text{Expr}] & \text{prec} = 1\\
         [\text{Expr}] >= [\text{Expr}] & \text{prec} = 1\\
+    \end{cases}\\
+
+    [\text{LogicExpr}] &\to
+    \begin{cases}
         [\text{Expr}]\ aj\ [\text{Expr}] & \text{prec} = 0\\
         [\text{Expr}]\ abo\ [\text{Expr}] & \text{prec} = 0\\
     \end{cases}\\
