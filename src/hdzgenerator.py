@@ -107,12 +107,12 @@ class Generator(ErrorHandler):
         size = self.stack_item_sizes[-1]
         return self.reg_lookup_table[size][idx]
 
-    def create_label(self) -> str:
+    def create_label(self, custom_lbl: str="") -> str:
         """
         returns a name for a new label based on the amount of labels already created
         """
         self.label_count += 1
-        return f"label{self.label_count}"
+        return f".lbl{custom_lbl}{self.label_count}"
 
     def begin_scope(self) -> None:
         """
@@ -480,8 +480,8 @@ class Generator(ErrorHandler):
 
     def gen_for(self, for_stmt: NodeStmtFor) -> None:
         self.output.append("    ;; --- for loop ---\n")
-        end_label = self.create_label()
-        reset_label = self.create_label()
+        end_label = self.create_label("end")
+        reset_label = self.create_label("rst")
         self.loop_end_labels.append(end_label)
 
         self.gen_let(for_stmt.ident_def)

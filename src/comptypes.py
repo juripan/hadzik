@@ -225,7 +225,7 @@ class NodeStmtPrint:
 
 
 @dataclass(slots=True)
-class NodeStmtEmpty: #empty line that only contains endline token
+class NodeStmtEmpty: #empty line that only contains newline token
     pass
 
 

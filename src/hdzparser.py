@@ -25,7 +25,7 @@ class Parser(ErrorHandler):
             tt.FOR: self.parse_for_loop,
             tt.DO: self.parse_do_while,
             tt.BREAK: self.parse_break,
-            tt.ENDLINE: self.parse_endline,
+            tt.NEWLINE: self.parse_newline,
         }
         self.next_token() # here to set the first token
 
@@ -202,7 +202,7 @@ class Parser(ErrorHandler):
         return NodeStmtExit(expr=expr)
 
     def parse_scope(self) -> NodeScope:
-        if self.current_token is not None and self.current_token.type == tt.ENDLINE:
+        if self.current_token is not None and self.current_token.type == tt.NEWLINE:
             self.next_token()
         
         start_curly = self.current_token
@@ -214,7 +214,7 @@ class Parser(ErrorHandler):
             scope.stmts.append(stmt)
             if not isinstance(stmt.stmt_var, (NodeStmtEmpty, NodeStmtIf)) \
                     and self.current_token and self.current_token.type != tt.RIGHT_CURLY:
-                self.try_throw_error(tt.ENDLINE, "Syntax", "expected new line")
+                self.try_throw_error(tt.NEWLINE, "Syntax", "expected new line")
                 self.next_token()
             if self.current_token and self.current_token.type == tt.RIGHT_CURLY:
                 self.next_token() # right curly
@@ -262,7 +262,7 @@ class Parser(ErrorHandler):
         
         scope = self.parse_scope()
 
-        while self.current_token is not None and self.current_token.type == tt.ENDLINE:
+        while self.current_token is not None and self.current_token.type == tt.NEWLINE:
             self.next_token()
 
         ifpred = self.parse_ifpred()
@@ -386,7 +386,7 @@ class Parser(ErrorHandler):
         self.next_token()
         return NodeStmtBreak()
 
-    def parse_endline(self):
+    def parse_newline(self):
         self.next_token()
         return NodeStmtEmpty()
     
@@ -413,7 +413,7 @@ class Parser(ErrorHandler):
         while self.current_token is not None:
             stmt = self.parse_statement()
             if not isinstance(stmt.stmt_var, (NodeStmtEmpty, NodeScope, NodeStmtIf)) and self.current_token:  # type: ignore (shouldn't be a problem if its None)
-                self.try_throw_error(tt.ENDLINE, "Syntax", "expected new line")
+                self.try_throw_error(tt.NEWLINE, "Syntax", "expected new line")
                 self.next_token()
             program.stmts.append(stmt)
         return program

@@ -1,4 +1,3 @@
-
 token_type = str
 
 LEFT_PAREN = "("
@@ -7,7 +6,7 @@ LEFT_CURLY = "{"
 RIGHT_CURLY = "}"
 
 COMMA = ","
-ENDLINE = "end line"
+NEWLINE = "newline"
 
 EXIT = "exit"
 PRINT = "hutor"
@@ -21,6 +20,8 @@ ELSE = "inac"
 WHILE = "kim"
 DO = "zrob"
 FOR = "furt"
+FOR_EVERY = "sicke"
+IN = "zos"
 BREAK = "konec"
 
 IDENT = "indentifier"
@@ -64,6 +65,8 @@ KEYWORD_TO_TOKEN_TYPE: dict[str, token_type] = {
     "kim": WHILE,
     "zrob": DO,
     "furt": FOR,
+    "sicke": FOR_EVERY,
+    "zos": IN,
     "konec": BREAK,
 
     "pravda": TRUE,
@@ -74,7 +77,9 @@ KEYWORD_TO_TOKEN_TYPE: dict[str, token_type] = {
     "ne": NOT,
 }
 
-COMPARISONS: tuple[token_type, ...] = (IS_EQUAL, IS_NOT_EQUAL, LARGER_THAN, LESS_THAN, LARGER_THAN_OR_EQ, LESS_THAN_OR_EQ)
+COMPARISONS: tuple[token_type, ...] = (
+    IS_EQUAL, IS_NOT_EQUAL, LARGER_THAN, LESS_THAN, LARGER_THAN_OR_EQ, LESS_THAN_OR_EQ
+)
 
 
 def get_prec_level(tt: token_type) -> int | None:

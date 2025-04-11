@@ -15,7 +15,7 @@ class Tokenizer(ErrorHandler):
         sees if a keyword is in the tokens list, otherwise makes an identifier
         """
         if potential_keyword in tt.KEYWORD_TO_TOKEN_TYPE:
-            return Token(type=tt.KEYWORD_TO_TOKEN_TYPE[potential_keyword], value=None, line=self.line_number, col=self.column_number)
+            return Token(type=tt.KEYWORD_TO_TOKEN_TYPE[potential_keyword], value=None, line=self.line_number, col=self.column_number - len(potential_keyword))
         else:
             return Token(type=tt.IDENT, value=potential_keyword, line=self.line_number, col=self.column_number)
     
@@ -126,7 +126,7 @@ class Tokenizer(ErrorHandler):
                     self.line_number, self.column_number = cache
                     self.raise_error("Syntax", "unclosed multiline comment")
             elif char == "\n":
-                tokens.append(Token(type=tt.ENDLINE, line=self.line_number, col=self.column_number))
+                tokens.append(Token(type=tt.NEWLINE, line=self.line_number, col=self.column_number))
                 self.advance()
             elif char == " ":
                 self.advance()
