@@ -38,6 +38,7 @@ def compile_to_asm(file_path: str) -> list[str]:
         print(tokens)
         print("-" * 130)
     parse_tree = Parser(tokens, hdz_src).parse_program()
+    TypeChecker(parse_tree, hdz_src).typecheck_program()
     if ErrorHandler.debug_mode:
         print(parse_tree)
         print("-" * 130)
@@ -62,26 +63,6 @@ def hdz_run(executable: str):
     print("-" * 80)
     print(f"Program exited with: {exit_code % 255}") # exit code 1 is 256 for some reason
 
-def typecheck(file_path: str) -> list[str]:
-    try:
-        with open(file_path, "r") as f:
-            hdz_src: str = f.read()
-    except FileNotFoundError:
-        print("ERROR: Nonexistent file / file path", file=sys.stderr)
-        exit(1)
-    
-    tokens = Tokenizer(hdz_src).tokenize()
-    if ErrorHandler.debug_mode:
-        print(tokens)
-        print("-" * 130)
-    parse_tree = Parser(tokens, hdz_src).parse_program()
-    if ErrorHandler.debug_mode:
-        print(parse_tree)
-        print("-" * 130)
-    TypeChecker(parse_tree, hdz_src).typecheck_program()
-    final_asm = Generator(parse_tree, hdz_src).gen_program()
-    
-    return final_asm
 
 def main():
     all_flags: tuple[str, ...] = tuple(filter(lambda x: x[0] == "-", sys.argv))
@@ -110,10 +91,7 @@ def main():
     else:
         filepath_no_hdz = file_path.rsplit(".", 1)[0] # removes the file extension
     
-    if "-t" in all_flags:
-        final_asm = typecheck(file_path)
-    else:
-        final_asm = compile_to_asm(file_path)
+    final_asm = compile_to_asm(file_path)
     
     asm_to_bin(filepath_no_hdz, final_asm)
 
