@@ -191,7 +191,7 @@ class Generator(ErrorHandler):
     
     def gen_predicate_expression(self, comparison: NodePredExpr) -> None:
         """
-        generates a comparison expression that pushes a 16bit value onto the stack,
+        generates a comparison expression that pushes a 8bit value onto the stack,
         type of binary expression that returns 1 or 0 depending on if its true or false
         """
         self.gen_expression(comparison.rhs)
@@ -219,7 +219,7 @@ class Generator(ErrorHandler):
 
     def gen_logical_expression(self, logic_expr: NodeExprLogic) -> None:
         """
-        generates an eval for a logical expression (AND or OR) that pushes a 16bit value onto the stack,
+        generates an eval for a logical expression (AND or OR) that pushes a 8bit value onto the stack,
         its result can be either 1 or 0
         """
         self.gen_expression(logic_expr.rhs)
