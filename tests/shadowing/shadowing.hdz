@@ -1,9 +1,9 @@
-naj x = 8
-naj y = 12
+cis x = 8
+cis y = 12
 x++
 
 {
-    naj x = 20
+    cis x = 20
     x = x + 1
     kec x == 21 {
         y++

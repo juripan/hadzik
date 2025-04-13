@@ -346,37 +346,37 @@ class Generator(ErrorHandler):
         else:
             raise ValueError("Unreachable")
 
-    def gen_let(self, let_stmt: NodeStmtLet):
-        found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == let_stmt.ident.value, self.variables[self.scopes[-1]::]))
+    def gen_decl(self, decl_stmt: NodeStmtDeclare):
+        found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == decl_stmt.ident.value, self.variables[self.scopes[-1]::]))
         if found_vars:
-            self.raise_error("Value", f"variable has been already declared in this scope: {let_stmt.ident.value}", curr_token=let_stmt.ident)
+            self.raise_error("Value", f"variable has been already declared in this scope: {decl_stmt.ident.value}", curr_token=decl_stmt.ident)
         location: int = self.stack_size # stack size changes after generating the expression, thats why its saved here
 
-        if let_stmt.type_.type == tt.INT_DEF:
+        if decl_stmt.type_.type == tt.INT_DEF:
             self.output.append("    ;; --- int var declaration ---\n")
             word_size: size_words = "DWORD"
             byte_size: size_bytes = 4
             #TODO: maybe handle incorrect types in the parser instead
-            if isinstance(let_stmt.expr.var, NodeExprBool):
+            if isinstance(decl_stmt.expr.var, NodeExprBool):
                 self.raise_error("Type", "cannot assign a boolean expression to `int`")
-            elif isinstance(let_stmt.expr.var, NodeTerm) and isinstance(let_stmt.expr.var.var, NodeTermBool):
-                self.raise_error("Type", "cannot assign `bool` to `int`", let_stmt.expr.var.var.bool)
-            self.gen_expression(let_stmt.expr)
-        elif let_stmt.type_.type == tt.BOOL_DEF:
+            elif isinstance(decl_stmt.expr.var, NodeTerm) and isinstance(decl_stmt.expr.var.var, NodeTermBool):
+                self.raise_error("Type", "cannot assign `bool` to `int`", decl_stmt.expr.var.var.bool)
+            self.gen_expression(decl_stmt.expr)
+        elif decl_stmt.type_.type == tt.BOOL_DEF:
             self.output.append("    ;; --- bul var declaration ---\n")
             word_size: size_words = "BYTE"
             byte_size: size_bytes = 1
-            if isinstance(let_stmt.expr.var, NodeBinExpr):
+            if isinstance(decl_stmt.expr.var, NodeBinExpr):
                 self.raise_error("Type", "cannot assign `int` to `bool`")
-            elif let_stmt.expr.var is not None and isinstance(let_stmt.expr.var.var, NodeTermInt):
+            elif decl_stmt.expr.var is not None and isinstance(decl_stmt.expr.var.var, NodeTermInt):
                 self.raise_error("Type", "cannot assign `int` to `bool`") # add guarding for other int expression (parenthesis and stuff)
 
-            self.gen_expression(let_stmt.expr)
+            self.gen_expression(decl_stmt.expr)
         else:
             raise ValueError("Unreachable")
         
-        assert let_stmt.ident.value is not None, "var name shouldn't be None here"
-        self.variables.append(VariableContext(let_stmt.ident.value, location, word_size, byte_size))
+        assert decl_stmt.ident.value is not None, "var name shouldn't be None here"
+        self.variables.append(VariableContext(decl_stmt.ident.value, location, word_size, byte_size))
 
     def gen_reassign(self, reassign_stmt: NodeStmtReassign):
         assert reassign_stmt.var.ident.value is not None, "has to be a string, probably a mistake in parsing"
@@ -484,7 +484,7 @@ class Generator(ErrorHandler):
         reset_label = self.create_label("rst")
         self.loop_end_labels.append(end_label)
 
-        self.gen_let(for_stmt.ident_def)
+        self.gen_decl(for_stmt.ident_def)
 
         self.output.append(f"{reset_label}:\n")
 
@@ -529,8 +529,8 @@ class Generator(ErrorHandler):
         """
         if isinstance(statement.stmt_var, NodeStmtExit):
             self.gen_exit(statement.stmt_var)
-        elif isinstance(statement.stmt_var, NodeStmtLet):
-            self.gen_let(statement.stmt_var)
+        elif isinstance(statement.stmt_var, NodeStmtDeclare):
+            self.gen_decl(statement.stmt_var)
         elif isinstance(statement.stmt_var, NodeScope):
             self.gen_scope(statement.stmt_var)
         elif isinstance(statement.stmt_var, NodeStmtIf):

@@ -1,8 +1,7 @@
-
-# TODO: make a type checker that runs after parsing, before code generation
-
 from hdzerrors import ErrorHandler
 from comptypes import *
+
+# TODO: make a type checker that runs after parsing, before code generation
 
 class TypeChecker(ErrorHandler):
     stack: list[token_type] = []
@@ -27,8 +26,8 @@ class TypeChecker(ErrorHandler):
     def typecheck_statement(self, stmt: NodeStmt):
         if isinstance(stmt.stmt_var, NodeStmtExit):
             self.typecheck_exit(stmt.stmt_var)
-        elif isinstance(stmt.stmt_var, NodeStmtLet):
-            # self.typecheck_let(stmt.stmt_var)
+        elif isinstance(stmt.stmt_var, NodeStmtDeclare):
+            # self.typecheck_decl(stmt.stmt_var)
             ...
         elif isinstance(stmt.stmt_var, NodeScope):
             # self.typecheck_scope(stmt.stmt_var)

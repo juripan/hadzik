@@ -1,6 +1,6 @@
-naj x = 10
-naj y = 5
-naj t = -5
+cis x = 10
+cis y = 5
+cis t = -5
 
 kec (x > y aj y > t) aj x > t{
     hutor('A')

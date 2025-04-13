@@ -1,4 +1,4 @@
-naj x = 45
+cis x = 45
 bul n = pravda
-naj y = x
+cis y = x
 vychod(x)

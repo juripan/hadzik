@@ -1,9 +1,9 @@
-naj x = 0
-naj y = 1
-naj medzi = 0
-naj kolke = 13
+cis x = 0
+cis y = 1
+cis medzi = 0
+cis kolke = 13
 
-furt(naj i = 1, i < kolke - 1, i++){
+furt(cis i = 1, i < kolke - 1, i++){
     medzi = x + y
     x = y
     y = medzi

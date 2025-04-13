@@ -11,7 +11,7 @@ NEWLINE = "newline"
 EXIT = "exit"
 PRINT = "hutor"
 
-INT_DEF = "naj"
+INT_DEF = "cis"
 BOOL_DEF = "bul"
 
 IF = "kec"
@@ -19,9 +19,9 @@ ELIF = "ikec"
 ELSE = "inac"
 WHILE = "kim"
 DO = "zrob"
-FOR = "furt"
-FOR_EVERY = "sicke"
-IN = "zos"
+FOR = "furt" # TODO: reuse this for const keyword
+FOR_EVERY = "sicke" # TODO: implement new for loops
+IN = "zos" # TODO: implement range
 BREAK = "konec"
 
 IDENT = "indentifier"
@@ -56,7 +56,7 @@ KEYWORD_TO_TOKEN_TYPE: dict[str, token_type] = {
     "vychod": EXIT,
     "hutor": PRINT,
 
-    "naj": INT_DEF,
+    "cis": INT_DEF,
     "bul": BOOL_DEF,
 
     "kec": IF,

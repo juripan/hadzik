@@ -136,7 +136,7 @@ class NodeStmtExit:
 
 
 @dataclass(slots=True)
-class NodeStmtLet:
+class NodeStmtDeclare:
     ident: Token
     expr: NodeExpr
     type_: Token
@@ -208,7 +208,7 @@ class NodeStmtDoWhile:
 
 @dataclass(slots=True)
 class NodeStmtFor:
-    ident_def: NodeStmtLet
+    ident_def: NodeStmtDeclare
     condition: NodePredExpr
     ident_assign: NodeStmtReassign
     scope: NodeScope
@@ -232,7 +232,7 @@ class NodeStmtEmpty: #empty line that only contains newline token
 @dataclass(slots=True)
 class NodeStmt:
     stmt_var: Union[
-        NodeStmtLet, NodeStmtExit, NodeScope, 
+        NodeStmtDeclare, NodeStmtExit, NodeScope, 
         NodeStmtIf, NodeStmtReassign, NodeStmtWhile, 
         NodeStmtDoWhile, NodeStmtBreak, NodeStmtFor, NodeStmtPrint, NodeStmtEmpty
         ]

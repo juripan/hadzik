@@ -16,8 +16,8 @@ class Parser(ErrorHandler):
         self.map_parse_func: dict[token_type, function]  = {
             tt.EXIT: self.parse_exit,
             tt.PRINT: self.parse_print,
-            tt.INT_DEF: self.parse_let,
-            tt.BOOL_DEF: self.parse_let,
+            tt.INT_DEF: self.parse_decl,
+            tt.BOOL_DEF: self.parse_decl,
             tt.LEFT_CURLY: self.parse_scope,
             tt.IF: self.parse_if,
             tt.IDENT: self.parse_reassign,
@@ -158,7 +158,7 @@ class Parser(ErrorHandler):
             expr_lhs.var = expr
         return expr_lhs
     
-    def parse_let(self) -> NodeStmtLet:
+    def parse_decl(self) -> NodeStmtDeclare:
         type_def = self.current_token
         self.next_token() # removes type def
 
@@ -181,7 +181,7 @@ class Parser(ErrorHandler):
 
         assert ident is not None, "Identifier should never be None"
         assert value is not None, "Value should never be None, maybe a missing if value is None"
-        return NodeStmtLet(ident, value, type_def)
+        return NodeStmtDeclare(ident, value, type_def)
 
     def parse_exit(self) -> NodeStmtExit:
         self.next_token() # removes exit token
@@ -286,7 +286,7 @@ class Parser(ErrorHandler):
         self.try_throw_error(tt.LEFT_PAREN, "Syntax", "expected '('")
         self.next_token()
 
-        ident_def = self.parse_let()
+        ident_def = self.parse_decl()
 
         self.try_throw_error(tt.COMMA, "Syntax", "expected ','")
         self.next_token()

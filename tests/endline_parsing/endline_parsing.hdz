@@ -1,8 +1,8 @@
-naj x = 8
-{naj x = 8}{
-    naj d = 12
+cis x = 8
+{cis x = 8}{
+    cis d = 12
 }{
-    naj x = 7}
+    cis x = 7}
 {{}}
 kim 1 {
     kim(1 == 1){
