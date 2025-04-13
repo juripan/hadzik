@@ -383,8 +383,10 @@ class Parser(ErrorHandler):
         return NodeStmtPrint(cont)
     
     def parse_break(self):
+        assert self.current_token is not None, "The token should be here because of the dict"
+        brk_tkn = self.current_token
         self.next_token()
-        return NodeStmtBreak()
+        return NodeStmtBreak(brk_tkn)
 
     def parse_newline(self):
         self.next_token()

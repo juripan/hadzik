@@ -73,6 +73,8 @@ def main():
     if not file_path.endswith(".hdz"):
         print("ERROR: File extension is missing or invalid (file extension must be .hdz)", file=sys.stderr)
         exit(1)
+    
+    ErrorHandler.file_path = file_path
 
     if "-s" in all_flags:
         ErrorHandler.dialect_errors = True

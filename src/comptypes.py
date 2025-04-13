@@ -216,7 +216,7 @@ class NodeStmtFor:
 
 @dataclass(slots=True)
 class NodeStmtBreak:
-    pass
+    break_tkn: Token
 
 
 @dataclass(slots=True)

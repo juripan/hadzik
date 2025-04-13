@@ -550,7 +550,7 @@ class Generator(ErrorHandler):
                 self.output.append("    ;; --- break --- \n")
                 self.output.append(f"    jmp {self.loop_end_labels[-1]}\n")
             else:
-                self.raise_error("Syntax", "cant break out of a loop when not inside one")
+                self.raise_error("Syntax", "cant break out of a loop when not inside one", statement.stmt_var.break_tkn)
 
     def gen_program(self) -> list[str]:
         """
