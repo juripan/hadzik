@@ -28,7 +28,7 @@ def remove(folders: tuple[str, ...]):
 
 
 def recompile_and_run(test_name: str) -> str | sbp.CompletedProcess[str]:
-    compilation = sbp.run(["./src/hdz.py", f"tests/{test_name}/{test_name}.hdz"], capture_output=True, text=True)
+    compilation = sbp.run(["./src/hdz", f"tests/{test_name}/{test_name}.hdz"], capture_output=True, text=True)
     
     while not os.path.exists(f"./tests/{test_name}/{test_name}"): # waits for the compilation to be done so it can run the file
         if compilation.returncode != 0:

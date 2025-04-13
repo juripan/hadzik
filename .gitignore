@@ -1,17 +1,19 @@
-# Ignore all
+# ignore all
 *
-# Unignore all with extensions
+# unignore all with extensions
 !*.*
-# Unignore all dirs
+# unignore all dirs
 !*/
 # all of that just to ignore bin files
 
-# Cache that gets created after running the python files
+# cache that gets created after running the python files
 __pycache__/
-# Vscode spellchecker settings
+# vscode spellchecker settings
 .vscode/
 # testing features in asm before adding to the language
 asm_testing/
-# Object and assembly files created by compilation
+# object and assembly files created by compilation
 *.o
 *.asm
+# unignores the main file (renamed hdz.py to hdz)
+!hdz
