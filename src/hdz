@@ -5,6 +5,7 @@ import os
 
 from hdzlexer import Tokenizer
 from hdzparser import Parser
+from hdztypechecker import TypeChecker
 from hdzgenerator import Generator
 from hdzerrors import ErrorHandler
 
@@ -61,6 +62,23 @@ def hdz_run(executable: str):
     print("-" * 80)
     print(f"Program exited with: {exit_code % 255}") # exit code 1 is 256 for some reason
 
+def typecheck(file_path: str) -> None:
+    try:
+        with open(file_path, "r") as f:
+            hdz_src: str = f.read()
+    except FileNotFoundError:
+        print("ERROR: Nonexistent file / file path", file=sys.stderr)
+        exit(1)
+    
+    tokens = Tokenizer(hdz_src).tokenize()
+    if ErrorHandler.debug_mode:
+        print(tokens)
+        print("-" * 130)
+    parse_tree = Parser(tokens, hdz_src).parse_program()
+    if ErrorHandler.debug_mode:
+        print(parse_tree)
+        print("-" * 130)
+    TypeChecker(parse_tree, hdz_src).typecheck_program()
 
 def main():
     all_flags: tuple[str, ...] = tuple(filter(lambda x: x[0] == "-", sys.argv))
@@ -89,9 +107,11 @@ def main():
     else:
         filepath_no_hdz = file_path.rsplit(".", 1)[0] # removes the file extension
     
-    final_asm = compile_to_asm(file_path)
-    
-    asm_to_bin(filepath_no_hdz, final_asm)
+    if "-t" in all_flags:
+        typecheck(file_path)
+    else:
+        final_asm = compile_to_asm(file_path)
+        asm_to_bin(filepath_no_hdz, final_asm)
 
     if "-r" in all_flags:
         hdz_run(filepath_no_hdz)

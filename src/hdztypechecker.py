@@ -17,11 +17,12 @@ class TypeChecker(ErrorHandler):
     def pop_stack(self):
         return self.stack.pop()
 
-    
+
     def typecheck_program(self):
         for stmt in self.main_program.stmts:
             assert stmt is not None, "None statement shouldn't make it here"
             self.typecheck_statement(stmt)
+            self.line_number+=1
 
     def typecheck_statement(self, stmt: NodeStmt):
         if isinstance(stmt.stmt_var, NodeStmtExit):
@@ -77,5 +78,5 @@ class TypeChecker(ErrorHandler):
     def typecheck_exit(self, exit_stmt: NodeStmtExit):
         self.typecheck_expression(exit_stmt.expr)
 
-        if self.stack.pop() != INT_DEF:
-            self.raise_error("Type", "expected type `int`")
+        if (type_ := self.stack.pop()) != INT_DEF:
+            self.raise_error("Type", f"expected type `{INT_DEF}`, got `{type_}`")
