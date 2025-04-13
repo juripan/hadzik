@@ -28,8 +28,7 @@ class TypeChecker(ErrorHandler):
         if isinstance(stmt.stmt_var, NodeStmtExit):
             self.typecheck_exit(stmt.stmt_var)
         elif isinstance(stmt.stmt_var, NodeStmtDeclare):
-            # self.typecheck_decl(stmt.stmt_var)
-            ...
+            self.typecheck_decl(stmt.stmt_var)
         elif isinstance(stmt.stmt_var, NodeScope):
             # self.typecheck_scope(stmt.stmt_var)
             ...
@@ -37,8 +36,7 @@ class TypeChecker(ErrorHandler):
             # self.typecheck_if(stmt.stmt_var)
             ...
         elif isinstance(stmt.stmt_var, NodeStmtReassign):
-            # self.typecheck_reassign(stmt.stmt_var)
-            ...
+            self.typecheck_reassign(stmt.stmt_var)
         elif isinstance(stmt.stmt_var, NodeStmtWhile):
             # self.typecheck_while(stmt.stmt_var)
             ...
@@ -58,7 +56,8 @@ class TypeChecker(ErrorHandler):
 
             self.push_stack(INT_DEF)
         elif isinstance(term.var, NodeTermIdent):
-            raise NotImplementedError("tracking identifiers and their types is not implemented")
+            vars = tuple(filter(lambda x: x[0] == term.var.ident.value, self.variables)) # type: ignore
+            self.push_stack(vars[-1][1])
         elif isinstance(term.var, NodeTermBool):
             assert term.var.bool.value is not None, "shouldn't be None here"
             self.push_stack(BOOL_DEF)
@@ -80,3 +79,25 @@ class TypeChecker(ErrorHandler):
 
         if (type_ := self.stack.pop()) != INT_DEF:
             self.raise_error("Type", f"expected type `{INT_DEF}`, got `{type_}`")
+    
+    def typecheck_decl(self, decl_stmt: NodeStmtDeclare):
+        self.typecheck_expression(decl_stmt.expr)
+        if self.stack[-1] != decl_stmt.type_.type:
+            self.raise_error("Type", f"expected type `{decl_stmt.type_.type}`, got `{self.stack[-1]}`")
+        self.variables.append((decl_stmt.ident.value, decl_stmt.type_.type)) # type: ignore (freaking out about str | None)
+    
+    def typecheck_reassign(self, reassign_stmt: NodeStmtReassign):
+        found_vars = tuple(filter(lambda x: x[0] == reassign_stmt.var.ident.value, self.variables)) # type: ignore
+
+        if not found_vars:
+            self.raise_error("Value", f"undeclared identifier: {reassign_stmt.var.ident.value}", reassign_stmt.var.ident)
+        
+        if isinstance(reassign_stmt.var, NodeStmtReassignEq):
+            self.typecheck_expression(reassign_stmt.var.expr)
+            if (type_ := self.pop_stack()) != found_vars[-1][1]:
+                self.raise_error("Type", f"expected type `{found_vars[-1][1]}`, got `{type_}`")
+        elif isinstance(reassign_stmt.var, (NodeStmtReassignInc, NodeStmtReassignDec)): # type: ignore (using an else branch to catch errors)
+            if found_vars[-1][1] != INT_DEF:
+                self.raise_error("Type", f"cannot increment or decrement a variable of `{found_vars[-1][1]}` type")
+        else:
+            raise ValueError("out or reach")

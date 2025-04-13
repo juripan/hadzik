@@ -356,21 +356,11 @@ class Generator(ErrorHandler):
             self.output.append("    ;; --- int var declaration ---\n")
             word_size: size_words = "DWORD"
             byte_size: size_bytes = 4
-            #TODO: maybe handle incorrect types in the parser instead
-            if isinstance(decl_stmt.expr.var, NodeExprBool):
-                self.raise_error("Type", "cannot assign a boolean expression to `int`")
-            elif isinstance(decl_stmt.expr.var, NodeTerm) and isinstance(decl_stmt.expr.var.var, NodeTermBool):
-                self.raise_error("Type", "cannot assign `bool` to `int`", decl_stmt.expr.var.var.bool)
             self.gen_expression(decl_stmt.expr)
         elif decl_stmt.type_.type == tt.BOOL_DEF:
             self.output.append("    ;; --- bul var declaration ---\n")
             word_size: size_words = "BYTE"
             byte_size: size_bytes = 1
-            if isinstance(decl_stmt.expr.var, NodeBinExpr):
-                self.raise_error("Type", "cannot assign `int` to `bool`")
-            elif decl_stmt.expr.var is not None and isinstance(decl_stmt.expr.var.var, NodeTermInt):
-                self.raise_error("Type", "cannot assign `int` to `bool`") # add guarding for other int expression (parenthesis and stuff)
-
             self.gen_expression(decl_stmt.expr)
         else:
             raise ValueError("Unreachable")
@@ -382,9 +372,6 @@ class Generator(ErrorHandler):
         assert reassign_stmt.var.ident.value is not None, "has to be a string, probably a mistake in parsing"
         
         found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == reassign_stmt.var.ident.value, self.variables))
-        
-        if not found_vars:
-            self.raise_error("Value", f"undeclared identifier: {reassign_stmt.var.ident.value}", reassign_stmt.var.ident)
         
         if isinstance(reassign_stmt.var, NodeStmtReassignEq):
             self.output.append("    ;; --- var reassign ---\n")
