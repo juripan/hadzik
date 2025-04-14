@@ -25,4 +25,31 @@ vychod(5)
 ```
 hutor('a')
 ```
-+ ...
+
+## Control flow
+### If + Elseif + Else
++ kec \*condition\* \*scope\* - if statement
++ ikec \*condition\* \*scope\* - else-if statement
++ inac \*scope\* - else statement 
+```
+kec y == 5 {
+    hutor('a')
+} ikec x {
+    hutor('b')
+} inac {
+    hutor('c')
+}
+```
+### While and Do-While loops 
++ kim \*condition\* \*scope\*
+```
+kim y < 10 {
+    y++
+}
+```
++ zrob \*scope\* kim \*condition\*
+```
+zrob {
+    y--
+} kim y > 5
+```

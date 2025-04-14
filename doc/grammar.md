@@ -12,9 +12,9 @@ $$
         [\text{IdentDef}]\\
         [\text{IdentAssign}]\\
         [\text{Scope}]\\
-        kec ([\text{Expr}]) [\text{Scope}] [\text{IfPred}]\\
-        kim ([\text{Expr}]) [\text{Scope}]\\
-        zrob [\text{Scope}] kim ([\text{Expr}])\\
+        kec [\text{Expr}] [\text{Scope}] [\text{IfPred}]\\
+        kim [\text{Expr}] [\text{Scope}]\\
+        zrob [\text{Scope}] kim [\text{Expr}]\\
         furt ([\text{IdentDef}], [\text{CompExpr}], [\text{IdentAssign}])[\text{Scope}]\\
         konec \leftarrow \text{only inside a loop}\\
         \text{newline}
@@ -22,7 +22,7 @@ $$
 
     [\text{IdentDef}] &\to
     \begin{cases}
-        naj \space \text{ident} = [\text{Expr}]\\
+        cis \space \text{ident} = [\text{Expr}]\\
         bul \space \text{ident} = [\text{LogicExpr}]\\
     \end{cases}\\
 

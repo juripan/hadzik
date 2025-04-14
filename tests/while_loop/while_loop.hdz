@@ -1,5 +1,5 @@
 cis x = 0
-kim(x < 20){
+kim x < 20 {
     x++
 }
 vychod(x)

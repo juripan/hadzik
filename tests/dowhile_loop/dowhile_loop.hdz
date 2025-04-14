@@ -1,0 +1,5 @@
+cis x = 0
+zrob{
+    x++
+} kim x < 20
+vychod(x)

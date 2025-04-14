@@ -322,17 +322,11 @@ class Parser(ErrorHandler):
         self.try_throw_error(tt.WHILE, "Syntax", "expected 'kim'")
         self.next_token()
 
-        self.try_throw_error(tt.LEFT_PAREN, "Syntax", "expected '('")
-        self.next_token()
-
         expr = self.parse_expr()
         if expr is None:
             self.raise_error("Value", "invalid expression", self.current_token)
         
         assert expr is not None, "expr shouldn't be None here, handled by the previous if condition"
-
-        self.try_throw_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
-        self.next_token()
 
         return NodeStmtDoWhile(scope, expr)
 
