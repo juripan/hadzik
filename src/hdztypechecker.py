@@ -65,14 +65,19 @@ class TypeChecker(ErrorHandler):
             self.push_stack(StackItem(INT_DEF, term.var.int_lit))
         elif isinstance(term.var, NodeTermIdent):
             vars: tuple[StackItem, ...] = tuple(filter(lambda x: x.name == term.var.ident.value, self.variables)) # type: ignore
-            self.push_stack(vars[-1])
+            self.push_stack(StackItem(vars[-1].type_, term.var.ident, vars[-1].name))
         elif isinstance(term.var, NodeTermBool):
             assert term.var.bool.value is not None, "shouldn't be None here"
             self.push_stack(StackItem(BOOL_DEF, term.var.bool))
         elif isinstance(term.var, NodeTermParen):
             self.typecheck_expression(term.var.expr)
-        elif isinstance(term.var, NodeTermNot): #TODO: check that the negated value is a bool
-            self.typecheck_term(term.var.term) # type: ignore (typechecker freaking out)
+        elif isinstance(term.var, NodeTermChar):
+            ... #TODO: implement char type
+        elif isinstance(term.var, NodeTermNot): # type: ignore
+            self.typecheck_term(term.var.term) # type: ignore
+            if self.stack[-1].type_ != BOOL_DEF:
+                self.raise_error("Type", f"expected type `{BOOL_DEF}`, got `{self.stack[-1].type_}`", self.stack[-1].token)
+
 
     def typecheck_binary_expression(self, bin_expr: NodeBinExpr):
         self.typecheck_expression(bin_expr.var.lhs) # type: ignore
