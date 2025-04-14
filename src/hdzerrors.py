@@ -19,10 +19,17 @@ class ErrorHandler:
         self.column_number: int = 0
 
     def get_error_line(self) -> str:
+        """
+        returns the line where the error happened based on the line number
+        """
         file_content = self.file_content.splitlines()
         return file_content[self.line_number - 1] if self.line_number - 1 < len(file_content) else file_content[-1]
 
     def raise_error(self, type_: str, details: str, curr_token: Token | None = None) -> None:
+        """
+        throws an error based on the given type, details and current tokens location,
+        if the current token doesn't exist then it assumes the line and column
+        """
         if curr_token:
             self.line_number = curr_token.line
             self.column_number = curr_token.col

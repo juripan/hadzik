@@ -18,9 +18,17 @@ class TypeChecker(ErrorHandler):
         self.main_program = program
 
     def push_stack(self, item: StackItem):
+        """
+        pushes the given item onto the stack,
+        is a separate function for tracking and debugging purposes
+        """
         self.stack.append(item)
 
     def pop_stack(self):
+        """
+        pops the top item off the stack,
+        is a separate function for tracking and debugging purposes
+        """
         return self.stack.pop()
 
 
@@ -49,12 +57,11 @@ class TypeChecker(ErrorHandler):
             self.typecheck_for(stmt.stmt_var)
         elif isinstance(stmt.stmt_var, NodeStmtPrint):
             # self.typecheck_print(stmt.stmt_var)
-            ...
+            ... # TODO: implement proper char type then add typechecking for print
     
     def typecheck_term(self, term: NodeTerm):
         if isinstance(term.var, NodeTermInt):
             assert term.var.int_lit.value is not None, "term.var.int_lit.value shouldn't be None, probably a parsing error"
-
             self.push_stack(StackItem(INT_DEF, term.var.int_lit))
         elif isinstance(term.var, NodeTermIdent):
             vars: tuple[StackItem, ...] = tuple(filter(lambda x: x.name == term.var.ident.value, self.variables)) # type: ignore
@@ -64,7 +71,7 @@ class TypeChecker(ErrorHandler):
             self.push_stack(StackItem(BOOL_DEF, term.var.bool))
         elif isinstance(term.var, NodeTermParen):
             self.typecheck_expression(term.var.expr)
-        elif isinstance(term.var, NodeTermNot):
+        elif isinstance(term.var, NodeTermNot): #TODO: check that the negated value is a bool
             self.typecheck_term(term.var.term) # type: ignore (typechecker freaking out)
 
     def typecheck_binary_expression(self, bin_expr: NodeBinExpr):

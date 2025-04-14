@@ -11,11 +11,16 @@ from hdzerrors import ErrorHandler
 
 
 def hdz_help():
+    """
+    prints out the usage information,
+    ends the program with exit code 0
+    """
+    
     print(
     """Usage:
-    $ python3 <path to 'hdz.py'> <path to your '.hdz' file> <flags> <custom path if using -n flag>
+    $ python3 <path to 'hdz'> <path to your '.hdz' file> <flags> <custom path if using -n flag>
 Or running it like an executable:
-    $ <path with './' to 'hdz.py'> <path to your '.hdz' file> <flags> <custom path if using -n flag>
+    $ <path with './' to 'hdz'> <path to your '.hdz' file> <flags> <custom path if using -n flag>
 Flags:
     --help - displays user manual
     -s - switches on the east slovak error messages
@@ -26,6 +31,10 @@ Flags:
 
 
 def compile_to_asm(file_path: str) -> list[str]:
+    """
+    tokenizes, parses, typechecks and generates assembly,
+    exits with 1 if the filepath isn't valid
+    """
     try:
         with open(file_path, "r") as f:
             hdz_src: str = f.read()
@@ -48,6 +57,10 @@ def compile_to_asm(file_path: str) -> list[str]:
 
 
 def asm_to_bin(filepath_no_hdz: str, content: list[str]):
+    """
+    makes an assembly file and links and assembles it by calling nasm and ld
+    if linking or assembling fails it throws an error and exits with 1
+    """
     with open("./" + filepath_no_hdz + ".asm", "w") as f:
         f.writelines(content)
     
@@ -58,6 +71,9 @@ def asm_to_bin(filepath_no_hdz: str, content: list[str]):
 
 
 def hdz_run(executable: str):
+    """
+    runs the executable and prints out its exit code
+    """
     print("Program output".center(80, "-"))
     exit_code = os.system("./" + executable)
     print("-" * 80)

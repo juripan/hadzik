@@ -17,7 +17,7 @@ All current design principles are subject to change
 
 ## Quick start:
 ```
-$ python3 <path to 'hdz.py'> <path to your '.hdz' file> <flags> <custom path if using -n flag>
+$ python3 <path to 'hdz'> <path to your '.hdz' file> <flags> <custom path if using -n flag>
 ```
 
 ## Flags:
@@ -25,32 +25,32 @@ Flags that are used when running the compiler in the console (more are going to 
 
 + -s - switches on the east slovak error messages
 ```
-$ python3 hdz.py path/file.hdz -s
+$ python3 hdz path/file.hdz -s
 ```
 
 + -r - after compilation is done runs the compiled file and prints its output
 ```
-$ python3 hdz.py path/file.hdz -r
+$ python3 hdz path/file.hdz -r
 ```
 
 + -n - determine a path and name of the compiled file
 ```
-$ python3 hdz.py path/file.hdz -n new_path/file2
+$ python3 hdz path/file.hdz -n new_path/file2
 ```
 
 + -d - dumps all of the compiler debug information available to the console
 ```
-$ python3 hdz.py path/file.hdz -d
+$ python3 hdz path/file.hdz -d
 ```
 
 + --help - displays user manual
 ```
-$ python3 hdz.py --help
+$ python3 hdz --help
 ```
 
 Order of flags doesn't matter just the order of paths:
 ```
-$ python3 hdz.py path/file.hdz -s -r new_path/file2 -n
+$ python3 hdz path/file.hdz -s -r new_path/file2 -n
 ```
 
 
@@ -60,6 +60,14 @@ all of the dependencies are listed in the Docker file but for more transparency 
 + libraries: sys, os, dataclasses, typing
 + NASM version 2.16.01
 + GNU ld 2.42
+
+## Priorities:
++ come up with a better name for the compiler \
+(so its not confused with the file extention)
++ typecasting
++ constants
++ proper char type
++ for loop rewrite
 
 ## Docker:
 To run this project in a docker you first need to install docker and then run these commands
