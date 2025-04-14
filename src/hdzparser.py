@@ -16,6 +16,7 @@ class Parser(ErrorHandler):
             tt.PRINT: self.parse_print,
             tt.INT_DEF: self.parse_decl,
             tt.BOOL_DEF: self.parse_decl,
+            tt.CHAR_DEF: self.parse_decl,
             tt.LEFT_CURLY: self.parse_scope,
             tt.IF: self.parse_if,
             tt.IDENT: self.parse_reassign,
@@ -42,15 +43,6 @@ class Parser(ErrorHandler):
         if self.current_token is None or self.current_token.type != token_type:
             self.raise_error(error_name, error_details, self.current_token)
 
-
-    def parse_char(self) -> NodeTermChar | None:
-        if self.current_token is not None and self.current_token.type == tt.CHAR_LIT:
-            char = self.current_token
-            self.next_token()
-            return NodeTermChar(char)
-        else:
-            return None
-
     def parse_term(self) -> NodeTerm | None:
         is_negative = False
         if self.current_token is not None and self.current_token.type == tt.MINUS:
@@ -61,6 +53,8 @@ class Parser(ErrorHandler):
             return NodeTerm(NodeTermInt(int_lit=self.current_token), is_negative)
         elif self.current_token is not None and self.current_token.type == tt.IDENT:
             return NodeTerm(NodeTermIdent(ident=self.current_token), is_negative)
+        elif self.current_token is not None and self.current_token.type == tt.CHAR_LIT:
+            return NodeTerm(NodeTermChar(self.current_token))
         elif self.current_token is not None and self.current_token.type == tt.TRUE:
             self.current_token.value = "1"
             return NodeTerm(NodeTermBool(bool=self.current_token))
@@ -168,11 +162,7 @@ class Parser(ErrorHandler):
         self.next_token()
 
         assert type_def is not None, "type_def should never be None"
-        if type_def.type in (tt.INT_DEF, tt.BOOL_DEF):
-            value = self.parse_expr()
-        else:
-            value = None
-            self.raise_error("Type", "type not defined", self.current_token)
+        value = self.parse_expr()
 
         if value is None:
             self.raise_error("Syntax", "invalid expression", self.current_token)
@@ -359,10 +349,7 @@ class Parser(ErrorHandler):
         self.try_throw_error(tt.LEFT_PAREN, "Syntax", "expected '('")
         self.next_token()
 
-        if self.current_token is not None and self.current_token.type == tt.CHAR_LIT:
-            cont = self.parse_char()
-        else:
-            cont = self.parse_expr()
+        cont = self.parse_expr()
 
         if cont is None:
             self.raise_error("Syntax", "Invalid print argument", self.current_token)

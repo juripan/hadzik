@@ -13,6 +13,7 @@ PRINT = "hutor"
 
 INT_DEF = "cis"
 BOOL_DEF = "bul"
+CHAR_DEF = "znak"
 
 IF = "kec"
 ELIF = "ikec"
@@ -58,6 +59,7 @@ KEYWORD_TO_TOKEN_TYPE: dict[str, token_type] = {
 
     "cis": INT_DEF,
     "bul": BOOL_DEF,
+    "znak": CHAR_DEF,
 
     "kec": IF,
     "ikec": ELIF,

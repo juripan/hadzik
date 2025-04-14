@@ -221,7 +221,7 @@ class NodeStmtBreak:
 
 @dataclass(slots=True)
 class NodeStmtPrint:
-    content: Union[NodeExpr, NodeTermChar]
+    content: NodeExpr
 
 
 @dataclass(slots=True)
@@ -263,3 +263,5 @@ class VariableContext:
     loc: int
     size_w: size_words
     size_b: size_bytes
+    def __repr__(self) -> str:
+        return f"VC('{self.name}' loc={self.loc} {self.size_b})"

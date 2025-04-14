@@ -74,7 +74,7 @@ class TypeChecker(ErrorHandler):
         elif isinstance(term.var, NodeTermParen):
             self.typecheck_expression(term.var.expr)
         elif isinstance(term.var, NodeTermChar):
-            ... #TODO: implement char type
+            self.push_stack(StackItem(CHAR_DEF, term.var.char))
         elif isinstance(term.var, NodeTermNot): # type: ignore
             self.typecheck_term(term.var.term) # type: ignore
             if self.stack[-1].type_ != BOOL_DEF:

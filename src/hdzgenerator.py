@@ -61,7 +61,7 @@ class Generator(ErrorHandler):
         # self.data_section_index: int = 1
         # self.bss_section_index: int = 2
     
-    def push_stack(self, loc: str, size_words: str = ""):
+    def push_stack(self, loc: str, size_words: str = ""): #TODO: make it so push and pop stack abide by the 16 bit stack alignment
         """
         adds a push instruction to the output and updates the stack size 
         """
@@ -81,10 +81,10 @@ class Generator(ErrorHandler):
             raise ValueError("Invalid register / WORD size")
         
         if "[" not in loc:
-            self.output.append(f"    mov {size_words}[rbp - {self.stack_size}], {loc} ;push\n")
+            self.output.append(f"    mov {size_words} [rbp - {self.stack_size}], {loc} ;push\n")
         else:
             self.output.append(f"    mov {reg}, {loc}\n")
-            self.output.append(f"    mov {size_words}[rbp - {self.stack_size}], {reg} ;push\n")
+            self.output.append(f"    mov {size_words} [rbp - {self.stack_size}], {reg} ;push\n")
         self.stack_size += size
         self.stack_item_sizes.append(size)
         if ErrorHandler.debug_mode:
@@ -165,13 +165,16 @@ class Generator(ErrorHandler):
             
             location, word_size = found_vars[-1].loc, found_vars[-1].size_w
 
-            self.push_stack(f"{word_size} [rbp - {location}]") # QWORD 64 bits (word = 16 bits)
+            self.push_stack(f"{word_size} [rbp - {location}]")
             
             if term.negative:
                 self.output.append(f"    neg {word_size}[rbp - {self.stack_size - self.stack_item_sizes[-1]}]\n")
         elif isinstance(term.var, NodeTermBool):
             assert term.var.bool.value is not None, "shouldn't be None here"
             self.push_stack(term.var.bool.value, "BYTE")
+        elif isinstance(term.var, NodeTermChar):
+            assert term.var.char.value is not None, "shouldn't be None here"
+            self.push_stack(term.var.char.value, "BYTE")
         elif isinstance(term.var, NodeTermParen):
             self.gen_expression(term.var.expr)
             if term.negative:
@@ -179,7 +182,7 @@ class Generator(ErrorHandler):
                 self.pop_stack(ra)
                 self.output.append(f"    neg {ra}\n")
                 self.push_stack(ra)
-        elif isinstance(term.var, NodeTermNot):
+        elif isinstance(term.var, NodeTermNot): # type: ignore (else used to catch errors)
             self.gen_term(term.var.term) # type: ignore (type checking freaking out)
             ra = self.get_reg(0)
             rb = self.get_reg(1)
@@ -188,6 +191,8 @@ class Generator(ErrorHandler):
             self.output.append(f"    test {rb}, {rb}\n")
             self.output.append("    sete al\n")
             self.push_stack(ra)
+        else:
+            raise ValueError("Unreachable")
     
     def gen_predicate_expression(self, comparison: NodePredExpr) -> None:
         """
@@ -310,10 +315,6 @@ class Generator(ErrorHandler):
             self.gen_binary_expression(expression.var)
         elif isinstance(expression.var, NodeExprBool):
             self.gen_bool_expression(expression.var)
-    
-    def gen_char(self, char: NodeTermChar) -> None:
-        assert char.char.value is not None, "char should have value here"
-        self.push_stack(char.char.value, "BYTE")
 
     def gen_scope(self, scope: NodeScope) -> None:
         self.begin_scope()
@@ -359,6 +360,11 @@ class Generator(ErrorHandler):
             self.gen_expression(decl_stmt.expr)
         elif decl_stmt.type_.type == tt.BOOL_DEF:
             self.output.append("    ;; --- bul var declaration ---\n")
+            word_size: size_words = "BYTE"
+            byte_size: size_bytes = 1
+            self.gen_expression(decl_stmt.expr)
+        elif decl_stmt.type_.type == tt.CHAR_DEF:
+            self.output.append("    ;; --- char var declaration ---\n")
             word_size: size_words = "BYTE"
             byte_size: size_bytes = 1
             self.gen_expression(decl_stmt.expr)
@@ -494,12 +500,7 @@ class Generator(ErrorHandler):
 
     def gen_print(self, print_stmt: NodeStmtPrint) -> None:
         self.output.append("    ;; --- print char ---\n")
-        if isinstance(print_stmt.content, NodeExpr):
-            self.gen_expression(print_stmt.content)
-        elif isinstance(print_stmt.content, NodeTermChar): # type: ignore (using an else branch to catch errors)
-            self.gen_char(print_stmt.content)
-        else:
-            raise ValueError("unreachable")
+        self.gen_expression(print_stmt.content)
         
         expr_loc = f"[rbp - {self.stack_size - self.stack_item_sizes[-1]}]"
         self.output.append("    mov rax, 1\n")
