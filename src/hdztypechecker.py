@@ -65,6 +65,8 @@ class TypeChecker(ErrorHandler):
             self.push_stack(StackItem(INT_DEF, term.var.int_lit))
         elif isinstance(term.var, NodeTermIdent):
             vars: tuple[StackItem, ...] = tuple(filter(lambda x: x.name == term.var.ident.value, self.variables)) # type: ignore
+            if not vars:
+                self.raise_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
             self.push_stack(StackItem(vars[-1].type_, term.var.ident, vars[-1].name))
         elif isinstance(term.var, NodeTermBool):
             assert term.var.bool.value is not None, "shouldn't be None here"

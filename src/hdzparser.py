@@ -2,9 +2,7 @@ from comptypes import * # uh-oh a wildcard import
 import hdztokentypes as tt
 from hdzerrors import ErrorHandler
 
-#TODO: implement proper parsing for booleans and boolean expressions
-
-
+#TODO: make chars a part of parsing expressions
 class Parser(ErrorHandler):
     index: int = -1
     column_number = -1 # -1 means that theres no column number tracked
