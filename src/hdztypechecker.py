@@ -56,8 +56,7 @@ class TypeChecker(ErrorHandler):
         elif isinstance(stmt.stmt_var, NodeStmtFor):
             self.typecheck_for(stmt.stmt_var)
         elif isinstance(stmt.stmt_var, NodeStmtPrint):
-            # self.typecheck_print(stmt.stmt_var)
-            ... # TODO: implement proper char type then add typechecking for print
+            self.typecheck_print(stmt.stmt_var)
     
     def typecheck_term(self, term: NodeTerm):
         if isinstance(term.var, NodeTermInt):
@@ -79,7 +78,6 @@ class TypeChecker(ErrorHandler):
             self.typecheck_term(term.var.term) # type: ignore
             if self.stack[-1].type_ != BOOL_DEF:
                 self.raise_error("Type", f"expected type `{BOOL_DEF}`, got `{self.stack[-1].type_}`", self.stack[-1].token)
-
 
     def typecheck_binary_expression(self, bin_expr: NodeBinExpr):
         self.typecheck_expression(bin_expr.var.lhs) # type: ignore
@@ -206,3 +204,9 @@ class TypeChecker(ErrorHandler):
         self.typecheck_scope(for_stmt.scope)
 
         self.typecheck_reassign(for_stmt.ident_assign)
+    
+    def typecheck_print(self, print_stmt: NodeStmtPrint):
+        self.typecheck_expression(print_stmt.content)
+        if (item := self.pop_stack()).type_ != CHAR_DEF:
+            self.raise_error("Type", f"expected type `{CHAR_DEF}`, got `{item.type_}`", item.token)
+        
