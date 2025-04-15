@@ -78,12 +78,14 @@ class Tokenizer(ErrorHandler):
                         ascii_value = 9
                     else:
                         ascii_value = ord(self.current_char)    
-                else:
+                elif self.current_char is not None: # type: ignore
                     ascii_value = ord(self.current_char)
-                tokens.append(Token(type=tt.CHAR_LIT, value=str(ascii_value), line=self.line_number, col=self.column_number))
+                else:
+                    self.raise_error("Syntax", "unclosed \"'\"", Token(tt.NEWLINE, self.line_number, self.column_number))
+                tokens.append(Token(type=tt.CHAR_LIT, value=str(ascii_value), line=self.line_number, col=self.column_number)) # type: ignore (never unbound since else catches it)
                 self.advance()
                 if self.current_char is None or self.current_char != "'": # type: ignore
-                    self.raise_error("Syntax", "expected \"'\"")
+                    self.raise_error("Syntax", "expected \"'\"", Token(tt.NEWLINE, self.line_number, self.column_number))
                 self.advance()
             
             elif char == "=" and self.look_ahead() == "=":
@@ -123,8 +125,7 @@ class Tokenizer(ErrorHandler):
                 self.advance()
                 self.advance()
                 if self.current_char is None: # type: ignore
-                    self.line_number, self.column_number = cache
-                    self.raise_error("Syntax", "unclosed multiline comment")
+                    self.raise_error("Syntax", "unclosed multiline comment", Token(tt.NEWLINE, *cache))
             elif char == "\n":
                 tokens.append(Token(type=tt.NEWLINE, line=self.line_number, col=self.column_number))
                 self.advance()
@@ -170,5 +171,5 @@ class Tokenizer(ErrorHandler):
                 self.advance()
                 tokens.append(Token(type=tt.PERCENT, line=self.line_number, col=self.column_number))
             else:
-                self.raise_error("Syntax", "char not included in the lexer")
+                self.raise_error("Syntax", "char not included in the lexer", Token(tt.NEWLINE, self.line_number, self.column_number))
         return tokens
