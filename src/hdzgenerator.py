@@ -61,7 +61,7 @@ class Generator(ErrorHandler):
         # self.data_section_index: int = 1
         # self.bss_section_index: int = 2
     
-    def push_stack(self, loc: str, size_words: str = ""): #TODO: make it so push and pop stack abide by the 16 bit stack alignment
+    def push_stack(self, loc: str, size_words: str = ""):
         """
         adds a push instruction to the output and updates the stack size 
         """
@@ -80,11 +80,15 @@ class Generator(ErrorHandler):
         else:
             raise ValueError("Invalid register / WORD size")
         
+        if self.stack_size % size != 0:
+            self.stack_size += 4 - self.stack_size % 4
+
         if "[" not in loc:
             self.output.append(f"    mov {size_words} [rbp - {self.stack_size}], {loc} ;push\n")
         else:
             self.output.append(f"    mov {reg}, {loc}\n")
             self.output.append(f"    mov {size_words} [rbp - {self.stack_size}], {reg} ;push\n")
+        
         self.stack_size += size
         self.stack_item_sizes.append(size)
         if ErrorHandler.debug_mode:
@@ -94,7 +98,8 @@ class Generator(ErrorHandler):
         """
         adds a pop instruction to the output and updates the stack size 
         """
-        self.stack_size -= self.stack_item_sizes.pop() # removes and gives the last items size
+        size = self.stack_item_sizes.pop() # removes the last items size
+        self.stack_size -= size
         self.output.append(f"    mov {reg}, [rbp - {self.stack_size}] ;pop\n")
         if ErrorHandler.debug_mode:
             print("pop", self.stack_size, self.stack_item_sizes, self.variables)
