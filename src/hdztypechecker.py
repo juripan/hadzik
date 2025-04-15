@@ -57,6 +57,12 @@ class TypeChecker(ErrorHandler):
             self.typecheck_for(stmt.stmt_var)
         elif isinstance(stmt.stmt_var, NodeStmtPrint):
             self.typecheck_print(stmt.stmt_var)
+        elif isinstance(stmt.stmt_var, NodeStmtEmpty):
+            pass
+        elif isinstance(stmt.stmt_var, NodeStmtBreak): # type: ignore
+            pass
+        else:
+            raise ValueError(f"Unreachable {stmt.stmt_var}")
     
     def typecheck_term(self, term: NodeTerm):
         if isinstance(term.var, NodeTermInt):
@@ -78,6 +84,8 @@ class TypeChecker(ErrorHandler):
             self.typecheck_term(term.var.term) # type: ignore
             if self.stack[-1].type_ != BOOL_DEF:
                 self.raise_error("Type", f"expected type `{BOOL_DEF}`, got `{self.stack[-1].type_}`", self.stack[-1].token)
+        else:
+            raise ValueError("Unreachable")
 
     def typecheck_binary_expression(self, bin_expr: NodeBinExpr):
         self.typecheck_expression(bin_expr.var.lhs) # type: ignore
@@ -118,6 +126,8 @@ class TypeChecker(ErrorHandler):
             self.typecheck_predicate_expression(bool_expr.var)
         elif isinstance(bool_expr.var, NodeExprLogic):
             self.typecheck_logical_expression(bool_expr.var)
+        else:
+            raise ValueError("Unreachable")
 
     def typecheck_expression(self, expr: NodeExpr):
         if isinstance(expr.var, NodeTerm):
@@ -126,6 +136,8 @@ class TypeChecker(ErrorHandler):
             self.typecheck_binary_expression(expr.var)
         elif isinstance(expr.var, NodeExprBool):
             self.typecheck_bool_expression(expr.var)
+        else:
+            raise ValueError("Unreachable")
 
     def typecheck_exit(self, exit_stmt: NodeStmtExit):
         self.typecheck_expression(exit_stmt.expr)
@@ -209,4 +221,3 @@ class TypeChecker(ErrorHandler):
         self.typecheck_expression(print_stmt.content)
         if (item := self.pop_stack()).type_ != CHAR_DEF:
             self.raise_error("Type", f"expected type `{CHAR_DEF}`, got `{item.type_}`", item.token)
-        

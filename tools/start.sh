@@ -2,6 +2,6 @@
 
 cd /app
 
-python3 hdz.py test.hdz
+python3 hdzc test.hdz
 ./test
 echo 'Exit code: '$?

@@ -15,5 +15,5 @@ asm_testing/
 # object and assembly files created by compilation
 *.o
 *.asm
-# unignores the main file (renamed hdz.py to hdz)
-!hdz
+# unignores the main file (renamed hdz.py to hdz to hdzc)
+!hdzc
