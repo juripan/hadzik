@@ -11,6 +11,7 @@ NEWLINE = "newline"
 EXIT = "exit"
 PRINT = "hutor"
 
+INFER_DEF = "naj"
 INT_DEF = "cis"
 BOOL_DEF = "bul"
 CHAR_DEF = "znak"
@@ -57,6 +58,7 @@ KEYWORD_TO_TOKEN_TYPE: dict[str, token_type] = {
     "vychod": EXIT,
     "hutor": PRINT,
 
+    "naj": INFER_DEF,
     "cis": INT_DEF,
     "bul": BOOL_DEF,
     "znak": CHAR_DEF,

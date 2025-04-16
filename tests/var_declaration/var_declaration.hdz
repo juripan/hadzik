@@ -1,4 +1,7 @@
 cis x = 45
-bul n = pravda
-cis y = x
+bul is_stupid = pravda
+znak char_z = 'z'
+cis x_again = x
+naj inferred = (1 == 1)
+
 vychod(x)

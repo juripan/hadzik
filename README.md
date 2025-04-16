@@ -9,14 +9,19 @@ For now only compiles to x86_64 linux assembly.
 
 File extension: **.hdz**
 
-Strings will use " " (someday)  
-Chars use ' '  
-Scopes are declared by curly braces  
-'\n' ends statements instead of using ';' to end statements
+Strings will use " " (someday).  
+Chars use ' '.  
+Scopes are declared by curly braces.  
+'\n' ends statements instead of using ';' to end statements.
 
 ## Quick start:
+You can run the compiler as a python script like this:
 ```
-$ python3 <path to 'hdzc'> <path to your '.hdz' file> <flags> <custom path if using -n flag>
+$ python3 <path to 'hdzc'> <path to your code>.hdz <flags> <custom path if using -n flag>
+```
+Or you can run it as an executable like this:
+```
+$ ./<path to 'hdzc'> <path to your code>.hdz <flags> <custom path if using -n flag>
 ```
 
 ## Flags:
@@ -54,7 +59,7 @@ $ python3 hdzc path/file.hdz -s -r new_path/file2 -n
 
 
 ## Dependencies:
-all of the dependencies are listed in the Docker file but for more transparency I will list them here also
+all of the dependencies are listed in the Docker file and source code files but for more transparency I will list them here also
 + Python 3.12.3
 + libraries: sys, os, dataclasses, typing
 + NASM version 2.16.01
@@ -62,8 +67,10 @@ all of the dependencies are listed in the Docker file but for more transparency 
 
 ## Priorities:
 + typecasting
++ strings
 + constants
 + for loop rewrite
++ macros
 
 ## Docker:
 To run this project in a docker you first need to install docker and then run these commands

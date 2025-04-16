@@ -14,6 +14,7 @@ class Parser(ErrorHandler):
         self.map_parse_func: dict[token_type, function]  = {
             tt.EXIT: self.parse_exit,
             tt.PRINT: self.parse_print,
+            tt.INFER_DEF: self.parse_decl,
             tt.INT_DEF: self.parse_decl,
             tt.BOOL_DEF: self.parse_decl,
             tt.CHAR_DEF: self.parse_decl,

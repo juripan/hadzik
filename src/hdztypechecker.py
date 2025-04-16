@@ -147,7 +147,10 @@ class TypeChecker(ErrorHandler):
     
     def typecheck_decl(self, decl_stmt: NodeStmtDeclare):
         self.typecheck_expression(decl_stmt.expr)
-        if self.stack[-1].type_ != decl_stmt.type_.type:
+        # if the type is supposed to be inferred then it just takes whatever type is on top of the stack
+        if decl_stmt.type_.type == INFER_DEF:
+            decl_stmt.type_.type = self.stack[-1].type_
+        elif self.stack[-1].type_ != decl_stmt.type_.type:
             self.raise_error("Type", f"expected type `{decl_stmt.type_.type}`, got `{self.stack[-1].type_}`", decl_stmt.type_)
         self.variables.append(StackItem(decl_stmt.type_.type, decl_stmt.ident, decl_stmt.ident.value)) # type: ignore (freaking out about str | None)
     
