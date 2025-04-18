@@ -1,9 +1,9 @@
-cis x = 8
-cis y = 12
+cif x = 8
+cif y = 12
 x++
 
 {
-    cis x = 20
+    cif x = 20
     x = x + 1
     kec x == 21 {
         y++

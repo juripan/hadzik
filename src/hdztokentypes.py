@@ -12,7 +12,7 @@ EXIT = "exit"
 PRINT = "hutor"
 
 INFER_DEF = "naj"
-INT_DEF = "cis"
+INT_DEF = "cif"
 BOOL_DEF = "bul"
 CHAR_DEF = "znak"
 
@@ -59,7 +59,7 @@ KEYWORD_TO_TOKEN_TYPE: dict[str, token_type] = {
     "hutor": PRINT,
 
     "naj": INFER_DEF,
-    "cis": INT_DEF,
+    "cif": INT_DEF,
     "bul": BOOL_DEF,
     "znak": CHAR_DEF,
 

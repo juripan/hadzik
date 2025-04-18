@@ -1,4 +1,4 @@
-cis x = 0
+cif x = 0
 zrob{
     x++
 } kim x < 20

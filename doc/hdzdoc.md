@@ -2,13 +2,22 @@
 
 ## Variables
 ### Declaration:
-+ cis \*ident\* = \*value\* - creates a 32-bit integer with a given value on the stack
++ cif \*ident\* = \*value\* - creates a 32-bit integer with a given value on the stack
 ```
-cis y = 5
+cif y = 5
 ```
 + bul \*ident\* = \*value\* - creates a 8-bit boolean with a given value on the stack
 ```
 bul x = pravda
+```
++ znak \*ident\* = \*value\* - creates a 8-bit char with a given value on the stack
+```
+znak d = 'd'
+```
+Types can also be automatically inferred:
++ naj \*ident\* = \*value\* - creates a variable with an inferred type by the typechecker on the stack
+```
+znak d = 'd'
 ```
 ### Reassignment:
 + \*ident\* = \*value\* - assigns a different value fo the same type to a variable

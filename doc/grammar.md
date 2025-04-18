@@ -22,8 +22,10 @@ $$
 
     [\text{IdentDef}] &\to
     \begin{cases}
-        cis \space \text{ident} = [\text{Expr}]\\
+        cif \space \text{ident} = [\text{Expr}]\\
         bul \space \text{ident} = [\text{LogicExpr}]\\
+        znak \space \text{ident} = [\text{Term}]\\
+        naj \space \text{ident} = [\text{Expr}]\\
     \end{cases}\\
 
     [\text{IdentAssign}] &\to

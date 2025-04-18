@@ -1,4 +1,4 @@
-cis x = 8
+cif x = 8
 
 kec x < 8{
     hutor('A')

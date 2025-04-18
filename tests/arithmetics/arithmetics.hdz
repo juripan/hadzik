@@ -1,10 +1,10 @@
-cis x = 8
-cis y = 2
+cif x = 8
+cif y = 2
 
-cis sum = x + y
-cis mult = sum * 2 // 20
-cis sub = mult - 5 // 15
-cis div = sub / -(2 + 8) // -1
-cis res = div + 2 // 1
+cif sum = x + y
+cif mult = sum * 2 // 20
+cif sub = mult - 5 // 15
+cif div = sub / -(2 + 8) // -1
+cif res = div + 2 // 1
 
 vychod(res)

@@ -1,8 +1,8 @@
-cis x = 8
-{cis x = 8}{
-    cis d = 12
+cif x = 8
+{cif x = 8}{
+    cif d = 12
 }{
-    cis x = 7}
+    cif x = 7}
 {{}}
 kim 1 {
     kim(1 == 1){
