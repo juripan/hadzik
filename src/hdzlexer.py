@@ -43,12 +43,33 @@ class Tokenizer(ErrorHandler):
         """
         return self.file_content[self.index + step] if self.index + step < len(self.file_content) else None
 
+    def lex_char(self, tokens: list[Token]):
+        self.advance()
+        if self.current_char == "\\":
+            self.advance()
+            if self.current_char == "n": # type: ignore
+                ascii_value = 10 # ascii code for newline
+            elif self.current_char == "t": # type: ignore
+                ascii_value = 9
+            elif self.current_char == "0": # type: ignore
+                ascii_value = 0
+            else:
+                ascii_value = ord(self.current_char)    
+        elif self.current_char is not None: # type: ignore
+            ascii_value = ord(self.current_char)
+        else:
+            self.raise_error("Syntax", "unclosed \"'\"", Token(tt.NEWLINE, self.line_number, self.column_number))
+        tokens.append(Token(type=tt.CHAR_LIT, value=str(ascii_value), line=self.line_number, col=self.column_number)) # type: ignore (never unbound since else catches it)
+        self.advance()
+        if self.current_char is None or self.current_char != "'": # type: ignore
+            self.raise_error("Syntax", "expected \"'\"", Token(tt.NEWLINE, self.line_number, self.column_number))
+        self.advance()
+
     def tokenize(self):
         tokens: list[Token] = []
         while self.current_char is not None:
             char: str = self.current_char
             buffer = ""
-
             if char.isalpha() or char == "_": # makes keywords, if not a keyword makes an identifier
                 buffer += char
                 self.advance()
@@ -57,7 +78,6 @@ class Tokenizer(ErrorHandler):
                     self.advance()
                 tokens.append(self.search_for_keyword(buffer))
                 buffer = ""
-            
             elif char.isnumeric(): # makes numbers, ints only for now
                 buffer += char
                 self.advance()
@@ -67,27 +87,8 @@ class Tokenizer(ErrorHandler):
                 type_of_number = tt.INT_LIT  # if "." not in buffer else tt.floating_number
                 tokens.append(Token(type=type_of_number, value=buffer, line=self.line_number, col=self.column_number))
                 buffer = ""
-            
             elif char == "'":
-                self.advance()
-                if self.current_char == "\\":
-                    self.advance()
-                    if self.current_char == "n": # type: ignore
-                        ascii_value = 10 # ascii code for newline
-                    elif self.current_char == "t": # type: ignore
-                        ascii_value = 9
-                    else:
-                        ascii_value = ord(self.current_char)    
-                elif self.current_char is not None: # type: ignore
-                    ascii_value = ord(self.current_char)
-                else:
-                    self.raise_error("Syntax", "unclosed \"'\"", Token(tt.NEWLINE, self.line_number, self.column_number))
-                tokens.append(Token(type=tt.CHAR_LIT, value=str(ascii_value), line=self.line_number, col=self.column_number)) # type: ignore (never unbound since else catches it)
-                self.advance()
-                if self.current_char is None or self.current_char != "'": # type: ignore
-                    self.raise_error("Syntax", "expected \"'\"", Token(tt.NEWLINE, self.line_number, self.column_number))
-                self.advance()
-            
+                self.lex_char(tokens)
             elif char == "=" and self.look_ahead() == "=":
                 tokens.append(Token(type=tt.IS_EQUAL, line=self.line_number, col=self.column_number))
                 self.advance()
