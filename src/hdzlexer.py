@@ -20,7 +20,7 @@ class Tokenizer(ErrorHandler):
             return Token(type=tt.IDENT, value=potential_keyword, line=self.line_number, col=self.column_number)
     
     @staticmethod
-    def is_valid_keyword_content(char: str) -> bool:
+    def is_valid_keyword(char: str) -> bool:
         """
         used for checking the remaining character in an identifier / keyword
         """
@@ -42,6 +42,30 @@ class Tokenizer(ErrorHandler):
         looks ahead step characters from the current character
         """
         return self.file_content[self.index + step] if self.index + step < len(self.file_content) else None
+
+
+    def lex_number(self, char: str, tokens: list[Token]):
+        """
+        makes numbers, ints only for now
+        """
+        buffer = char
+        self.advance()
+        while self.current_char is not None and self.current_char.isnumeric():  # type: ignore (can be definitely None)
+            buffer += self.current_char
+            self.advance()
+        type_of_number = tt.INT_LIT  # if "." not in buffer else tt.floating_number
+        tokens.append(Token(type=type_of_number, value=buffer, line=self.line_number, col=self.column_number))
+
+    def lex_keyword(self, char: str, tokens: list[Token]):
+        """
+        makes potential keyword / identifier
+        """
+        buffer = char
+        self.advance()
+        while self.current_char is not None and self.is_valid_keyword(self.current_char): # type: ignore (doesn't think it can be None but definitely can)
+            buffer += self.current_char
+            self.advance()
+        tokens.append(self.search_for_keyword(buffer))
 
     def lex_char(self, tokens: list[Token]):
         self.advance()
@@ -69,24 +93,10 @@ class Tokenizer(ErrorHandler):
         tokens: list[Token] = []
         while self.current_char is not None:
             char: str = self.current_char
-            buffer = ""
             if char.isalpha() or char == "_": # makes keywords, if not a keyword makes an identifier
-                buffer += char
-                self.advance()
-                while self.current_char is not None and self.is_valid_keyword_content(self.current_char): # type: ignore (doesn't think it can be None but definitely can)
-                    buffer += self.current_char
-                    self.advance()
-                tokens.append(self.search_for_keyword(buffer))
-                buffer = ""
-            elif char.isnumeric(): # makes numbers, ints only for now
-                buffer += char
-                self.advance()
-                while self.current_char is not None and self.current_char.isnumeric():  # type: ignore (can be definitely None)
-                    buffer += self.current_char
-                    self.advance()
-                type_of_number = tt.INT_LIT  # if "." not in buffer else tt.floating_number
-                tokens.append(Token(type=type_of_number, value=buffer, line=self.line_number, col=self.column_number))
-                buffer = ""
+                self.lex_keyword(char, tokens)
+            elif char.isnumeric():
+                self.lex_number(char, tokens)
             elif char == "'":
                 self.lex_char(tokens)
             elif char == "=" and self.look_ahead() == "=":
