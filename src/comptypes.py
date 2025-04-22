@@ -263,5 +263,6 @@ class VariableContext:
     loc: int
     size_w: size_words
     size_b: size_bytes
+    
     def __repr__(self) -> str:
         return f"VC('{self.name}' loc={self.loc} {self.size_b})"
