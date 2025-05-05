@@ -57,9 +57,19 @@ class Generator(ErrorHandler):
         self.main_program: NodeProgram = program
 
         self.column_number = -1
-        
-        # self.data_section_index: int = 1
-        # self.bss_section_index: int = 2
+
+        self.map_generate_func: dict[object, function] = {
+            NodeStmtExit: self.gen_exit,
+            NodeStmtDeclare: self.gen_decl,
+            NodeScope: self.gen_scope,
+            NodeStmtIf: self.gen_if_statement,
+            NodeStmtReassign: self.gen_reassign,
+            NodeStmtWhile: self.gen_while,
+            NodeStmtDoWhile: self.gen_do_while,
+            NodeStmtFor: self.gen_for,
+            NodeStmtPrint: self.gen_print,
+            NodeStmtBreak: self.gen_break,
+        }
     
     def push_stack(self, loc: str, size_words: str = ""):
         """
@@ -516,34 +526,27 @@ class Generator(ErrorHandler):
         pushed_res = self.stack_item_sizes.pop() #it removes the printed expression because it causes a mess in the stack when looping
         self.stack_size -= pushed_res #lowers the stack size
 
+    def gen_break(self, break_stmt: NodeStmtBreak) -> None:
+        if self.loop_end_labels:
+            self.output.append("    ;; --- break --- \n")
+            self.output.append(f"    jmp {self.loop_end_labels[-1]}\n")
+        else:
+            self.raise_error("Syntax", "cant break out of a loop when not inside one", break_stmt.break_tkn)
+
     def gen_statement(self, statement: NodeStmt) -> None:
         """
         generates a statement based on the node passed in
         """
-        if isinstance(statement.stmt_var, NodeStmtExit):
-            self.gen_exit(statement.stmt_var)
-        elif isinstance(statement.stmt_var, NodeStmtDeclare):
-            self.gen_decl(statement.stmt_var)
-        elif isinstance(statement.stmt_var, NodeScope):
-            self.gen_scope(statement.stmt_var)
-        elif isinstance(statement.stmt_var, NodeStmtIf):
-            self.gen_if_statement(statement.stmt_var)
-        elif isinstance(statement.stmt_var, NodeStmtReassign):
-            self.gen_reassign(statement.stmt_var)
-        elif isinstance(statement.stmt_var, NodeStmtWhile):
-            self.gen_while(statement.stmt_var)
-        elif isinstance(statement.stmt_var, NodeStmtDoWhile):
-            self.gen_do_while(statement.stmt_var)
-        elif isinstance(statement.stmt_var, NodeStmtFor):
-            self.gen_for(statement.stmt_var)
-        elif isinstance(statement.stmt_var, NodeStmtPrint):
-            self.gen_print(statement.stmt_var)
-        elif isinstance(statement.stmt_var, NodeStmtBreak):
-            if self.loop_end_labels:
-                self.output.append("    ;; --- break --- \n")
-                self.output.append(f"    jmp {self.loop_end_labels[-1]}\n")
-            else:
-                self.raise_error("Syntax", "cant break out of a loop when not inside one", statement.stmt_var.break_tkn)
+        gen_func: function | None = self.map_generate_func.get(statement.stmt_var.__class__)
+        
+        if gen_func is not None: #can be None for NodeStmtEmpty
+            assert callable(gen_func), "it should be callable since its a function"
+
+            gen_func(statement.stmt_var)
+        elif isinstance(statement.stmt_var, NodeStmtEmpty):
+            pass
+        else:
+            assert False, "Unreachable" 
 
     def gen_program(self) -> list[str]:
         """

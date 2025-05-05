@@ -11,7 +11,7 @@ class Parser(ErrorHandler):
     def __init__(self, tokens: list[Token], file_content: str):
         super().__init__(file_content)
         self.all_tokens: list[Token] = tokens
-        self.map_parse_func: dict[token_type, function]  = {
+        self.map_parse_func: dict[token_type, function] = {
             tt.EXIT: self.parse_exit,
             tt.PRINT: self.parse_print,
             tt.INFER_DEF: self.parse_decl,
@@ -384,8 +384,9 @@ class Parser(ErrorHandler):
         if parse_func is None:
             self.raise_error("Syntax", "invalid statement start", self.current_token)
         assert parse_func is not None, "shouldn't be None here"
+        assert callable(parse_func), "should be callable since its a function"
 
-        statement = parse_func() # type: ignore (I know the type but the checker keeps panicking)
+        statement = parse_func()
         
         assert statement is not None, "statement should never be None, handled by the if statements above"
         return NodeStmt(stmt_var=statement) # type: ignore (I know the type but the checker keeps panicking)
