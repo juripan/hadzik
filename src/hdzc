@@ -2,6 +2,7 @@
 
 import sys
 import os
+import time
 
 from hdzlexer import Tokenizer
 from hdzparser import Parser
@@ -42,17 +43,32 @@ def compile_to_asm(file_path: str) -> list[str]:
         print("ERROR: Nonexistent file / file path", file=sys.stderr)
         exit(1)
     
+    start = time.time()
     tokens = Tokenizer(hdz_src).tokenize()
+    elapsed = time.time() - start
+    print(f"[INFO] Lexing took {elapsed:.6f} seconds")
+
     if ErrorHandler.debug_mode:
         print(tokens)
         print("-" * 130)
+    
+    start = time.time()
     parse_tree = Parser(tokens, hdz_src).parse_program()
+    elapsed = time.time() - start
+    print(f"[INFO] Parsing took {elapsed:.6f} seconds")
+
+    start = time.time()
     TypeChecker(parse_tree, hdz_src).typecheck_program()
+    elapsed = time.time() - start
+    print(f"[INFO] Typechecking took {elapsed:.6f} seconds")
+    
     if ErrorHandler.debug_mode:
         print(parse_tree)
         print("-" * 130)
+    start = time.time()
     final_asm = Generator(parse_tree, hdz_src).gen_program()
-    
+    elapsed = time.time() - start
+    print(f"[INFO] Generating took {elapsed:.6f} seconds")
     return final_asm
 
 
@@ -63,11 +79,13 @@ def asm_to_bin(filepath_no_hdz: str, content: list[str]):
     """
     with open("./" + filepath_no_hdz + ".asm", "w") as f:
         f.writelines(content)
-    
+    start = time.time()
     if os.system("nasm -felf64 " + filepath_no_hdz + ".asm") \
     or os.system("ld " + filepath_no_hdz + ".o -o " + filepath_no_hdz):
         print("ERROR: assembly failed", file=sys.stderr)
         exit(1)
+    elapsed = time.time() - start
+    print(f"[INFO] Assembling took {elapsed:.6f} seconds")
 
 
 def hdz_run(executable: str):
