@@ -212,7 +212,6 @@ class Parser(ErrorHandler):
             self.raise_error("Syntax", "unclosed scope starting here", start_curly)
         
         if self.current_token and self.current_token.type == tt.RIGHT_CURLY:
-            print("AAAAAAAA")
             self.next_token() # right curly (for empty statement with no statements inside)
         return scope
 

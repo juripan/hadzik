@@ -4,6 +4,10 @@ from comptypes import *
 
 @dataclass(slots=True)
 class StackItem:
+    """
+    class that stores the type name of the variable (if it is one)
+    and its location in the source code via Token (for error reporting)
+    """
     type_: token_type
     token: Token
     name: str = ""
@@ -146,8 +150,12 @@ class TypeChecker(ErrorHandler):
             self.raise_error("Type", f"expected type `{INT_DEF}`, got `{item.type_}`", item.token)
     
     def typecheck_decl(self, decl_stmt: NodeStmtDeclare):
+        """
+        checks if the type fits the keyword used to declare the variable,
+        if the type is supposed to be inferred then it just takes whatever type is on top of the stack
+        """
         self.typecheck_expression(decl_stmt.expr)
-        # if the type is supposed to be inferred then it just takes whatever type is on top of the stack
+
         if decl_stmt.type_.type == INFER_DEF:
             decl_stmt.type_.type = self.stack[-1].type_
         elif self.stack[-1].type_ != decl_stmt.type_.type:

@@ -131,19 +131,19 @@ class Generator(ErrorHandler):
 
     def begin_scope(self) -> None:
         """
-        only used in the gen_scope() method,
         adds the amount of variables to the scopes list 
-        so the end scopes function knows how many variables it should delete
+        so the end scopes function knows how many variables it should delete,
+        only used in the gen_scope() method
         """
         self.scopes.append(len(self.variables))
 
     def end_scope(self) -> None:
         """
-        only used in the gen_scope() method,
         removes the last scopes variables from memory (by moving the stack pointer),
         removes itself from the generators list of scopes,
         removes the aforementioned variables from the generators dictionary
-        returns prematurely if theres nothing to remove
+        returns prematurely if theres nothing to remove,
+        only used in the gen_scope() method
         """
         pop_count: int = len(self.variables) - self.scopes[-1]
         if pop_count == 0:
@@ -332,6 +332,9 @@ class Generator(ErrorHandler):
             self.gen_bool_expression(expression.var)
 
     def gen_scope(self, scope: NodeScope) -> None:
+        """
+        generates all of the statements in a given scope
+        """
         self.begin_scope()
         for stmt in scope.stmts:
             self.gen_statement(stmt)
@@ -356,13 +359,16 @@ class Generator(ErrorHandler):
             self.output.append(f"{label}:\n")
             if pred.var.pred is not None:
                 self.gen_if_predicate(pred.var.pred, end_label)
-        elif isinstance(pred.var, NodeIfPredElse): # type: ignore (here just so the else can catch mistakes)
+        elif isinstance(pred.var, NodeIfPredElse):
             self.output.append("    ;; --- else ---\n")
             self.gen_scope(pred.var.scope)
         else:
             raise ValueError("Unreachable")
 
     def gen_decl(self, decl_stmt: NodeStmtDeclare):
+        """
+        generates a variable declaration
+        """
         found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == decl_stmt.ident.value, self.variables[self.scopes[-1]::]))
         if found_vars:
             self.raise_error("Value", f"variable has been already declared in this scope: {decl_stmt.ident.value}", curr_token=decl_stmt.ident)
@@ -390,8 +396,9 @@ class Generator(ErrorHandler):
         self.variables.append(VariableContext(decl_stmt.ident.value, location, word_size, byte_size))
 
     def gen_reassign(self, reassign_stmt: NodeStmtReassign):
-        assert reassign_stmt.var.ident.value is not None, "has to be a string, probably a mistake in parsing"
-        
+        """
+        generates a var reassignment, increment and decrement
+        """
         found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == reassign_stmt.var.ident.value, self.variables))
         
         if isinstance(reassign_stmt.var, NodeStmtReassignEq):
@@ -417,6 +424,9 @@ class Generator(ErrorHandler):
             raise ValueError("Unreachable")
 
     def gen_exit(self, exit_stmt: NodeStmtExit) -> None:
+        """
+        generates an exit syscall
+        """
         self.gen_expression(exit_stmt.expr)
         self.output.append("    ;; --- exit ---\n")
         self.output.append("    mov rax, 60\n")
@@ -514,6 +524,9 @@ class Generator(ErrorHandler):
         self.loop_end_labels.pop()
 
     def gen_print(self, print_stmt: NodeStmtPrint) -> None:
+        """
+        generates a print syscall and cleaning up the stack
+        """
         self.output.append("    ;; --- print char ---\n")
         self.gen_expression(print_stmt.content)
         
@@ -527,6 +540,9 @@ class Generator(ErrorHandler):
         self.stack_size -= pushed_res #lowers the stack size
 
     def gen_break(self, break_stmt: NodeStmtBreak) -> None:
+        """
+        adds a jump to the end of the loop if it exists, if not in a loop throws a compiler error
+        """
         if self.loop_end_labels:
             self.output.append("    ;; --- break --- \n")
             self.output.append(f"    jmp {self.loop_end_labels[-1]}\n")

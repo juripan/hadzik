@@ -52,7 +52,7 @@ class Tokenizer(ErrorHandler):
         assert self.curr_char is not None, "current char shouldn't be None here"
         buffer = self.curr_char
         self.advance()
-        while self.curr_char is not None and self.curr_char.isnumeric():  # type: ignore (can be definitely None)
+        while self.curr_char is not None and self.curr_char.isnumeric():
             buffer += self.curr_char
             self.advance()
         type_of_number = tt.INT_LIT  # if "." not in buffer else tt.floating_number
@@ -65,30 +65,33 @@ class Tokenizer(ErrorHandler):
         assert self.curr_char is not None, "current char is a char"
         buffer: str = self.curr_char
         self.advance()
-        while self.curr_char is not None and self.is_valid_keyword(self.curr_char): # type: ignore (doesn't think it can be None but definitely can)
+        while self.curr_char is not None and self.is_valid_keyword(self.curr_char):
             buffer += self.curr_char
             self.advance()
         self.tokens.append(self.search_for_keyword(buffer))
 
     def lex_char(self):
+        """
+        makes a character literal
+        """
         self.advance()
         if self.curr_char == "\\":
             self.advance()
-            if self.curr_char == "n": # type: ignore
+            if self.curr_char == "n":
                 ascii_value = 10 # ascii code for newline
-            elif self.curr_char == "t": # type: ignore
+            elif self.curr_char == "t":
                 ascii_value = 9
-            elif self.curr_char == "0": # type: ignore
+            elif self.curr_char == "0":
                 ascii_value = 0
             else:
                 ascii_value = ord(self.curr_char)    
-        elif self.curr_char is not None: # type: ignore
+        elif self.curr_char is not None:
             ascii_value = ord(self.curr_char)
         else:
             self.raise_error("Syntax", "unclosed \"'\"", Token(tt.NEWLINE, self.line_number, self.column_number))
         self.tokens.append(Token(type=tt.CHAR_LIT, value=str(ascii_value), line=self.line_number, col=self.column_number)) # type: ignore (never unbound since else catches it)
         self.advance()
-        if self.curr_char is None or self.curr_char != "'": # type: ignore
+        if self.curr_char is None or self.curr_char != "'":
             self.raise_error("Syntax", "expected \"'\"", Token(tt.NEWLINE, self.line_number, self.column_number))
         self.advance()
 
@@ -126,17 +129,17 @@ class Tokenizer(ErrorHandler):
                 self.advance()
             elif self.curr_char == "/" and self.look_ahead() == "/":
                 self.advance()
-                while self.curr_char not in ("\n", None): # type: ignore
+                while self.curr_char not in ("\n", None):
                     self.advance()
             elif self.curr_char == "/" and self.look_ahead() == "*":
                 cache = self.line_number, self.column_number
                 self.advance()
                 self.advance()
-                while self.curr_char not in ("*", None) or self.look_ahead() not in ("/", None): # type: ignore
+                while self.curr_char not in ("*", None) or self.look_ahead() not in ("/", None):
                     self.advance()
                 self.advance()
                 self.advance()
-                if self.curr_char is None: # type: ignore
+                if self.curr_char is None:
                     self.raise_error("Syntax", "unclosed multiline comment", Token(tt.NEWLINE, *cache))
             elif self.curr_char == "\n":
                 self.tokens.append(Token(type=tt.NEWLINE, line=self.line_number, col=self.column_number))
