@@ -56,6 +56,12 @@ class Parser(ErrorHandler):
             return NodeTerm(NodeTermIdent(ident=self.current_token), is_negative)
         elif self.current_token is not None and self.current_token.type == tt.CHAR_LIT:
             return NodeTerm(NodeTermChar(self.current_token))
+        elif self.current_token is not None and self.current_token.type == tt.STR_LIT:
+            assert self.current_token.value is not None, "string value shouldn't be None here, bug in lexing"
+            *val, length = self.current_token.value.split(",")
+            self.current_token.value = ",".join(val)
+            length = int(length)
+            return NodeTerm(NodeTermStr(self.current_token, length))
         elif self.current_token is not None and self.current_token.type == tt.TRUE:
             self.current_token.value = "1"
             return NodeTerm(NodeTermBool(bool=self.current_token))

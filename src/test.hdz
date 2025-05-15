@@ -1,12 +1,3 @@
-cif x = 0
-cif y = 1
-cif medzi = 0
-cif kolke = 13
+hutor("Ahoj, svetu")
 
-furt(cif i = 1, i < kolke - 1, i++){
-    medzi = x + y
-    x = y
-    y = medzi
-}
-
-vychod(y)
+vychod(0)

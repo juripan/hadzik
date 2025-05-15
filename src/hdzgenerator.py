@@ -190,6 +190,9 @@ class Generator(ErrorHandler):
         elif isinstance(term.var, NodeTermChar):
             assert term.var.char.value is not None, "shouldn't be None here"
             self.push_stack(term.var.char.value, "BYTE")
+        elif isinstance(term.var, NodeTermStr):
+            assert term.var.str.value is not None, "shouldn't be None here"
+            raise NotImplementedError("TODO: Implement string literals in generator")
         elif isinstance(term.var, NodeTermParen):
             self.gen_expression(term.var.expr)
             if term.negative:

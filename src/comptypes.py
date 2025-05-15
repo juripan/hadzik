@@ -34,6 +34,11 @@ class NodeTermChar:
     char: Token
 
 @dataclass(slots=True)
+class NodeTermStr:
+    str: Token
+    length: int
+
+@dataclass(slots=True)
 class NodeTermIdent:
     ident: Token
 
@@ -55,7 +60,10 @@ class NodeTermNot: # type: ignore (has to be predeclared)
 
 @dataclass(slots=True)
 class NodeTerm:
-    var: Union[NodeTermIdent, NodeTermInt, NodeTermChar, NodeTermParen, NodeTermNot, NodeTermBool]
+    var: Union[
+        NodeTermIdent, NodeTermInt, NodeTermChar, NodeTermStr, 
+        NodeTermParen, NodeTermNot, NodeTermBool
+        ]
     negative: bool = False
 
 

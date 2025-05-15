@@ -70,6 +70,22 @@ class Tokenizer(ErrorHandler):
             self.advance()
         self.tokens.append(self.search_for_keyword(buffer))
 
+    def escape_char(self) -> int:
+        if self.curr_char is None:
+            #TODO: make the raise error be capable of accepting the line and col number without the dummy Token
+            self.raise_error("Syntax", "expected a character after \\ escape", Token(tt.NEWLINE, self.line_number, self.column_number))
+        assert self.curr_char is not None, "char shouldn't be None here"
+        if self.curr_char == "n":
+            ascii_value = 10 # ascii code for newline
+        elif self.curr_char == "t":
+            ascii_value = 9
+        elif self.curr_char == "0":
+            ascii_value = 0
+        else:
+            ascii_value = ord(self.curr_char)
+        return ascii_value
+
+
     def lex_char(self):
         """
         makes a character literal
@@ -77,22 +93,36 @@ class Tokenizer(ErrorHandler):
         self.advance()
         if self.curr_char == "\\":
             self.advance()
-            if self.curr_char == "n":
-                ascii_value = 10 # ascii code for newline
-            elif self.curr_char == "t":
-                ascii_value = 9
-            elif self.curr_char == "0":
-                ascii_value = 0
-            else:
-                ascii_value = ord(self.curr_char)    
+            ascii_value = str(self.escape_char())
         elif self.curr_char is not None:
-            ascii_value = ord(self.curr_char)
+            ascii_value = str(ord(self.curr_char))
         else:
-            self.raise_error("Syntax", "unclosed \"'\"", Token(tt.NEWLINE, self.line_number, self.column_number))
-        self.tokens.append(Token(type=tt.CHAR_LIT, value=str(ascii_value), line=self.line_number, col=self.column_number)) # type: ignore (never unbound since else catches it)
+            self.raise_error("Syntax", "unclosed `'`", Token(tt.NEWLINE, self.line_number, self.column_number))
+        self.tokens.append(Token(type=tt.CHAR_LIT, value=ascii_value, line=self.line_number, col=self.column_number)) # type: ignore (never unbound since else catches it)
         self.advance()
         if self.curr_char is None or self.curr_char != "'":
             self.raise_error("Syntax", "expected \"'\"", Token(tt.NEWLINE, self.line_number, self.column_number))
+        self.advance()
+
+    def lex_string(self):
+        """
+        makes a string literal
+        """
+        start_line_number, start_column_number = self.line_number, self.column_number
+        self.advance()
+        string: list[str] = []
+        while self.curr_char != '"':
+            if self.curr_char == "\\":
+                self.advance()
+                string.append(str(self.escape_char()))
+            elif self.curr_char is not None:
+                string.append(str(ord(self.curr_char)))
+            else:
+                self.raise_error("Syntax", "unclosed `\"` started here", Token(tt.NEWLINE, start_line_number, start_column_number))
+            self.advance()
+        #TODO: find a better solution to this
+        string.append(str(len(string))) # passes a string length as the last number
+        self.tokens.append(Token(type=tt.STR_LIT, value=",".join(string), line=self.line_number, col=self.column_number))
         self.advance()
 
     def tokenize(self):
@@ -103,6 +133,8 @@ class Tokenizer(ErrorHandler):
                 self.lex_number()
             elif self.curr_char == "'":
                 self.lex_char()
+            elif self.curr_char == '"':
+                self.lex_string()
             elif self.curr_char == "=" and self.look_ahead() == "=":
                 self.tokens.append(Token(type=tt.IS_EQUAL, line=self.line_number, col=self.column_number))
                 self.advance()
