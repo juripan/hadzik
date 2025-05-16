@@ -56,7 +56,7 @@ class Tokenizer(ErrorHandler):
             buffer += self.curr_char
             self.advance()
         type_of_number = tt.INT_LIT  # if "." not in buffer else tt.floating_number
-        self.tokens.append(Token(type=type_of_number, value=buffer, line=self.line_number, col=self.column_number))
+        self.tokens.append(Token(type=type_of_number, value=buffer, line=self.line_number, col=self.column_number - 1))
 
     def lex_keyword(self):
         """
@@ -69,7 +69,7 @@ class Tokenizer(ErrorHandler):
             buffer += self.curr_char
             self.advance()
         self.tokens.append(self.search_for_keyword(buffer))
-
+    
     def escape_char(self) -> int:
         if self.curr_char is None:
             #TODO: make the raise error be capable of accepting the line and col number without the dummy Token
@@ -120,8 +120,7 @@ class Tokenizer(ErrorHandler):
             else:
                 self.raise_error("Syntax", "unclosed `\"` started here", Token(tt.NEWLINE, start_line_number, start_column_number))
             self.advance()
-        #TODO: find a better solution to this
-        string.append(str(len(string))) # passes a string length as the last number
+        
         self.tokens.append(Token(type=tt.STR_LIT, value=",".join(string), line=self.line_number, col=self.column_number))
         self.advance()
 
@@ -179,44 +178,44 @@ class Tokenizer(ErrorHandler):
             elif self.curr_char == " ":
                 self.advance()
             elif self.curr_char == "(":
-                self.advance()
                 self.tokens.append(Token(type=tt.LEFT_PAREN, line=self.line_number, col=self.column_number))
+                self.advance()
             elif self.curr_char == ")":
-                self.advance()
                 self.tokens.append(Token(type=tt.RIGHT_PAREN, line=self.line_number, col=self.column_number))
+                self.advance()
             elif self.curr_char == "{":
-                self.advance()
                 self.tokens.append(Token(type=tt.LEFT_CURLY, line=self.line_number, col=self.column_number))
+                self.advance()
             elif self.curr_char == "}":
-                self.advance()
                 self.tokens.append(Token(type=tt.RIGHT_CURLY, line=self.line_number, col=self.column_number))
+                self.advance()
             elif self.curr_char == ",":
-                self.advance()
                 self.tokens.append(Token(type=tt.COMMA, line=self.line_number, col=self.column_number))
+                self.advance()
             elif self.curr_char == "=":
-                self.advance()
                 self.tokens.append(Token(type=tt.EQUALS, line=self.line_number, col=self.column_number))
+                self.advance()
             elif self.curr_char == ">":
-                self.advance()
                 self.tokens.append(Token(type=tt.LARGER_THAN, line=self.line_number, col=self.column_number))
+                self.advance()
             elif self.curr_char == "<":
-                self.advance()
                 self.tokens.append(Token(type=tt.LESS_THAN, line=self.line_number, col=self.column_number))
+                self.advance()
             elif self.curr_char == "+":
-                self.advance()
                 self.tokens.append(Token(type=tt.PLUS, line=self.line_number, col=self.column_number))
+                self.advance()
             elif self.curr_char == "-":
-                self.advance()
                 self.tokens.append(Token(type=tt.MINUS, line=self.line_number, col=self.column_number))
+                self.advance()
             elif self.curr_char == "*":
-                self.advance()
                 self.tokens.append(Token(type=tt.STAR, line=self.line_number, col=self.column_number))
+                self.advance()
             elif self.curr_char == "/":
-                self.advance()
                 self.tokens.append(Token(type=tt.SLASH, line=self.line_number, col=self.column_number))
-            elif self.curr_char == "%":
                 self.advance()
+            elif self.curr_char == "%":
                 self.tokens.append(Token(type=tt.PERCENT, line=self.line_number, col=self.column_number))
+                self.advance()
             else:
                 self.raise_error("Syntax", "char not included in the lexer", Token(tt.NEWLINE, self.line_number, self.column_number))
         return self.tokens

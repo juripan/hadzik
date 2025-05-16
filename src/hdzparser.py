@@ -45,6 +45,7 @@ class Parser(ErrorHandler):
             self.raise_error(error_name, error_details, self.current_token)
 
     def parse_term(self) -> NodeTerm | None:
+        #TODO: factor out the is_negative attribute into the NodeTermInt, NodeTermIdent, NodeTermParen since only they can be negative
         is_negative = False
         if self.current_token is not None and self.current_token.type == tt.MINUS:
             is_negative = True
@@ -55,17 +56,23 @@ class Parser(ErrorHandler):
         elif self.current_token is not None and self.current_token.type == tt.IDENT:
             return NodeTerm(NodeTermIdent(ident=self.current_token), is_negative)
         elif self.current_token is not None and self.current_token.type == tt.CHAR_LIT:
+            if is_negative:
+                self.raise_error("Syntax", f"`{CHAR_DEF}` literal cannot be negative", self.get_token_at(-1))
             return NodeTerm(NodeTermChar(self.current_token))
         elif self.current_token is not None and self.current_token.type == tt.STR_LIT:
+            if is_negative:
+                self.raise_error("Syntax", f"`{STR_DEF}` literal cannot be negative", self.get_token_at(-1))
             assert self.current_token.value is not None, "string value shouldn't be None here, bug in lexing"
-            *val, length = self.current_token.value.split(",")
-            self.current_token.value = ",".join(val)
-            length = int(length)
+            length = len(self.current_token.value.split(","))
             return NodeTerm(NodeTermStr(self.current_token, length))
         elif self.current_token is not None and self.current_token.type == tt.TRUE:
+            if is_negative:
+                self.raise_error("Syntax", f"`{BOOL_DEF}` literal cannot be negative", self.get_token_at(-1))
             self.current_token.value = "1"
             return NodeTerm(NodeTermBool(bool=self.current_token))
         elif self.current_token is not None and self.current_token.type == tt.FALSE:
+            if is_negative:
+                self.raise_error("Syntax", f"`{BOOL_DEF}` literal cannot be negative", self.get_token_at(-1))
             self.current_token.value = "0"
             return NodeTerm(NodeTermBool(bool=self.current_token))
         elif self.current_token is not None and self.current_token.type == tt.LEFT_PAREN:
@@ -86,7 +93,7 @@ class Parser(ErrorHandler):
                 self.raise_error("Value", "expected term", self.current_token)
             
             assert term is not None, "Should be handled in the if statement above"
-            return NodeTerm(var=NodeTermNot(term=term))
+            return NodeTerm(NodeTermNot(term=term), is_negative)
         else:
             return None
 
