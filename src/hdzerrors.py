@@ -25,20 +25,22 @@ class ErrorHandler:
         file_content = self.file_content.splitlines()
         return file_content[self.line_number - 1] if self.line_number - 1 < len(file_content) else file_content[-1]
 
-    def raise_error(self, type_: str, details: str, curr_token: Token | None = None) -> None:
+    def compiler_error(self, type_: str, details: str, line_and_num: Token | tuple[int, int] | None = None) -> None:
         """
-        throws an error based on the given type, details and current tokens location,
-        if the current token doesn't exist then it assumes the line and column
+        throws an error based on the given type, details and location passed in,
+        if the location isn't given then it assumes the line and column
         """
-        if curr_token:
-            self.line_number = curr_token.line
-            self.column_number = curr_token.col
+        if isinstance(line_and_num, Token):
+            self.line_number = line_and_num.line
+            self.column_number = line_and_num.col
+        elif line_and_num:
+            self.line_number, self.column_number = line_and_num
         
         error_line = self.get_error_line()
         print(f"Failed here: {self.file_path}:{self.line_number}:{self.column_number}")
         print(error_line)
         
-        if curr_token:
+        if line_and_num:
             print("^".rjust(self.column_number))
             col_report = \
             f" column {self.column_number}" if not self.dialect_errors \

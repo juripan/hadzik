@@ -42,7 +42,7 @@ class Parser(ErrorHandler):
         raises an error if the condition is true
         """
         if self.current_token is None or self.current_token.type != token_type:
-            self.raise_error(error_name, error_details, self.current_token)
+            self.compiler_error(error_name, error_details, self.current_token)
 
     def parse_term(self) -> NodeTerm | None:
         #TODO: factor out the is_negative attribute into the NodeTermInt, NodeTermIdent, NodeTermParen since only they can be negative
@@ -57,29 +57,29 @@ class Parser(ErrorHandler):
             return NodeTerm(NodeTermIdent(ident=self.current_token), is_negative)
         elif self.current_token is not None and self.current_token.type == tt.CHAR_LIT:
             if is_negative:
-                self.raise_error("Syntax", f"`{CHAR_DEF}` literal cannot be negative", self.get_token_at(-1))
+                self.compiler_error("Syntax", f"`{CHAR_DEF}` literal cannot be negative", self.get_token_at(-1))
             return NodeTerm(NodeTermChar(self.current_token))
         elif self.current_token is not None and self.current_token.type == tt.STR_LIT:
             if is_negative:
-                self.raise_error("Syntax", f"`{STR_DEF}` literal cannot be negative", self.get_token_at(-1))
+                self.compiler_error("Syntax", f"`{STR_DEF}` literal cannot be negative", self.get_token_at(-1))
             assert self.current_token.value is not None, "string value shouldn't be None here, bug in lexing"
             length = len(self.current_token.value.split(","))
             return NodeTerm(NodeTermStr(self.current_token, length))
         elif self.current_token is not None and self.current_token.type == tt.TRUE:
             if is_negative:
-                self.raise_error("Syntax", f"`{BOOL_DEF}` literal cannot be negative", self.get_token_at(-1))
+                self.compiler_error("Syntax", f"`{BOOL_DEF}` literal cannot be negative", self.get_token_at(-1))
             self.current_token.value = "1"
             return NodeTerm(NodeTermBool(bool=self.current_token))
         elif self.current_token is not None and self.current_token.type == tt.FALSE:
             if is_negative:
-                self.raise_error("Syntax", f"`{BOOL_DEF}` literal cannot be negative", self.get_token_at(-1))
+                self.compiler_error("Syntax", f"`{BOOL_DEF}` literal cannot be negative", self.get_token_at(-1))
             self.current_token.value = "0"
             return NodeTerm(NodeTermBool(bool=self.current_token))
         elif self.current_token is not None and self.current_token.type == tt.LEFT_PAREN:
             self.next_token()
             expr = self.parse_expr()
             if expr is None:
-                self.raise_error("Value", "expected expression", self.current_token)
+                self.compiler_error("Value", "expected expression", self.current_token)
 
             self.try_throw_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
 
@@ -90,7 +90,7 @@ class Parser(ErrorHandler):
             
             term = self.parse_term()
             if term is None:
-                self.raise_error("Value", "expected term", self.current_token)
+                self.compiler_error("Value", "expected term", self.current_token)
             
             assert term is not None, "Should be handled in the if statement above"
             return NodeTerm(NodeTermNot(term=term), is_negative)
@@ -122,7 +122,7 @@ class Parser(ErrorHandler):
             expr_rhs = self.parse_expr(next_min_prec)
 
             if expr_rhs is None:
-                self.raise_error("Value", "invalid expression", self.current_token)
+                self.compiler_error("Value", "invalid expression", self.current_token)
             assert expr_rhs is not None, "expression shouldn't be None, is handled in the above if statement"
 
             expr = NodeBinExpr(None) if op.type in (
@@ -179,7 +179,7 @@ class Parser(ErrorHandler):
         value = self.parse_expr()
 
         if value is None:
-            self.raise_error("Syntax", "invalid expression", self.current_token)
+            self.compiler_error("Syntax", "invalid expression", self.current_token)
 
         assert ident is not None, "Identifier should never be None"
         assert value is not None, "Value should never be None, maybe a missing if value is None"
@@ -194,7 +194,7 @@ class Parser(ErrorHandler):
         expr = self.parse_expr()
         
         if expr is None:
-            self.raise_error("Syntax", "invalid expression", self.current_token)
+            self.compiler_error("Syntax", "invalid expression", self.current_token)
         
         assert expr is not None, "expr shouldn't be None, handled in the above if statement"
 
@@ -222,7 +222,7 @@ class Parser(ErrorHandler):
                 self.next_token() # right curly
                 return scope
         else:
-            self.raise_error("Syntax", "unclosed scope starting here", start_curly)
+            self.compiler_error("Syntax", "unclosed scope starting here", start_curly)
         
         if self.current_token and self.current_token.type == tt.RIGHT_CURLY:
             self.next_token() # right curly (for empty statement with no statements inside)
@@ -234,7 +234,7 @@ class Parser(ErrorHandler):
             
             expr = self.parse_expr()
             if expr is None:
-                self.raise_error("Value", "not able to evaluate expression", self.current_token)
+                self.compiler_error("Value", "not able to evaluate expression", self.current_token)
             
             assert expr is not None, "expr shouldn't be None, handled in the previous if statement"
             
@@ -257,7 +257,7 @@ class Parser(ErrorHandler):
 
         expr = self.parse_expr()
         if expr is None:
-            self.raise_error("Value", "not able to parse expression", self.current_token)
+            self.compiler_error("Value", "not able to parse expression", self.current_token)
 
         assert expr is not None, "expr shouldn't be None, handled in the previous if statement"
         
@@ -274,7 +274,7 @@ class Parser(ErrorHandler):
 
         expr = self.parse_expr()
         if expr is None:
-            self.raise_error("Value", "not able to parse expression", self.current_token)
+            self.compiler_error("Value", "not able to parse expression", self.current_token)
         
         assert expr is not None, "expr shouldn't be None, handled in the previous if statement"
 
@@ -294,7 +294,7 @@ class Parser(ErrorHandler):
 
         expr = self.parse_expr()
         if expr is None or expr.var is None:
-            self.raise_error("Syntax", "missing condition", self.current_token)
+            self.compiler_error("Syntax", "missing condition", self.current_token)
         
         assert expr is not None, "expr shouldn't be None, handled in the previous if statement"
         assert expr.var is not None, "expr.var shouldn't be None, handled in the previous if statement"
@@ -302,7 +302,7 @@ class Parser(ErrorHandler):
         condition = expr.var.var # gets the NodePredExpr
 
         if not isinstance(condition, NodePredExpr):
-            self.raise_error("Syntax", "invalid condition", self.current_token)
+            self.compiler_error("Syntax", "invalid condition", self.current_token)
 
         self.try_throw_error(tt.COMMA, "Syntax", "expected ','")
         self.next_token()
@@ -325,7 +325,7 @@ class Parser(ErrorHandler):
 
         expr = self.parse_expr()
         if expr is None:
-            self.raise_error("Value", "invalid expression", self.current_token)
+            self.compiler_error("Value", "invalid expression", self.current_token)
         
         assert expr is not None, "expr shouldn't be None here, handled by the previous if condition"
 
@@ -350,7 +350,7 @@ class Parser(ErrorHandler):
 
         expr = self.parse_expr()
         if expr is None:
-            self.raise_error("Value", "expected expression", self.current_token)
+            self.compiler_error("Value", "expected expression", self.current_token)
         
         assert expr is not None, "expr shouldn't be None here, handled by the previous if condition"
         
@@ -365,7 +365,7 @@ class Parser(ErrorHandler):
         cont = self.parse_expr()
 
         if cont is None:
-            self.raise_error("Syntax", "Invalid print argument", self.current_token)
+            self.compiler_error("Syntax", "Invalid print argument", self.current_token)
         
         assert cont is not None, "content shouldn't be None, handled by the previous if statement"
 
@@ -394,7 +394,7 @@ class Parser(ErrorHandler):
         if self.current_token.type == tt.RIGHT_CURLY: # here to handle fully empty scopes like this -> {{}}
             return NodeStmt(stmt_var=NodeStmtEmpty())
         if parse_func is None:
-            self.raise_error("Syntax", "invalid statement start", self.current_token)
+            self.compiler_error("Syntax", "invalid statement start", self.current_token)
         assert parse_func is not None, "shouldn't be None here"
         assert callable(parse_func), "should be callable since its a function"
 

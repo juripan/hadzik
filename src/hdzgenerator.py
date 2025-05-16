@@ -176,7 +176,7 @@ class Generator(ErrorHandler):
 
             found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == term.var.ident.value, self.variables)) # type: ignore (says types are unknown even though they are known)
             if not found_vars:
-                self.raise_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
+                self.compiler_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
             
             location, word_size = found_vars[-1].loc, found_vars[-1].size_w
 
@@ -237,7 +237,7 @@ class Generator(ErrorHandler):
         elif comparison.comp_sign.type == tt.LESS_THAN_OR_EQ:
             self.output.append("    setle al\n")
         else:
-            self.raise_error("Syntax", "Invalid comparison expression", comparison.comp_sign)
+            self.compiler_error("Syntax", "Invalid comparison expression", comparison.comp_sign)
         self.push_stack("al")
 
     def gen_logical_expression(self, logic_expr: NodeExprLogic) -> None:
@@ -263,7 +263,7 @@ class Generator(ErrorHandler):
             self.output.append(f"    jz {label}\n")
             self.output.append(f"    mov {rc}, {rb}\n")
         else:
-            self.raise_error("Syntax", "Invalid logic expression", logic_expr.logical_operator)
+            self.compiler_error("Syntax", "Invalid logic expression", logic_expr.logical_operator)
         self.output.append(f"{label}:\n")
         self.output.append(f"    test {ra}, {ra}\n")
         self.output.append("    setne al\n")
@@ -315,7 +315,7 @@ class Generator(ErrorHandler):
             #TODO: make division be generic for any size
             self.push_stack("edx") # assembly stores the modulus in rdx after the standard division instruction
         else:
-            self.raise_error("Generator", "failed to generate binary expression")
+            self.compiler_error("Generator", "failed to generate binary expression")
 
     def gen_bool_expression(self, expression: NodeExprBool):
         if isinstance(expression.var, NodePredExpr):
@@ -374,7 +374,7 @@ class Generator(ErrorHandler):
         """
         found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == decl_stmt.ident.value, self.variables[self.scopes[-1]::]))
         if found_vars:
-            self.raise_error("Value", f"variable has been already declared in this scope: {decl_stmt.ident.value}", curr_token=decl_stmt.ident)
+            self.compiler_error("Value", f"variable has been already declared in this scope: {decl_stmt.ident.value}", decl_stmt.ident)
         location: int = self.stack_size # stack size changes after generating the expression, thats why its saved here
 
         if decl_stmt.type_.type == tt.INT_DEF:
@@ -550,7 +550,7 @@ class Generator(ErrorHandler):
             self.output.append("    ;; --- break --- \n")
             self.output.append(f"    jmp {self.loop_end_labels[-1]}\n")
         else:
-            self.raise_error("Syntax", "cant break out of a loop when not inside one", break_stmt.break_tkn)
+            self.compiler_error("Syntax", "cant break out of a loop when not inside one", break_stmt.break_tkn)
 
     def gen_statement(self, statement: NodeStmt) -> None:
         """

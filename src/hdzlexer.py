@@ -73,7 +73,7 @@ class Tokenizer(ErrorHandler):
     def escape_char(self) -> int:
         if self.curr_char is None:
             #TODO: make the raise error be capable of accepting the line and col number without the dummy Token
-            self.raise_error("Syntax", "expected a character after \\ escape", Token(tt.NEWLINE, self.line_number, self.column_number))
+            self.compiler_error("Syntax", "expected a character after \\ escape", (self.line_number, self.column_number))
         assert self.curr_char is not None, "char shouldn't be None here"
         if self.curr_char == "n":
             ascii_value = 10 # ascii code for newline
@@ -97,18 +97,18 @@ class Tokenizer(ErrorHandler):
         elif self.curr_char is not None:
             ascii_value = str(ord(self.curr_char))
         else:
-            self.raise_error("Syntax", "unclosed `'`", Token(tt.NEWLINE, self.line_number, self.column_number))
+            self.compiler_error("Syntax", "unclosed `'` started here", (self.line_number, self.column_number))
         self.tokens.append(Token(type=tt.CHAR_LIT, value=ascii_value, line=self.line_number, col=self.column_number)) # type: ignore (never unbound since else catches it)
         self.advance()
         if self.curr_char is None or self.curr_char != "'":
-            self.raise_error("Syntax", "expected \"'\"", Token(tt.NEWLINE, self.line_number, self.column_number))
+            self.compiler_error("Syntax", "expected \"'\"", (self.line_number, self.column_number))
         self.advance()
 
     def lex_string(self):
         """
         makes a string literal
         """
-        start_line_number, start_column_number = self.line_number, self.column_number
+        start_str = (self.line_number, self.column_number)
         self.advance()
         string: list[str] = []
         while self.curr_char != '"':
@@ -118,7 +118,7 @@ class Tokenizer(ErrorHandler):
             elif self.curr_char is not None:
                 string.append(str(ord(self.curr_char)))
             else:
-                self.raise_error("Syntax", "unclosed `\"` started here", Token(tt.NEWLINE, start_line_number, start_column_number))
+                self.compiler_error("Syntax", 'unclosed `"` started here', start_str)
             self.advance()
         
         self.tokens.append(Token(type=tt.STR_LIT, value=",".join(string), line=self.line_number, col=self.column_number))
@@ -163,7 +163,7 @@ class Tokenizer(ErrorHandler):
                 while self.curr_char not in ("\n", None):
                     self.advance()
             elif self.curr_char == "/" and self.look_ahead() == "*":
-                cache = self.line_number, self.column_number
+                comment_start = (self.line_number, self.column_number)
                 self.advance()
                 self.advance()
                 while self.curr_char not in ("*", None) or self.look_ahead() not in ("/", None):
@@ -171,7 +171,7 @@ class Tokenizer(ErrorHandler):
                 self.advance()
                 self.advance()
                 if self.curr_char is None:
-                    self.raise_error("Syntax", "unclosed multiline comment", Token(tt.NEWLINE, *cache))
+                    self.compiler_error("Syntax", "unclosed multiline comment", comment_start)
             elif self.curr_char == "\n":
                 self.tokens.append(Token(type=tt.NEWLINE, line=self.line_number, col=self.column_number))
                 self.advance()
@@ -217,5 +217,5 @@ class Tokenizer(ErrorHandler):
                 self.tokens.append(Token(type=tt.PERCENT, line=self.line_number, col=self.column_number))
                 self.advance()
             else:
-                self.raise_error("Syntax", "char not included in the lexer", Token(tt.NEWLINE, self.line_number, self.column_number))
+                self.compiler_error("Syntax", "char not included in the lexer", (self.line_number, self.column_number))
         return self.tokens
