@@ -1,7 +1,6 @@
 naj s = 'a'
 naj x = 8
 furt(naj i = 0, i < 10, i++){
-    hutor("ahoj\n")
+    hutor("ahoj ")
 }
-hutor(s)
 vychod(x)

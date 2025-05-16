@@ -64,7 +64,7 @@ class Parser(ErrorHandler):
                 self.compiler_error("Syntax", f"`{STR_DEF}` literal cannot be negative", self.get_token_at(-1))
             assert self.current_token.value is not None, "string value shouldn't be None here, bug in lexing"
             length = len(self.current_token.value.split(","))
-            return NodeTerm(NodeTermStr(self.current_token, length))
+            return NodeTerm(NodeTermStr(self.current_token, str(length)))
         elif self.current_token is not None and self.current_token.type == tt.TRUE:
             if is_negative:
                 self.compiler_error("Syntax", f"`{BOOL_DEF}` literal cannot be negative", self.get_token_at(-1))
@@ -372,7 +372,7 @@ class Parser(ErrorHandler):
         self.try_throw_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
         self.next_token()
         
-        return NodeStmtPrint(cont)
+        return NodeStmtPrint(cont, cont_type=INFER_DEF)
     
     def parse_break(self):
         assert self.current_token is not None, "The token should be here because of the dict"

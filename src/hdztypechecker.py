@@ -87,7 +87,7 @@ class TypeChecker(ErrorHandler):
         elif isinstance(term.var, NodeTermChar):
             self.push_stack(StackItem(CHAR_DEF, (term.var.char.line, term.var.char.col)))
         elif isinstance(term.var, NodeTermStr):
-            self.push_stack(StackItem(STR_DEF, (term.var.str.line, term.var.str.col)))
+            self.push_stack(StackItem(STR_DEF, (term.var.string.line, term.var.string.col)))
         elif isinstance(term.var, NodeTermNot): # type: ignore
             self.typecheck_term(term.var.term) # type: ignore
             if self.stack[-1].type_ != BOOL_DEF:
@@ -236,3 +236,4 @@ class TypeChecker(ErrorHandler):
         self.typecheck_expression(print_stmt.content)
         if (item := self.pop_stack()).type_ not in (CHAR_DEF, STR_DEF):
             self.compiler_error("Type", f"expected type `{CHAR_DEF}` or `{STR_DEF}`, got `{item.type_}`", item.loc)
+        print_stmt.cont_type = item.type_
