@@ -2,7 +2,7 @@ from comptypes import * # uh-oh a wildcard import
 import hdztokentypes as tt
 from hdzerrors import ErrorHandler
 
-#TODO: make chars a part of parsing expressions
+
 class Parser(ErrorHandler):
     index: int = -1
     column_number = -1 # -1 means that theres no column number tracked
@@ -18,6 +18,7 @@ class Parser(ErrorHandler):
             tt.INT_DEF: self.parse_decl,
             tt.BOOL_DEF: self.parse_decl,
             tt.CHAR_DEF: self.parse_decl,
+            tt.CONST: self.parse_decl,
             tt.LEFT_CURLY: self.parse_scope,
             tt.IF: self.parse_if,
             tt.IDENT: self.parse_reassign,
@@ -29,19 +30,19 @@ class Parser(ErrorHandler):
         }
         self.next_token() # here to set the first token
 
-    def next_token(self) -> Token | None:
+    def next_token(self) -> None:
         self.index += 1
         self.current_token = self.all_tokens[self.index] if self.index < len(self.all_tokens) else None
 
     def get_token_at(self, offset: int = 0) -> Token | None:
         return self.all_tokens[self.index + offset] if self.index + offset < len(self.all_tokens) else None
     
-    def try_throw_error(self, token_type: token_type, error_name: str, error_details: str) -> None:
+    def try_throw_error(self, token_type: tuple[token_type, ...] | token_type, error_name: str, error_details: str) -> None:
         """
         checks if the current token is none or if its type is not the token type given,
         raises an error if the condition is true
         """
-        if self.current_token is None or self.current_token.type != token_type:
+        if self.current_token is None or self.current_token.type not in token_type:
             self.raise_error(error_name, error_details, self.current_token)
 
     def parse_term(self) -> NodeTerm | None:
@@ -152,8 +153,18 @@ class Parser(ErrorHandler):
         return expr_lhs
     
     def parse_decl(self) -> NodeStmtDeclare:
+        assert self.current_token is not None, "cant be None here since it triggered the method"
+        is_const = False
+        if self.current_token.type == tt.CONST:
+            is_const = True
+            self.next_token()
+        
         type_def = self.current_token
-        self.next_token() # removes type def
+        if type_def.type == tt.IDENT and is_const:
+            type_def = Token(tt.INFER_DEF, self.current_token.line, self.current_token.col) # allows for type inference without `naj` just with `furt`
+        else:
+            self.try_throw_error((tt.BOOL_DEF, tt.CHAR_DEF, tt.INT_DEF, tt.INFER_DEF), "Syntax", "expected a valid type")
+            self.next_token() # removes type def
 
         self.try_throw_error(tt.IDENT, "Syntax", "expected valid identifier")
         ident = self.current_token
@@ -170,7 +181,7 @@ class Parser(ErrorHandler):
 
         assert ident is not None, "Identifier should never be None"
         assert value is not None, "Value should never be None, maybe a missing if value is None"
-        return NodeStmtDeclare(ident, value, type_def)
+        return NodeStmtDeclare(ident, value, type_def, is_const)
 
     def parse_exit(self) -> NodeStmtExit:
         self.next_token() # removes exit token

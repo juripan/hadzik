@@ -68,7 +68,6 @@ all of the dependencies are listed in the Docker file and source code files but 
 ## Priorities:
 + typecasting
 + strings
-+ constants
 + for loop rewrite
 + macros
 

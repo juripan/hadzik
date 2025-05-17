@@ -5,12 +5,14 @@ from comptypes import *
 @dataclass(slots=True)
 class StackItem:
     """
-    class that stores the type name of the variable (if it is one)
+    class that stores the type name of the variable (if it is one),
+    if its a constant variable (if it is one)
     and its location in the source code via Token (for error reporting)
     """
     type_: token_type
     token: Token
     name: str = ""
+    is_const: bool = False
 
 
 class TypeChecker(ErrorHandler):
@@ -160,13 +162,15 @@ class TypeChecker(ErrorHandler):
             decl_stmt.type_.type = self.stack[-1].type_
         elif self.stack[-1].type_ != decl_stmt.type_.type:
             self.raise_error("Type", f"expected type `{decl_stmt.type_.type}`, got `{self.stack[-1].type_}`", decl_stmt.type_)
-        self.variables.append(StackItem(decl_stmt.type_.type, decl_stmt.ident, decl_stmt.ident.value)) # type: ignore (freaking out about str | None)
+        self.variables.append(StackItem(decl_stmt.type_.type, decl_stmt.ident, decl_stmt.ident.value, decl_stmt.is_const)) # type: ignore (freaking out about str | None)
     
     def typecheck_reassign(self, reassign_stmt: NodeStmtReassign):
         found_vars = tuple(filter(lambda x: x.name == reassign_stmt.var.ident.value, self.variables))
 
         if not found_vars:
             self.raise_error("Value", f"undeclared identifier: {reassign_stmt.var.ident.value}", reassign_stmt.var.ident)
+        elif found_vars[-1].is_const:
+            self.raise_error("Value", f"reassignment of const identifier: {reassign_stmt.var.ident.value}", reassign_stmt.var.ident)
         
         if isinstance(reassign_stmt.var, NodeStmtReassignEq):
             self.typecheck_expression(reassign_stmt.var.expr)

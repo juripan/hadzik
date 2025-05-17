@@ -140,6 +140,7 @@ class NodeStmtDeclare:
     ident: Token
     expr: NodeExpr
     type_: Token
+    is_const: bool = False
 
 
 class NodeScope: # type: ignore (has to be predeclared)

@@ -15,17 +15,19 @@ $$
         kec [\text{Expr}] [\text{Scope}] [\text{IfPred}]\\
         kim [\text{Expr}] [\text{Scope}]\\
         zrob [\text{Scope}] kim [\text{Expr}]\\
-        furt ([\text{IdentDef}], [\text{CompExpr}], [\text{IdentAssign}])[\text{Scope}]\\
+        sicke ([\text{IdentDef}], [\text{CompExpr}], [\text{IdentAssign}])[\text{Scope}]\\
         konec \leftarrow \text{only inside a loop}\\
         \text{newline}
     \end{cases}\\
 
     [\text{IdentDef}] &\to
     \begin{cases}
-        cif \space \text{ident} = [\text{Expr}]\\
-        bul \space \text{ident} = [\text{LogicExpr}]\\
-        znak \space \text{ident} = [\text{Term}]\\
-        naj \space \text{ident} = [\text{Expr}]\\
+        furt^? \space cif \space \text{ident} = [\text{Expr}]\\
+        furt^? \space bul \space \text{ident} = [\text{LogicExpr}]\\
+        furt^? \space znak \space \text{ident} = [\text{Term}]\\
+        furt^? \space naj \space \text{ident} = [\text{Expr}]\\
+        furt \space \text{ident} = [\text{Expr}]\\
+
     \end{cases}\\
 
     [\text{IdentAssign}] &\to

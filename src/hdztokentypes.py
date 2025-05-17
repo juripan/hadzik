@@ -21,9 +21,8 @@ ELIF = "ikec"
 ELSE = "inac"
 WHILE = "kim"
 DO = "zrob"
-FOR = "furt" # TODO: reuse this for const keyword
-FOR_EVERY = "sicke" # TODO: implement new for loops
-IN = "zos" # TODO: implement range
+CONST = "furt"
+FOR = "sicke"
 BREAK = "konec"
 
 IDENT = "indentifier"
@@ -68,9 +67,8 @@ KEYWORD_TO_TOKEN_TYPE: dict[str, token_type] = {
     "inac": ELSE,
     "kim": WHILE,
     "zrob": DO,
-    "furt": FOR,
-    "sicke": FOR_EVERY,
-    "zos": IN,
+    "furt": CONST,
+    "sicke": FOR,
     "konec": BREAK,
 
     "pravda": TRUE,
