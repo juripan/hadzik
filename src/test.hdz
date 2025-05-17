@@ -1,5 +1,4 @@
 naj x = 8
-// TODO: remove or adjust reassignment of strings (doesn't update length only the pointer currently)
 lancok s = "ahoj\n"
 znak a = 'a'
 furt(naj i = 0, i < 10, i++){

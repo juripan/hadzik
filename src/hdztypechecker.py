@@ -171,10 +171,13 @@ class TypeChecker(ErrorHandler):
 
         if not found_vars:
             self.compiler_error("Value", f"undeclared identifier: {reassign_stmt.var.ident.value}", reassign_stmt.var.ident)
-        
+
         if isinstance(reassign_stmt.var, NodeStmtReassignEq):
             self.typecheck_expression(reassign_stmt.var.expr)
-            if (item := self.pop_stack()).type_ != found_vars[-1].type_:
+            item = self.pop_stack()
+            if item.type_ == STR_DEF:
+                self.compiler_error("Type", f"reassigning of type `{item.type_}` is not allowed", reassign_stmt.var.ident)
+            elif item.type_ != found_vars[-1].type_:
                 self.compiler_error("Type", f"expected type `{found_vars[-1].type_}`, got `{item.type_}`", reassign_stmt.var.ident)
         elif isinstance(reassign_stmt.var, (NodeStmtReassignInc, NodeStmtReassignDec)): # type: ignore (using an else branch to catch errors)
             if found_vars[-1].type_ != INT_DEF:
