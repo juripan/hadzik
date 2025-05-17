@@ -7,8 +7,8 @@ class Generator(ErrorHandler):
     output: list[str] = []
     section_data: list[str] = []
 
-    stack_size: size_bytes = 0 # 8 bits (a byte) as a unit
-    stack_item_sizes: list[size_bytes] = [] # same as above
+    stack_size: size_bytes = 0
+    stack_item_sizes: list[size_bytes] = []
 
     variables: list[VariableContext] = [] # stores all variables on the stack
     
@@ -189,6 +189,13 @@ class Generator(ErrorHandler):
             found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == term.var.ident.value, self.variables)) # type: ignore (says types are unknown even though they are known)
             if not found_vars:
                 self.compiler_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
+            if len(found_vars) == 2: #reading a string
+                #TODO: make this less scuffed
+                ptr_loc, ptr_size = found_vars[-1].loc, found_vars[-1].size_w
+                len_loc, len_size = found_vars[-2].loc, found_vars[-2].size_w
+                self.push_stack(f"{len_size} [rbp - {len_loc}]")
+                self.push_stack(f"{ptr_size} [rbp - {ptr_loc}]")
+                return
             
             location, word_size = found_vars[-1].loc, found_vars[-1].size_w
 
@@ -408,9 +415,16 @@ class Generator(ErrorHandler):
             self.add_variable(decl_stmt, "BYTE", 1)
         elif decl_stmt.type_.type == tt.CHAR_DEF:
             self.output.append("    ;; --- char var declaration ---\n")
+            self.gen_expression(decl_stmt.expr)
             self.add_variable(decl_stmt, "BYTE", 1)
         elif decl_stmt.type_.type == tt.STR_DEF:
-            raise NotImplementedError("TODO: add strings to variables")
+            self.output.append("    ;; --- string var declaration ---\n")
+            #TODO: refactor this somehow
+            self.gen_expression(decl_stmt.expr)
+            self.stack_size -= 4
+            self.add_variable(decl_stmt, "DWORD", 4)
+            self.stack_size += 4
+            self.add_variable(decl_stmt, "DWORD", 4)
         else:
             raise ValueError("Unreachable")
         

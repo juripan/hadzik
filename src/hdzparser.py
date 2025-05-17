@@ -18,6 +18,7 @@ class Parser(ErrorHandler):
             tt.INT_DEF: self.parse_decl,
             tt.BOOL_DEF: self.parse_decl,
             tt.CHAR_DEF: self.parse_decl,
+            tt.STR_DEF: self.parse_decl,
             tt.LEFT_CURLY: self.parse_scope,
             tt.IF: self.parse_if,
             tt.IDENT: self.parse_reassign,
