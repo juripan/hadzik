@@ -380,36 +380,40 @@ class Generator(ErrorHandler):
         else:
             raise ValueError("Unreachable")
 
+    def add_variable(self, decl_stmt: NodeStmtDeclare, word_size: size_words, byte_size: size_bytes):
+        location: int = self.stack_size - byte_size
+        assert decl_stmt.ident.value is not None, "var name shouldn't be None here"
+        self.variables.append(VariableContext(decl_stmt.ident.value, location, word_size, byte_size))
+
     def gen_decl(self, decl_stmt: NodeStmtDeclare):
         """
         generates a variable declaration
         """
-        found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == decl_stmt.ident.value, self.variables[self.scopes[-1]::]))
+        found_vars: tuple[VariableContext, ...] = tuple(
+            filter(
+                lambda x: x.name == decl_stmt.ident.value, 
+                self.variables[self.scopes[-1]::]
+            )
+        )
         if found_vars:
             self.compiler_error("Value", f"variable has been already declared in this scope: {decl_stmt.ident.value}", decl_stmt.ident)
 
         if decl_stmt.type_.type == tt.INT_DEF:
             self.output.append("    ;; --- int var declaration ---\n")
-            word_size: size_words = "DWORD"
-            byte_size: size_bytes = 4
             self.gen_expression(decl_stmt.expr)
+            self.add_variable(decl_stmt, "DWORD", 4)
         elif decl_stmt.type_.type == tt.BOOL_DEF:
             self.output.append("    ;; --- bul var declaration ---\n")
-            word_size: size_words = "BYTE"
-            byte_size: size_bytes = 1
             self.gen_expression(decl_stmt.expr)
+            self.add_variable(decl_stmt, "BYTE", 1)
         elif decl_stmt.type_.type == tt.CHAR_DEF:
             self.output.append("    ;; --- char var declaration ---\n")
-            word_size: size_words = "BYTE"
-            byte_size: size_bytes = 1
-            self.gen_expression(decl_stmt.expr)
+            self.add_variable(decl_stmt, "BYTE", 1)
+        elif decl_stmt.type_.type == tt.STR_DEF:
+            raise NotImplementedError("TODO: add strings to variables")
         else:
-            raise ValueError("Unreachable") #TODO: implement string variables
+            raise ValueError("Unreachable")
         
-        location: int = self.stack_size - byte_size
-        assert decl_stmt.ident.value is not None, "var name shouldn't be None here"
-        self.variables.append(VariableContext(decl_stmt.ident.value, location, word_size, byte_size))
-
     def gen_reassign(self, reassign_stmt: NodeStmtReassign):
         """
         generates a var reassignment, increment and decrement
