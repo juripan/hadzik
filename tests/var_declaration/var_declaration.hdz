@@ -1,7 +1,9 @@
+lancok h = "cau"
 cif x = 45
-bul glupy = pravda
+furt bul glupy = pravda
 znak char_z = 'z'
 cif x_again = x
 naj inferred = (1 == 1)
 
+hutor(h)
 vychod(x)

@@ -1,12 +1,8 @@
-cif x = 0
-cif y = 1
-cif medzi = 0
-furt kolke = 13
-
-sicke(cif i = 1, i < kolke - 1, i++){
-    medzi = x + y
-    x = y
-    y = medzi
+naj x = 8
+lancok s = "ahoj\n"
+znak a = 'a'
+sicke(naj i = 0, i < 10, i++){
+    hutor(s)
 }
-
-vychod(y)
+hutor(a)
+vychod(x)

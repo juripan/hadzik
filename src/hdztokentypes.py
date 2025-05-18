@@ -15,6 +15,7 @@ INFER_DEF = "naj"
 INT_DEF = "cif"
 BOOL_DEF = "bul"
 CHAR_DEF = "znak"
+STR_DEF = "lancok"
 
 IF = "kec"
 ELIF = "ikec"
@@ -28,6 +29,7 @@ BREAK = "konec"
 IDENT = "indentifier"
 CHAR_LIT = "char"
 INT_LIT = "int"
+STR_LIT = "string"
 TRUE = "pravda"
 FALSE = "klamstvo"
 
@@ -61,6 +63,7 @@ KEYWORD_TO_TOKEN_TYPE: dict[str, token_type] = {
     "cif": INT_DEF,
     "bul": BOOL_DEF,
     "znak": CHAR_DEF,
+    "lancok": STR_DEF,
 
     "kec": IF,
     "ikec": ELIF,

@@ -5,8 +5,10 @@ import hdztokentypes as tt
 
 class Generator(ErrorHandler):
     output: list[str] = []
-    stack_size: size_bytes = 0 # 8 bits (a byte) as a unit
-    stack_item_sizes: list[size_bytes] = [] # same as above
+    section_data: list[str] = []
+
+    stack_size: size_bytes = 0
+    stack_item_sizes: list[size_bytes] = []
 
     variables: list[VariableContext] = [] # stores all variables on the stack
     
@@ -58,6 +60,8 @@ class Generator(ErrorHandler):
 
         self.column_number = -1
 
+        # What if every Node had its generation as its own method and not a method of the generator?
+        # Hmmmmmmmmm
         self.map_generate_func: dict[object, function] = {
             NodeStmtExit: self.gen_exit,
             NodeStmtDeclare: self.gen_decl,
@@ -90,7 +94,7 @@ class Generator(ErrorHandler):
         else:
             raise ValueError("Invalid register / WORD size")
         
-        if self.stack_size % size != 0:
+        if self.stack_size % size != 0: # stack alignment
             self.stack_size += 4 - self.stack_size % 4
 
         if "[" not in loc:
@@ -156,6 +160,14 @@ class Generator(ErrorHandler):
             self.variables.pop()
             self.stack_item_sizes.pop()
         del self.scopes[-1]
+    
+    def make_str(self, str_term: NodeTermStr):
+        # TODO: make a string with a 64 bit pointer and length can stay 32 bit
+        lbl = self.create_label("str")
+        self.section_data.append(f"{lbl} db {str_term.string.value}\n")
+        self.push_stack(str_term.length, "DWORD")
+        self.push_stack(lbl, "DWORD")
+
 
     def gen_term(self, term: NodeTerm) -> None:
         """
@@ -176,7 +188,14 @@ class Generator(ErrorHandler):
 
             found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == term.var.ident.value, self.variables)) # type: ignore (says types are unknown even though they are known)
             if not found_vars:
-                self.raise_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
+                self.compiler_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
+            if len(found_vars) % 2 == 0: # reading a string (maybe)
+                #TODO: make this know what is a string
+                ptr_loc, ptr_size = found_vars[-1].loc, found_vars[-1].size_w
+                len_loc, len_size = found_vars[-2].loc, found_vars[-2].size_w
+                self.push_stack(f"{len_size} [rbp - {len_loc}]")
+                self.push_stack(f"{ptr_size} [rbp - {ptr_loc}]")
+                return
             
             location, word_size = found_vars[-1].loc, found_vars[-1].size_w
 
@@ -190,6 +209,9 @@ class Generator(ErrorHandler):
         elif isinstance(term.var, NodeTermChar):
             assert term.var.char.value is not None, "shouldn't be None here"
             self.push_stack(term.var.char.value, "BYTE")
+        elif isinstance(term.var, NodeTermStr):
+            assert term.var.string.value is not None, "shouldn't be None here"
+            self.make_str(term.var)
         elif isinstance(term.var, NodeTermParen):
             self.gen_expression(term.var.expr)
             if term.negative:
@@ -197,7 +219,7 @@ class Generator(ErrorHandler):
                 self.pop_stack(ra)
                 self.output.append(f"    neg {ra}\n")
                 self.push_stack(ra)
-        elif isinstance(term.var, NodeTermNot): # type: ignore (else used to catch errors)
+        elif isinstance(term.var, NodeTermNot):
             self.gen_term(term.var.term) # type: ignore (type checking freaking out)
             ra = self.get_reg(0)
             rb = self.get_reg(1)
@@ -234,7 +256,7 @@ class Generator(ErrorHandler):
         elif comparison.comp_sign.type == tt.LESS_THAN_OR_EQ:
             self.output.append("    setle al\n")
         else:
-            self.raise_error("Syntax", "Invalid comparison expression", comparison.comp_sign)
+            self.compiler_error("Syntax", "Invalid comparison expression", comparison.comp_sign)
         self.push_stack("al")
 
     def gen_logical_expression(self, logic_expr: NodeExprLogic) -> None:
@@ -260,7 +282,7 @@ class Generator(ErrorHandler):
             self.output.append(f"    jz {label}\n")
             self.output.append(f"    mov {rc}, {rb}\n")
         else:
-            self.raise_error("Syntax", "Invalid logic expression", logic_expr.logical_operator)
+            self.compiler_error("Syntax", "Invalid logic expression", logic_expr.logical_operator)
         self.output.append(f"{label}:\n")
         self.output.append(f"    test {ra}, {ra}\n")
         self.output.append("    setne al\n")
@@ -312,7 +334,7 @@ class Generator(ErrorHandler):
             #TODO: make division be generic for any size
             self.push_stack("edx") # assembly stores the modulus in rdx after the standard division instruction
         else:
-            self.raise_error("Generator", "failed to generate binary expression")
+            self.compiler_error("Generator", "failed to generate binary expression")
 
     def gen_bool_expression(self, expression: NodeExprBool):
         if isinstance(expression.var, NodePredExpr):
@@ -365,36 +387,47 @@ class Generator(ErrorHandler):
         else:
             raise ValueError("Unreachable")
 
+    def add_variable(self, decl_stmt: NodeStmtDeclare, word_size: size_words, byte_size: size_bytes):
+        location: int = self.stack_size - byte_size
+        assert decl_stmt.ident.value is not None, "var name shouldn't be None here"
+        self.variables.append(VariableContext(decl_stmt.ident.value, location, word_size, byte_size))
+
     def gen_decl(self, decl_stmt: NodeStmtDeclare):
         """
         generates a variable declaration
         """
-        found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == decl_stmt.ident.value, self.variables[self.scopes[-1]::]))
+        found_vars: tuple[VariableContext, ...] = tuple(
+            filter(
+                lambda x: x.name == decl_stmt.ident.value, 
+                self.variables[self.scopes[-1]::]
+            )
+        )
         if found_vars:
-            self.raise_error("Value", f"variable has been already declared in this scope: {decl_stmt.ident.value}", curr_token=decl_stmt.ident)
-        location: int = self.stack_size # stack size changes after generating the expression, thats why its saved here
+            self.compiler_error("Value", f"variable has been already declared in this scope: {decl_stmt.ident.value}", decl_stmt.ident)
 
         if decl_stmt.type_.type == tt.INT_DEF:
             self.output.append("    ;; --- int var declaration ---\n")
-            word_size: size_words = "DWORD"
-            byte_size: size_bytes = 4
             self.gen_expression(decl_stmt.expr)
+            self.add_variable(decl_stmt, "DWORD", 4)
         elif decl_stmt.type_.type == tt.BOOL_DEF:
             self.output.append("    ;; --- bul var declaration ---\n")
-            word_size: size_words = "BYTE"
-            byte_size: size_bytes = 1
             self.gen_expression(decl_stmt.expr)
+            self.add_variable(decl_stmt, "BYTE", 1)
         elif decl_stmt.type_.type == tt.CHAR_DEF:
             self.output.append("    ;; --- char var declaration ---\n")
-            word_size: size_words = "BYTE"
-            byte_size: size_bytes = 1
             self.gen_expression(decl_stmt.expr)
+            self.add_variable(decl_stmt, "BYTE", 1)
+        elif decl_stmt.type_.type == tt.STR_DEF:
+            self.output.append("    ;; --- string var declaration ---\n")
+            #TODO: refactor this somehow
+            self.gen_expression(decl_stmt.expr)
+            self.stack_size -= 4
+            self.add_variable(decl_stmt, "DWORD", 4)
+            self.stack_size += 4
+            self.add_variable(decl_stmt, "DWORD", 4)
         else:
             raise ValueError("Unreachable")
         
-        assert decl_stmt.ident.value is not None, "var name shouldn't be None here"
-        self.variables.append(VariableContext(decl_stmt.ident.value, location, word_size, byte_size))
-
     def gen_reassign(self, reassign_stmt: NodeStmtReassign):
         """
         generates a var reassignment, increment and decrement
@@ -527,17 +560,27 @@ class Generator(ErrorHandler):
         """
         generates a print syscall and cleaning up the stack
         """
-        self.output.append("    ;; --- print char ---\n")
-        self.gen_expression(print_stmt.content)
-        
-        expr_loc = f"[rbp - {self.stack_size - self.stack_item_sizes[-1]}]"
-        self.output.append("    mov rax, 1\n")
-        self.output.append("    mov rdi, 1\n")
-        self.output.append(f"    lea rsi, {expr_loc}\n")
-        self.output.append("    mov rdx, 1\n")
-        self.output.append("    syscall\n")
-        pushed_res = self.stack_item_sizes.pop() #it removes the printed expression because it causes a mess in the stack when looping
-        self.stack_size -= pushed_res #lowers the stack size
+        if print_stmt.cont_type == CHAR_DEF:
+            self.output.append("    ;; --- print char ---\n")
+            self.gen_expression(print_stmt.content)
+            
+            expr_loc = f"[rbp - {self.stack_size - self.stack_item_sizes[-1]}]"
+            self.output.append("    mov rax, 1\n")
+            self.output.append("    mov rdi, 1\n")
+            self.output.append(f"    lea rsi, {expr_loc}\n")
+            self.output.append("    mov rdx, 1\n")
+            self.output.append("    syscall\n")
+            # it removes the printed expression because it causes a mess in the stack when looping
+            pushed_res = self.stack_item_sizes.pop()
+            self.stack_size -= pushed_res #lowers the stack size
+        elif print_stmt.cont_type == STR_DEF:
+            self.output.append("    ;; --- print str ---\n")
+            self.gen_expression(print_stmt.content)
+            self.output.append("    mov rax, 1\n")
+            self.output.append("    mov rdi, 1\n")
+            self.pop_stack("esi") # pointer is 32 bit
+            self.pop_stack("edx") # length is 32 bit
+            self.output.append("    syscall\n")
 
     def gen_break(self, break_stmt: NodeStmtBreak) -> None:
         """
@@ -547,7 +590,7 @@ class Generator(ErrorHandler):
             self.output.append("    ;; --- break --- \n")
             self.output.append(f"    jmp {self.loop_end_labels[-1]}\n")
         else:
-            self.raise_error("Syntax", "cant break out of a loop when not inside one", break_stmt.break_tkn)
+            self.compiler_error("Syntax", "cant break out of a loop when not inside one", break_stmt.break_tkn)
 
     def gen_statement(self, statement: NodeStmt) -> None:
         """
@@ -578,5 +621,6 @@ class Generator(ErrorHandler):
 
         self.output.append("    ;; --- default exit ---\n    mov rax, 60\n    mov rdi, 0\n    syscall\n" )
         self.output.append("section .data\n")
+        self.output.extend(self.section_data)
         self.output.append("section .bss\n")
         return self.output

@@ -34,6 +34,11 @@ class NodeTermChar:
     char: Token
 
 @dataclass(slots=True)
+class NodeTermStr:
+    string: Token
+    length: str
+
+@dataclass(slots=True)
 class NodeTermIdent:
     ident: Token
 
@@ -55,7 +60,10 @@ class NodeTermNot: # type: ignore (has to be predeclared)
 
 @dataclass(slots=True)
 class NodeTerm:
-    var: Union[NodeTermIdent, NodeTermInt, NodeTermChar, NodeTermParen, NodeTermNot, NodeTermBool]
+    var: Union[
+        NodeTermIdent, NodeTermInt, NodeTermChar, NodeTermStr, 
+        NodeTermParen, NodeTermNot, NodeTermBool
+        ]
     negative: bool = False
 
 
@@ -223,6 +231,7 @@ class NodeStmtBreak:
 @dataclass(slots=True)
 class NodeStmtPrint:
     content: NodeExpr
+    cont_type: token_type
 
 
 @dataclass(slots=True)
@@ -266,4 +275,4 @@ class VariableContext:
     size_b: size_bytes
     
     def __repr__(self) -> str:
-        return f"VC('{self.name}' loc={self.loc} {self.size_b})"
+        return f"VC('{self.name}' loc={self.loc} size={self.size_b})"

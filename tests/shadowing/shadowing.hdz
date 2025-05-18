@@ -1,7 +1,7 @@
 cif x = 8
 cif y = 12
 x++
-
+// TODO: reading a string variable broke shadowing (in gen_term - NodeTermIdent branch)
 {
     cif x = 20
     x = x + 1

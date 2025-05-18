@@ -1,0 +1,6 @@
+naj s = 'a'
+naj x = 8
+sicke(naj i = 0, i < 10, i++){
+    hutor("ahoj ")
+}
+vychod(x)
