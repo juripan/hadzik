@@ -189,11 +189,11 @@ class Generator(ErrorHandler):
             found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == term.var.ident.value, self.variables)) # type: ignore (says types are unknown even though they are known)
             if not found_vars:
                 self.compiler_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
-            if len(found_vars) % 2 == 0: # reading a string (maybe)
+            if found_vars[-1].size_w == "QWORD": # reading a string (maybe)
                 #TODO: make this know what is a string
-                ptr_loc, ptr_size = found_vars[-1].loc, found_vars[-1].size_w
-                len_loc, len_size = found_vars[-2].loc, found_vars[-2].size_w
-                self.push_stack(f"{len_size} [rbp - {len_loc}]")
+                ptr_loc = found_vars[-1].loc
+                ptr_size = len_size = "DWORD"
+                self.push_stack(f"{len_size} [rbp - {ptr_loc - 4}]")
                 self.push_stack(f"{ptr_size} [rbp - {ptr_loc}]")
                 return
             
@@ -421,10 +421,7 @@ class Generator(ErrorHandler):
             self.output.append("    ;; --- string var declaration ---\n")
             #TODO: refactor this somehow
             self.gen_expression(decl_stmt.expr)
-            self.stack_size -= 4
-            self.add_variable(decl_stmt, "DWORD", 4)
-            self.stack_size += 4
-            self.add_variable(decl_stmt, "DWORD", 4)
+            self.add_variable(decl_stmt, "QWORD", 4)
         else:
             raise ValueError("Unreachable")
         

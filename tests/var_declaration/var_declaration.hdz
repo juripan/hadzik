@@ -4,6 +4,7 @@ furt bul glupy = pravda
 znak char_z = 'z'
 cif x_again = x
 naj inferred = (1 == 1)
+furt const_inferred = pravda
 
 hutor(h)
 vychod(x)

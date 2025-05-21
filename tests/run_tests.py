@@ -35,7 +35,6 @@ def recompile_and_run(test_name: str) -> str | sbp.CompletedProcess[str]:
             print(f"{"\033[31m"}[FAIL]{test_name}{"\033[0m"}\nfailed to compile")
             return compilation.stdout
         time.sleep(1)
-    
     out_hadzik = sbp.run([f"./tests/{test_name}/{test_name}"], capture_output=True, text=True)
     out_hadzik_str: str = f"stdout: {out_hadzik.stdout}| stderr: {out_hadzik.stderr}| returncode: {out_hadzik.returncode}"
     return out_hadzik_str
