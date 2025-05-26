@@ -1,0 +1,4 @@
+Failed here: tests/_errors/unclosed_str/unclosed_str.hdz:1:12
+lancok s = "\"
+           ^
+[31mSyntaxError[0m: (line 1 column 12) unclosed `"` started here

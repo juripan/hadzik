@@ -22,8 +22,6 @@ def record(folders: tuple[str, ...], subfolder: str = ""):
 def remove(folders: tuple[str, ...], subfolder: str = ""):
     for folder in folders:
         if folder == "_errors":
-            err_folders: tuple[str, ...] = tuple(filter(lambda x: not x.endswith(".py"), os.listdir(f"./tests/{folder}")))
-            remove(err_folders, folder)
             continue
 
         try:
