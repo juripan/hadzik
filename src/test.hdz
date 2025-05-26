@@ -1,8 +1,0 @@
-naj x = 8
-lancok s = "ahoj\n"
-znak a = 'a'
-sicke(naj i = 0, i < 10, i++){
-    hutor(s)
-}
-hutor(a)
-vychod(x)

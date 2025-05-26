@@ -4,11 +4,11 @@ import sys
 import os
 import time
 
-from hdzlexer import Tokenizer
-from hdzparser import Parser
-from hdztypechecker import TypeChecker
-from hdzgenerator import Generator
-from hdzerrors import ErrorHandler
+from lexer import Tokenizer
+from parser import Parser
+from typechecker import TypeChecker
+from generator import Generator
+from errors import ErrorHandler
 
 
 def hdz_help():

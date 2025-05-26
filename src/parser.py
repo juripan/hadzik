@@ -1,6 +1,6 @@
 from comptypes import * # uh-oh a wildcard import
-import hdztokentypes as tt
-from hdzerrors import ErrorHandler
+import tokentypes as tt
+from errors import ErrorHandler
 
 
 class Parser(ErrorHandler):

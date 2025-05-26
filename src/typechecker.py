@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from hdzerrors import ErrorHandler
+from errors import ErrorHandler
 from comptypes import *
 
 @dataclass(slots=True)

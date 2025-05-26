@@ -1,5 +1,5 @@
-import hdztokentypes as tt
-from hdzerrors import ErrorHandler
+import tokentypes as tt
+from errors import ErrorHandler
 from comptypes import Token
 
 class Tokenizer(ErrorHandler):

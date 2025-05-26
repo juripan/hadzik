@@ -12,6 +12,7 @@ __pycache__/
 .vscode/
 # testing features in asm before adding to the language
 asm_testing/
+test_feature/
 # object and assembly files created by compilation
 *.o
 *.asm

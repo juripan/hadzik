@@ -1,6 +1,6 @@
-from hdzerrors import ErrorHandler
+from errors import ErrorHandler
 from comptypes import *
-import hdztokentypes as tt
+import tokentypes as tt
 
 
 class Generator(ErrorHandler):
