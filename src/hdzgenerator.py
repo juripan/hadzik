@@ -193,7 +193,7 @@ class Generator(ErrorHandler):
         if isinstance(term.var, NodeTermInt):
             assert term.var.int_lit.value is not None, "term.var.int_lit.value shouldn't be None, probably a parsing error"
             
-            if term.negative:
+            if term.var.negative:
                 term.var.int_lit.value = "-" + term.var.int_lit.value
             self.push_stack(term.var.int_lit.value, "DWORD")
         elif isinstance(term.var, NodeTermIdent):
@@ -213,7 +213,7 @@ class Generator(ErrorHandler):
 
             self.push_stack(f"{word_size} [rbp - {location}]")
             
-            if term.negative:
+            if term.var.negative:
                 self.output.append(f"    neg {word_size}[rbp - {self.stack_size - self.stack_item_sizes[-1]}]\n")
         elif isinstance(term.var, NodeTermBool):
             assert term.var.bool.value is not None, "shouldn't be None here"
@@ -226,7 +226,7 @@ class Generator(ErrorHandler):
             self.make_str(term.var)
         elif isinstance(term.var, NodeTermParen):
             self.gen_expression(term.var.expr)
-            if term.negative:
+            if term.var.negative:
                 ra = self.get_reg(0)
                 self.pop_stack(ra)
                 self.output.append(f"    neg {ra}\n")

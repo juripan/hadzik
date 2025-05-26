@@ -84,7 +84,7 @@ class TypeChecker(ErrorHandler):
             self.push_stack(StackItem(BOOL_DEF, (term.var.bool.line, term.var.bool.col)))
         elif isinstance(term.var, NodeTermParen):
             self.typecheck_expression(term.var.expr)
-            if term.negative and self.stack[-1].type_ != INT_DEF:
+            if term.var.negative and self.stack[-1].type_ != INT_DEF:
                 self.compiler_error("Type", f"`{self.stack[-1].type_}` cannot be negative", self.stack[-1].loc)
         elif isinstance(term.var, NodeTermChar):
             self.push_stack(StackItem(CHAR_DEF, (term.var.char.line, term.var.char.col)))

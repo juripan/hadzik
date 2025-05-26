@@ -41,16 +41,19 @@ class NodeTermStr:
 @dataclass(slots=True)
 class NodeTermIdent:
     ident: Token
+    negative: bool = False
 
 
 @dataclass(slots=True)
 class NodeTermInt:
     int_lit: Token
+    negative: bool = False
 
 
 @dataclass(slots=True)
 class NodeTermParen:
     expr: NodeExpr
+    negative: bool = False
 
 
 @dataclass(slots=True)
@@ -64,7 +67,6 @@ class NodeTerm:
         NodeTermIdent, NodeTermInt, NodeTermChar, NodeTermStr, 
         NodeTermParen, NodeTermNot, NodeTermBool
         ]
-    negative: bool = False
 
 
 @dataclass(slots=True)

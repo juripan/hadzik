@@ -47,16 +47,15 @@ class Parser(ErrorHandler):
             self.compiler_error(error_name, error_details, self.current_token)
 
     def parse_term(self) -> NodeTerm | None:
-        #TODO: factor out the is_negative attribute into the NodeTermInt, NodeTermIdent, NodeTermParen since only they can be negative
         is_negative = False
         if self.current_token is not None and self.current_token.type == tt.MINUS:
             is_negative = True
             self.next_token()
 
         if self.current_token is not None and self.current_token.type == tt.INT_LIT:
-            return NodeTerm(NodeTermInt(int_lit=self.current_token), is_negative)
+            return NodeTerm(NodeTermInt(self.current_token, is_negative))
         elif self.current_token is not None and self.current_token.type == tt.IDENT:
-            return NodeTerm(NodeTermIdent(ident=self.current_token), is_negative)
+            return NodeTerm(NodeTermIdent(self.current_token, is_negative))
         elif self.current_token is not None and self.current_token.type == tt.CHAR_LIT:
             if is_negative:
                 self.compiler_error("Syntax", f"`{CHAR_DEF}` literal cannot be negative", self.get_token_at(-1))
@@ -86,8 +85,10 @@ class Parser(ErrorHandler):
             self.try_throw_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
 
             assert expr is not None, "Should be handled in the if statement above"
-            return NodeTerm(NodeTermParen(expr=expr), is_negative)
+            return NodeTerm(NodeTermParen(expr, is_negative))
         elif self.current_token is not None and self.current_token.type == tt.NOT:
+            if is_negative:
+                self.compiler_error("Syntax", f"boolean expression literal cannot be negative", self.get_token_at(-1))
             self.next_token()
             
             term = self.parse_term()
@@ -95,7 +96,7 @@ class Parser(ErrorHandler):
                 self.compiler_error("Value", "expected term", self.current_token)
             
             assert term is not None, "Should be handled in the if statement above"
-            return NodeTerm(NodeTermNot(term=term), is_negative)
+            return NodeTerm(NodeTermNot(term))
         else:
             return None
 
