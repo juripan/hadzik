@@ -74,33 +74,33 @@ class Generator(ErrorHandler):
             NodeStmtPrint: self.gen_print,
             NodeStmtBreak: self.gen_break,
         }
-    
-    def push_stack(self, loc: str, size_words: str = ""):
+
+    def push_stack(self, src: str, size_words: str = ""):
         """
         adds a push instruction to the output and updates the stack size 
         """
-        if loc in self.registers_64bit or loc.startswith("QWORD") or size_words == "QWORD":
+        if src in self.registers_64bit or src.startswith("QWORD") or size_words == "QWORD":
             size: size_bytes = 8
             reg = "rax"
-        elif loc in self.registers_32bit or loc.startswith("DWORD") or size_words == "DWORD":
+        elif src in self.registers_32bit or src.startswith("DWORD") or size_words == "DWORD":
             size: size_bytes = 4
             reg = "eax"
-        elif loc in self.registers_16bit or loc.startswith("WORD") or size_words == "WORD":
+        elif src in self.registers_16bit or src.startswith("WORD") or size_words == "WORD":
             size: size_bytes = 2
             reg = "ax"
-        elif loc in self.registers_8bit or loc.startswith("BYTE") or size_words == "BYTE":
+        elif src in self.registers_8bit or src.startswith("BYTE") or size_words == "BYTE":
             size: size_bytes = 1
             reg = "al"
         else:
             raise ValueError("Invalid register / WORD size")
         
-        if self.stack_size % size != 0: # stack alignment
+        if self.stack_size % 4 != 0: # stack alignment
             self.stack_size += 4 - self.stack_size % 4
 
-        if "[" not in loc:
-            self.output.append(f"    mov {size_words} [rbp - {self.stack_size}], {loc} ;push\n")
+        if "[" not in src:
+            self.output.append(f"    mov {size_words} [rbp - {self.stack_size}], {src} ;push\n")
         else:
-            self.output.append(f"    mov {reg}, {loc}\n")
+            self.output.append(f"    mov {reg}, {src}\n")
             self.output.append(f"    mov {size_words} [rbp - {self.stack_size}], {reg} ;push\n")
         
         self.stack_size += size
@@ -108,16 +108,29 @@ class Generator(ErrorHandler):
         if ErrorHandler.debug_mode:
             print("push", self.stack_size, self.stack_item_sizes, self.variables)
 
-    def pop_stack(self, reg: str):
+    def pop_stack(self, dest_reg: str):
         """
         adds a pop instruction to the output and updates the stack size 
         """
         size = self.stack_item_sizes.pop() # removes the last items size
         self.stack_size -= size
-        self.output.append(f"    mov {reg}, [rbp - {self.stack_size}] ;pop\n")
+        self.output.append(f"    mov {dest_reg}, [rbp - {self.stack_size}] ;pop\n")
         if ErrorHandler.debug_mode:
             print("pop", self.stack_size, self.stack_item_sizes, self.variables)
     
+    def push_stack_complex(self, src: tuple[str, ...], sizes_w: tuple[size_words, ...], sizes_b: tuple[size_bytes, ...]):
+        if self.stack_size % 4 != 0: # stack alignment
+            self.stack_size += 4 - self.stack_size % 4
+        
+        for item, byte_s, word_s in zip(src, sizes_b, sizes_w):
+            self.output.append(f"    mov {word_s} [rbp - {self.stack_size}], {item} ;push\n")
+            self.stack_size += byte_s
+        
+        self.stack_item_sizes.append(sum(sizes_b))
+        
+        if ErrorHandler.debug_mode:
+            print("push multi", self.stack_size, self.stack_item_sizes, self.variables)
+
     def get_reg(self, idx: int) -> str:
         """
         returns a name of the correctly sized register based on the current top of the stack
@@ -151,6 +164,7 @@ class Generator(ErrorHandler):
         """
         pop_count: int = len(self.variables) - self.scopes[-1]
         if pop_count == 0:
+            del self.scopes[-1]
             return # nothing to remove, if its not here then slice accepts all of the stack -> list[0:] == list
 
         popped_size: int = sum(self.stack_item_sizes[-pop_count:])
@@ -165,8 +179,7 @@ class Generator(ErrorHandler):
         # TODO: make a string with a 64 bit pointer and length can stay 32 bit
         lbl = self.create_label("str")
         self.section_data.append(f"{lbl} db {str_term.string.value}\n")
-        self.push_stack(str_term.length, "DWORD")
-        self.push_stack(lbl, "DWORD")
+        self.push_stack_complex((str_term.length, lbl), ("DWORD", )*2, (4, )*2)
 
 
     def gen_term(self, term: NodeTerm) -> None:
@@ -189,12 +202,11 @@ class Generator(ErrorHandler):
             found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == term.var.ident.value, self.variables)) # type: ignore (says types are unknown even though they are known)
             if not found_vars:
                 self.compiler_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
-            if found_vars[-1].size_w == "QWORD": # reading a string (maybe)
-                #TODO: make this know what is a string
+            if found_vars[-1].size_w == "STR": # reading a complex type
                 ptr_loc = found_vars[-1].loc
                 ptr_size = len_size = "DWORD"
-                self.push_stack(f"{len_size} [rbp - {ptr_loc - 4}]")
-                self.push_stack(f"{ptr_size} [rbp - {ptr_loc}]")
+                self.push_stack(f"{len_size} [rbp - {ptr_loc}]")
+                self.push_stack(f"{ptr_size} [rbp - {ptr_loc + 4}]")
                 return
             
             location, word_size = found_vars[-1].loc, found_vars[-1].size_w
@@ -419,9 +431,8 @@ class Generator(ErrorHandler):
             self.add_variable(decl_stmt, "BYTE", 1)
         elif decl_stmt.type_.type == tt.STR_DEF:
             self.output.append("    ;; --- string var declaration ---\n")
-            #TODO: refactor this somehow
             self.gen_expression(decl_stmt.expr)
-            self.add_variable(decl_stmt, "QWORD", 4)
+            self.add_variable(decl_stmt, "STR", 8)
         else:
             raise ValueError("Unreachable")
         
@@ -568,16 +579,17 @@ class Generator(ErrorHandler):
             self.output.append("    mov rdx, 1\n")
             self.output.append("    syscall\n")
             # it removes the printed expression because it causes a mess in the stack when looping
-            pushed_res = self.stack_item_sizes.pop()
-            self.stack_size -= pushed_res #lowers the stack size
+            self.stack_size -= self.stack_item_sizes.pop()
         elif print_stmt.cont_type == STR_DEF:
             self.output.append("    ;; --- print str ---\n")
             self.gen_expression(print_stmt.content)
+            PTR_SIZE = LEN_SIZE = 4
             self.output.append("    mov rax, 1\n")
             self.output.append("    mov rdi, 1\n")
-            self.pop_stack("esi") # pointer is 32 bit
-            self.pop_stack("edx") # length is 32 bit
+            self.output.append(f"mov esi, [rbp - {self.stack_size - PTR_SIZE}]\n")
+            self.output.append(f"mov edx, [rbp - {self.stack_size - PTR_SIZE - LEN_SIZE}]\n")
             self.output.append("    syscall\n")
+            self.stack_size -= self.stack_item_sizes.pop()
 
     def gen_break(self, break_stmt: NodeStmtBreak) -> None:
         """

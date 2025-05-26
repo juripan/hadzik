@@ -1,6 +1,8 @@
 naj s = 'a'
 naj x = 8
-sicke(naj i = 0, i < 10, i++){
+lancok v = "ahoj "
+sicke(naj i = 0, i < 5, i++){
     hutor("ahoj ")
+    hutor(v)
 }
 vychod(x)
