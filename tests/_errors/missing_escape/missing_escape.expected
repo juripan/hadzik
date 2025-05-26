@@ -1,0 +1,4 @@
+Failed here: tests/_errors/missing_escape/missing_escape.hdz:1:14
+lancok s = "\
+             ^
+[31mSyntaxError[0m: (line 1 column 14) expected a character after \ escape

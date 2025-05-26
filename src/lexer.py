@@ -72,7 +72,6 @@ class Tokenizer(ErrorHandler):
     
     def escape_char(self) -> int:
         if self.curr_char is None:
-            #TODO: make the raise error be capable of accepting the line and col number without the dummy Token
             self.compiler_error("Syntax", "expected a character after \\ escape", (self.line_number, self.column_number))
         assert self.curr_char is not None, "char shouldn't be None here"
         if self.curr_char == "n":
