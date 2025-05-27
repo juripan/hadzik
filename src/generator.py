@@ -97,14 +97,15 @@ class Generator(ErrorHandler):
         if self.stack_size % 4 != 0: # stack alignment
             self.stack_size += 4 - self.stack_size % 4
 
+        self.stack_size += size
+        self.stack_item_sizes.append(size)
+
         if "[" not in src:
             self.output.append(f"    mov {size_words} [rbp - {self.stack_size}], {src} ;push\n")
         else:
             self.output.append(f"    mov {reg}, {src}\n")
             self.output.append(f"    mov {size_words} [rbp - {self.stack_size}], {reg} ;push\n")
         
-        self.stack_size += size
-        self.stack_item_sizes.append(size)
         if ErrorHandler.debug_mode:
             print("push", self.stack_size, self.stack_item_sizes, self.variables)
 
@@ -112,19 +113,19 @@ class Generator(ErrorHandler):
         """
         adds a pop instruction to the output and updates the stack size 
         """
+        self.output.append(f"    mov {dest_reg}, [rbp - {self.stack_size}] ;pop\n")
         size = self.stack_item_sizes.pop() # removes the last items size
         self.stack_size -= size
-        self.output.append(f"    mov {dest_reg}, [rbp - {self.stack_size}] ;pop\n")
         if ErrorHandler.debug_mode:
             print("pop", self.stack_size, self.stack_item_sizes, self.variables)
     
     def push_stack_complex(self, src: tuple[str, ...], sizes_w: tuple[size_words, ...], sizes_b: tuple[size_bytes, ...]):
         if self.stack_size % 4 != 0: # stack alignment
             self.stack_size += 4 - self.stack_size % 4
-        
+
         for item, byte_s, word_s in zip(src, sizes_b, sizes_w):
-            self.output.append(f"    mov {word_s} [rbp - {self.stack_size}], {item} ;push\n")
             self.stack_size += byte_s
+            self.output.append(f"    mov {word_s} [rbp - {self.stack_size}], {item} ;push\n")
         
         self.stack_item_sizes.append(sum(sizes_b))
         
@@ -205,8 +206,8 @@ class Generator(ErrorHandler):
             if found_vars[-1].size_w == "STR": # reading a complex type
                 ptr_loc = found_vars[-1].loc
                 ptr_size = len_size = "DWORD"
+                self.push_stack(f"{ptr_size} [rbp - {ptr_loc - 4}]")
                 self.push_stack(f"{len_size} [rbp - {ptr_loc}]")
-                self.push_stack(f"{ptr_size} [rbp - {ptr_loc + 4}]")
                 return
             
             location, word_size = found_vars[-1].loc, found_vars[-1].size_w
@@ -400,7 +401,7 @@ class Generator(ErrorHandler):
             raise ValueError("Unreachable")
 
     def add_variable(self, decl_stmt: NodeStmtDeclare, word_size: size_words, byte_size: size_bytes):
-        location: int = self.stack_size - byte_size
+        location: int = self.stack_size
         assert decl_stmt.ident.value is not None, "var name shouldn't be None here"
         self.variables.append(VariableContext(decl_stmt.ident.value, location, word_size, byte_size))
 
@@ -572,7 +573,7 @@ class Generator(ErrorHandler):
             self.output.append("    ;; --- print char ---\n")
             self.gen_expression(print_stmt.content)
             
-            expr_loc = f"[rbp - {self.stack_size - self.stack_item_sizes[-1]}]"
+            expr_loc = f"[rbp - {self.stack_size}]"
             self.output.append("    mov rax, 1\n")
             self.output.append("    mov rdi, 1\n")
             self.output.append(f"    lea rsi, {expr_loc}\n")
@@ -583,11 +584,11 @@ class Generator(ErrorHandler):
         elif print_stmt.cont_type == STR_DEF:
             self.output.append("    ;; --- print str ---\n")
             self.gen_expression(print_stmt.content)
-            PTR_SIZE = LEN_SIZE = 4
+            PTR_SIZE = 4
             self.output.append("    mov rax, 1\n")
             self.output.append("    mov rdi, 1\n")
-            self.output.append(f"mov esi, [rbp - {self.stack_size - PTR_SIZE}]\n")
-            self.output.append(f"mov edx, [rbp - {self.stack_size - PTR_SIZE - LEN_SIZE}]\n")
+            self.output.append(f"    mov esi, [rbp - {self.stack_size}]\n")
+            self.output.append(f"    mov edx, [rbp - {self.stack_size - PTR_SIZE}]\n")
             self.output.append("    syscall\n")
             self.stack_size -= self.stack_item_sizes.pop()
 
