@@ -19,9 +19,9 @@ def hdz_help():
     
     print(
     """Usage:
-    $ python3 <path to 'hdzc'> <path to your '.hdz' file> <flags> <custom path if using -n flag>
+    $ python3 <path to `hdzc`> <path to your code>.hdz [flags] [dst path if using -n flag]
 Or running it like an executable:
-    $ <path with './' to 'hdzc'> <path to your '.hdz' file> <flags> <custom path if using -n flag>
+    $ ./<path to `hdzc`> <path to your code>.hdz [flags] [dst path if using -n flag]
 Flags:
     --help - displays user manual
     -s - switches on the east slovak error messages
