@@ -100,7 +100,7 @@ class Tokenizer(ErrorHandler):
         self.tokens.append(Token(type=tt.CHAR_LIT, value=ascii_value, line=self.line_number, col=self.column_number)) # type: ignore (never unbound since else catches it)
         self.advance()
         if self.curr_char is None or self.curr_char != "'":
-            self.compiler_error("Syntax", "expected \"'\"", (self.line_number, self.column_number))
+            self.compiler_error("Syntax", "expected `'`", (self.line_number, self.column_number))
         self.advance()
 
     def lex_string(self):
@@ -216,5 +216,5 @@ class Tokenizer(ErrorHandler):
                 self.tokens.append(Token(type=tt.PERCENT, line=self.line_number, col=self.column_number))
                 self.advance()
             else:
-                self.compiler_error("Syntax", "char not included in the lexer", (self.line_number, self.column_number))
+                self.compiler_error("Syntax", "character not included in the language grammar", (self.line_number, self.column_number))
         return self.tokens

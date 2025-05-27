@@ -1,0 +1,4 @@
+Failed here: tests/_errors/missing_char/missing_char.hdz:1:10
+naj s = '
+         ^
+[31mSyntaxError[0m: (line 1 column 10) unclosed `'` started here

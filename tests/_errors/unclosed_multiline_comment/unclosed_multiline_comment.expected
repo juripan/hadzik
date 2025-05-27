@@ -1,0 +1,4 @@
+Failed here: tests/_errors/unclosed_multiline_comment/unclosed_multiline_comment.hdz:1:1
+/*
+^
+[31mSyntaxError[0m: (line 1 column 1) unclosed multiline comment
