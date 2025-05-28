@@ -5,18 +5,17 @@ import os
 import sys
 import time
 
-def rename(folder: list[str], new_folder: str):
+def rename(folder: list[str], new_folder_name: str):
     folder_path = "/".join(folder[:-1])
     folder_name = folder[-1]
-
-    new_folder_name = new_folder
     
     try:
-        os.rename(f"./tests/{folder_path}/{folder_name}", f"./tests/{folder_path}/{new_folder_name}")
+        os.rename(f"./tests/{folder_path}/{folder_name}",
+                f"./tests/{folder_path}/{new_folder_name}")
         os.rename(f"./tests/{folder_path}/{new_folder_name}/{folder_name}.hdz", 
-                  f"./tests/{folder_path}/{new_folder_name}/{new_folder_name}.hdz")
+                f"./tests/{folder_path}/{new_folder_name}/{new_folder_name}.hdz")
         os.rename(f"./tests/{folder_path}/{new_folder_name}/{folder_name}.expected", 
-                  f"./tests/{folder_path}/{new_folder_name}/{new_folder_name}.expected")
+                f"./tests/{folder_path}/{new_folder_name}/{new_folder_name}.expected")
     except OSError as error:
         print(error)
 
@@ -34,18 +33,17 @@ def record(folders: tuple[str, ...], subfolder: str = ""):
 
 
 def remove(folders: tuple[str, ...], subfolder: str = ""):
-    #TODO: make this generic for all files with .o .asm and no extension
     for folder in folders:
         if folder == "_errors":
             continue
 
-        try:
-            os.remove(f"tests/{subfolder}/{folder}/{folder}.o")
-            os.remove(f"tests/{subfolder}/{folder}/{folder}.asm")
-            os.remove(f"tests/{subfolder}/{folder}/{folder}")
-        except OSError:
-            pass
-
+        rem = filter(lambda x: not x.endswith((".hdz", ".expected")), os.listdir(f"./tests/{subfolder}/{folder}"))
+        
+        for file in rem:
+            try:
+                os.remove(f"tests/{subfolder}/{folder}/{file}")
+            except OSError as e:
+                print(e)
 
 def recompile_and_run(test_name: str, subfolder: str="") -> str:
     compilation = sbp.run(["./src/hdzc", f"tests/{subfolder}/{test_name}/{test_name}.hdz", "-c"], capture_output=True, text=True)
