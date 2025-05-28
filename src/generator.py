@@ -75,6 +75,10 @@ class Generator(ErrorHandler):
             NodeStmtBreak: self.gen_break,
         }
 
+    def align_stack(self) -> None:
+        if self.stack_size % 2 != 0:
+            self.stack_size += 2 - self.stack_size % 2
+
     def push_stack(self, src: str, size_words: str = ""):
         """
         adds a push instruction to the output and updates the stack size 
@@ -94,8 +98,7 @@ class Generator(ErrorHandler):
         else:
             raise ValueError("Invalid register / WORD size")
         
-        if self.stack_size % 4 != 0: # stack alignment
-            self.stack_size += 4 - self.stack_size % 4
+        self.align_stack()
 
         self.stack_size += size
         self.stack_item_sizes.append(size)
@@ -120,8 +123,7 @@ class Generator(ErrorHandler):
             print("pop", self.stack_size, self.stack_item_sizes, self.variables)
     
     def push_stack_complex(self, src: tuple[str, ...], sizes_w: tuple[size_words, ...], sizes_b: tuple[size_bytes, ...]):
-        if self.stack_size % 4 != 0: # stack alignment
-            self.stack_size += 4 - self.stack_size % 4
+        self.align_stack()
 
         for item, byte_s, word_s in zip(src, sizes_b, sizes_w):
             self.stack_size += byte_s
