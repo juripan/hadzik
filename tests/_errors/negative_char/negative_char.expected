@@ -1,0 +1,4 @@
+Failed here: tests/_errors/negative_char/negative_char.hdz:1:7
+hutor(-'a')
+      ^
+[31mSyntaxError[0m: (line 1 column 7) `znak` literal cannot be negative

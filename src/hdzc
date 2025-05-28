@@ -10,6 +10,7 @@ from typechecker import TypeChecker
 from generator import Generator
 from errors import ErrorHandler
 
+compiler_silent = False
 
 def hdz_help():
     """
@@ -25,6 +26,7 @@ Or running it like an executable:
 Flags:
     --help - displays user manual
     -s - switches on the east slovak error messages
+    -c - removes all of the log statements during compilation
     -r - after compilation is done runs the compiled file and prints its output
     -n - determine a path and name of the compiled file
     -d - dumps all of the compiler debug information available to the console""")
@@ -46,7 +48,8 @@ def compile_to_asm(file_path: str) -> list[str]:
     start = time.time()
     tokens = Tokenizer(hdz_src).tokenize()
     elapsed = time.time() - start
-    print(f"[INFO] Lexing took {elapsed:.6f} seconds")
+    if not compiler_silent:
+        print(f"[INFO] Lexing took {elapsed:.6f} seconds")
 
     if ErrorHandler.debug_mode:
         print(tokens)
@@ -55,12 +58,14 @@ def compile_to_asm(file_path: str) -> list[str]:
     start = time.time()
     parse_tree = Parser(tokens, hdz_src).parse_program()
     elapsed = time.time() - start
-    print(f"[INFO] Parsing took {elapsed:.6f} seconds")
+    if not compiler_silent:
+        print(f"[INFO] Parsing took {elapsed:.6f} seconds")
 
     start = time.time()
     TypeChecker(parse_tree, hdz_src).typecheck_program()
     elapsed = time.time() - start
-    print(f"[INFO] Typechecking took {elapsed:.6f} seconds")
+    if not compiler_silent:
+        print(f"[INFO] Typechecking took {elapsed:.6f} seconds")
     
     if ErrorHandler.debug_mode:
         print(parse_tree)
@@ -68,7 +73,8 @@ def compile_to_asm(file_path: str) -> list[str]:
     start = time.time()
     final_asm = Generator(parse_tree, hdz_src).gen_program()
     elapsed = time.time() - start
-    print(f"[INFO] Generating took {elapsed:.6f} seconds")
+    if not compiler_silent:
+        print(f"[INFO] Generating took {elapsed:.6f} seconds")
     return final_asm
 
 
@@ -85,7 +91,8 @@ def asm_to_bin(filepath_no_hdz: str, content: list[str]):
         print("ERROR: assembly failed", file=sys.stderr)
         exit(1)
     elapsed = time.time() - start
-    print(f"[INFO] Assembling took {elapsed:.6f} seconds")
+    if not compiler_silent:
+        print(f"[INFO] Assembling took {elapsed:.6f} seconds")
 
 
 def hdz_run(executable: str):
@@ -99,6 +106,7 @@ def hdz_run(executable: str):
 
 
 def main():
+    global compiler_silent
     all_flags: tuple[str, ...] = tuple(filter(lambda x: x[0] == "-", sys.argv))
     non_flags: tuple[str, ...] = tuple(filter(lambda x: x[0] != "-", sys.argv))[1:]
 
@@ -116,6 +124,8 @@ def main():
         ErrorHandler.dialect_errors = True
     if "-d" in all_flags:
         ErrorHandler.debug_mode = True
+    if "-c" in all_flags:
+        compiler_silent = True
     
     if "-n" in all_flags and len(non_flags) <= 1:
         print("ERROR: Missing file path when using the 'n' flag", file=sys.stderr)

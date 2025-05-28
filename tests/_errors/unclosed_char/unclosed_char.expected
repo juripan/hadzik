@@ -1,4 +1,4 @@
-Failed here: tests/_errors/unclosed_char_lit/unclosed_char_lit.hdz:1:11
+Failed here: tests/_errors/unclosed_char/unclosed_char.hdz:1:11
 naj s = 'a
           ^
 [31mSyntaxError[0m: (line 1 column 11) expected `'`

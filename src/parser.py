@@ -38,7 +38,7 @@ class Parser(ErrorHandler):
     def get_token_at(self, offset: int = 0) -> Token | None:
         return self.all_tokens[self.index + offset] if self.index + offset < len(self.all_tokens) else None
     
-    def try_throw_error(self, token_type: tuple[token_type, ...] | token_type, error_name: str, error_details: str) -> None:
+    def try_compiler_error(self, token_type: tuple[token_type, ...] | token_type, error_name: str, error_details: str) -> None:
         """
         checks if the current token is none or if its type is not the token type given,
         raises an error if the condition is true
@@ -82,7 +82,7 @@ class Parser(ErrorHandler):
             if expr is None:
                 self.compiler_error("Value", "expected expression", self.current_token)
 
-            self.try_throw_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
+            self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected ')'") # TODO: add tests for other errors below this one
 
             assert expr is not None, "Should be handled in the if statement above"
             return NodeTerm(NodeTermParen(expr, is_negative))
@@ -178,14 +178,14 @@ class Parser(ErrorHandler):
         if type_def.type == tt.IDENT and is_const:
             type_def = Token(tt.INFER_DEF, self.current_token.line, self.current_token.col) # allows for type inference without `naj` just with `furt`
         else:
-            self.try_throw_error((tt.BOOL_DEF, tt.CHAR_DEF, tt.INT_DEF, tt.INFER_DEF, tt.STR_DEF), "Syntax", f"expected a valid type {self.current_token}")
+            self.try_compiler_error((tt.BOOL_DEF, tt.CHAR_DEF, tt.INT_DEF, tt.INFER_DEF, tt.STR_DEF), "Syntax", f"expected a valid type {self.current_token}")
             self.next_token() # removes type def
 
-        self.try_throw_error(tt.IDENT, "Syntax", "expected valid identifier")
+        self.try_compiler_error(tt.IDENT, "Syntax", "expected valid identifier")
         ident = self.current_token
         self.next_token()
 
-        self.try_throw_error(tt.EQUALS, "Syntax", "expected '='")
+        self.try_compiler_error(tt.EQUALS, "Syntax", "expected '='")
         self.next_token()
 
         assert type_def is not None, "type_def should never be None"
@@ -201,7 +201,7 @@ class Parser(ErrorHandler):
     def parse_exit(self) -> NodeStmtExit:
         self.next_token() # removes exit token
         
-        self.try_throw_error(tt.LEFT_PAREN, "Syntax", "expected '('")
+        self.try_compiler_error(tt.LEFT_PAREN, "Syntax", "expected '('")
         self.next_token()
 
         expr = self.parse_expr()
@@ -211,7 +211,7 @@ class Parser(ErrorHandler):
         
         assert expr is not None, "expr shouldn't be None, handled in the above if statement"
 
-        self.try_throw_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
+        self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
         self.next_token()
 
         return NodeStmtExit(expr=expr)
@@ -221,7 +221,7 @@ class Parser(ErrorHandler):
             self.next_token()
         
         start_curly = self.current_token
-        self.try_throw_error(tt.LEFT_CURLY, "Syntax", "expected '{'")
+        self.try_compiler_error(tt.LEFT_CURLY, "Syntax", "expected '{'")
         self.next_token()  # left curly
 
         scope = NodeScope(stmts=[])
@@ -229,7 +229,7 @@ class Parser(ErrorHandler):
             scope.stmts.append(stmt)
             if not isinstance(stmt.stmt_var, (NodeStmtEmpty, NodeStmtIf)) \
                     and self.current_token and self.current_token.type != tt.RIGHT_CURLY:
-                self.try_throw_error(tt.NEWLINE, "Syntax", "expected new line")
+                self.try_compiler_error(tt.NEWLINE, "Syntax", "expected new line")
                 self.next_token()
             if self.current_token and self.current_token.type == tt.RIGHT_CURLY:
                 self.next_token() # right curly
@@ -297,12 +297,12 @@ class Parser(ErrorHandler):
     def parse_for_loop(self) -> NodeStmtFor:
         self.next_token()
 
-        self.try_throw_error(tt.LEFT_PAREN, "Syntax", "expected '('")
+        self.try_compiler_error(tt.LEFT_PAREN, "Syntax", "expected '('")
         self.next_token()
 
         ident_def = self.parse_decl()
 
-        self.try_throw_error(tt.COMMA, "Syntax", "expected ','")
+        self.try_compiler_error(tt.COMMA, "Syntax", "expected ','")
         self.next_token()
 
         expr = self.parse_expr()
@@ -317,12 +317,12 @@ class Parser(ErrorHandler):
         if not isinstance(condition, NodePredExpr):
             self.compiler_error("Syntax", "invalid condition", self.current_token)
 
-        self.try_throw_error(tt.COMMA, "Syntax", "expected ','")
+        self.try_compiler_error(tt.COMMA, "Syntax", "expected ','")
         self.next_token()
 
         assign = self.parse_reassign()
         
-        self.try_throw_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
+        self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
         self.next_token()
 
         scope = self.parse_scope()
@@ -333,7 +333,7 @@ class Parser(ErrorHandler):
 
         scope = self.parse_scope()
         
-        self.try_throw_error(tt.WHILE, "Syntax", "expected 'kim'")
+        self.try_compiler_error(tt.WHILE, "Syntax", "expected 'kim'")
         self.next_token()
 
         expr = self.parse_expr()
@@ -345,7 +345,7 @@ class Parser(ErrorHandler):
         return NodeStmtDoWhile(scope, expr)
 
     def parse_reassign(self) -> NodeStmtReassign:
-        self.try_throw_error(tt.IDENT, "Syntax", "expected identifier")
+        self.try_compiler_error(tt.IDENT, "Syntax", "expected identifier")
         ident = self.current_token
         self.next_token()
         
@@ -358,7 +358,7 @@ class Parser(ErrorHandler):
             self.next_token()
             return NodeStmtReassign(var=NodeStmtReassignDec(ident))
 
-        self.try_throw_error(tt.EQUALS, "Syntax", "expected '='")
+        self.try_compiler_error(tt.EQUALS, "Syntax", "expected '='")
         self.next_token()
 
         expr = self.parse_expr()
@@ -372,7 +372,7 @@ class Parser(ErrorHandler):
     def parse_print(self) -> NodeStmtPrint:
         self.next_token() # removes print token
 
-        self.try_throw_error(tt.LEFT_PAREN, "Syntax", "expected '('")
+        self.try_compiler_error(tt.LEFT_PAREN, "Syntax", "expected '('")
         self.next_token()
 
         cont = self.parse_expr()
@@ -382,7 +382,7 @@ class Parser(ErrorHandler):
         
         assert cont is not None, "content shouldn't be None, handled by the previous if statement"
 
-        self.try_throw_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
+        self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
         self.next_token()
         
         return NodeStmtPrint(cont, cont_type=INFER_DEF)
@@ -421,7 +421,7 @@ class Parser(ErrorHandler):
         while self.current_token is not None:
             stmt = self.parse_statement()
             if not isinstance(stmt.stmt_var, (NodeStmtEmpty, NodeScope, NodeStmtIf)) and self.current_token:  # type: ignore (shouldn't be a problem if its None)
-                self.try_throw_error(tt.NEWLINE, "Syntax", "expected new line")
+                self.try_compiler_error(tt.NEWLINE, "Syntax", "expected new line")
                 self.next_token()
             program.stmts.append(stmt)
         return program

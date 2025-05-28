@@ -1,0 +1,4 @@
+Failed here: tests/_errors/expr_empty_paren/expr_empty_paren.hdz:1:20
+naj empty_paren = ()
+                   ^
+[31mValueError[0m: (line 1 column 20) expected expression

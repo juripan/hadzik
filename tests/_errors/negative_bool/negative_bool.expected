@@ -1,0 +1,4 @@
+Failed here: tests/_errors/negative_bool/negative_bool.hdz:1:9
+bul x = -pravda
+        ^
+[31mSyntaxError[0m: (line 1 column 9) `bul` literal cannot be negative

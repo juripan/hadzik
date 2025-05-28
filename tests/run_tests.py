@@ -5,6 +5,20 @@ import os
 import sys
 import time
 
+def rename(folder: list[str], new_folder: str):
+    folder_path = "/".join(folder[:-1])
+    folder_name = folder[-1]
+
+    new_folder_name = new_folder
+    
+    try:
+        os.rename(f"./tests/{folder_path}/{folder_name}", f"./tests/{folder_path}/{new_folder_name}")
+        os.rename(f"./tests/{folder_path}/{new_folder_name}/{folder_name}.hdz", 
+                  f"./tests/{folder_path}/{new_folder_name}/{new_folder_name}.hdz")
+        os.rename(f"./tests/{folder_path}/{new_folder_name}/{folder_name}.expected", 
+                  f"./tests/{folder_path}/{new_folder_name}/{new_folder_name}.expected")
+    except OSError as error:
+        print(error)
 
 def record(folders: tuple[str, ...], subfolder: str = ""):
     for folder in folders:
@@ -20,6 +34,7 @@ def record(folders: tuple[str, ...], subfolder: str = ""):
 
 
 def remove(folders: tuple[str, ...], subfolder: str = ""):
+    #TODO: make this generic for all files with .o .asm and no extension
     for folder in folders:
         if folder == "_errors":
             continue
@@ -33,7 +48,7 @@ def remove(folders: tuple[str, ...], subfolder: str = ""):
 
 
 def recompile_and_run(test_name: str, subfolder: str="") -> str:
-    compilation = sbp.run(["./src/hdzc", f"tests/{subfolder}/{test_name}/{test_name}.hdz"], capture_output=True, text=True)
+    compilation = sbp.run(["./src/hdzc", f"tests/{subfolder}/{test_name}/{test_name}.hdz", "-c"], capture_output=True, text=True)
     
     while not os.path.exists(f"./tests/{subfolder}/{test_name}/{test_name}"): # waits for the compilation to be done so it can run the file
         if compilation.returncode != 0:
@@ -63,7 +78,7 @@ def testing(folders: tuple[str, ...], subfolder: str = ""):
             out_record = f.read()
 
         if out_record == out_hadzik:
-            print(f"{"\033[92m"}[SUCCESS] {folder}{"\033[0m"} \nExpected: {out_record} \nGot: {out_hadzik}")
+            print(f"{"\033[92m"}[SUCCESS] {"\033[0m"}{folder}")
             success_count += 1
         else:
             print(f"{"\033[31m"}[FAIL] {folder}{"\033[0m"} \nExpected: {out_record} \nGot: {out_hadzik}")
@@ -83,6 +98,11 @@ def main():
         print("Removing generated files...")
         remove(folders)
         print("Cleaning finished!")
+    elif "ren" in sys.argv:
+        if len(sys.argv) < 4:
+            print("ERROR: invalid argument count")
+            exit(1)
+        rename(sys.argv[2].split("/"), sys.argv[3])
     elif len(sys.argv) == 1:
         testing(folders)
     else:
