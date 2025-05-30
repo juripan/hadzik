@@ -20,16 +20,20 @@ def hdz_help():
     
     print(
     """Usage:
-    $ python3 <path to `hdzc`> <path to your code>.hdz [flags] [dst path if using -n flag]
+    $ python3 hdzc src_code [-h] [-s] [-n DEST] [-c] [-r] [-d]
 Or running it like an executable:
-    $ ./<path to `hdzc`> <path to your code>.hdz [flags] [dst path if using -n flag]
-Flags:
-    --help - displays user manual
-    -s - switches on the east slovak error messages
-    -c - removes all of the log statements during compilation
-    -r - after compilation is done runs the compiled file and prints its output
-    -n - determine a path and name of the compiled file
-    -d - dumps all of the compiler debug information available to the console""")
+    $ ./hdzc src_code [-h] [-s] [-n DEST] [-c] [-r] [-d]
+
+arguments:
+    src_code    path to your source code
+
+options:
+    -h, --help  displays user manual
+    -s          switches on the east slovak error messages
+    -c          removes all of the log statements printed during compilation
+    -r          runs the compiled file and prints its output after compilation is done
+    -n DEST     determine a path and name of the compiled file
+    -d          dumps all of the compiler debug information available to the console""")
     exit(0)
 
 
@@ -112,6 +116,10 @@ def main():
 
     if len(sys.argv) < 2 or "--help" in all_flags:
         hdz_help()
+
+    if len(non_flags) == 0:
+        print("ERROR: File extension is missing", file=sys.stderr)
+        exit(1)
 
     file_path: str = non_flags[0]
     if not file_path.endswith(".hdz"):

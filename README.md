@@ -17,11 +17,11 @@ Newline ends statements instead of semicolon.
 ## Quick start:
 You can run the compiler as a python script like this:
 ```
-$ python3 <path to `hdzc`> <path to your code>.hdz [flags] [dst path if using -n flag]
+$ python3 hdzc src_code [-h] [-s] [-n DEST] [-c] [-r] [-d]
 ```
 Or you can run it as an executable like this:
 ```
-$ ./<path to `hdzc`> <path to your code>.hdz [flags] [dst path if using -n flag]
+$ ./hdzc src_code [-h] [-s] [-n DEST] [-c] [-r] [-d]
 ```
 
 ## Flags:
@@ -32,7 +32,7 @@ Flags that are used when running the compiler in the console (more are going to 
 $ python3 hdzc path/file.hdz -s
 ```
 
-+ -r - after compilation is done runs the compiled file and prints its output
++ -r - runs the compiled file and prints its output after compilation is done
 ```
 $ python3 hdzc path/file.hdz -r
 ```
@@ -47,7 +47,12 @@ $ python3 hdzc path/file.hdz -n new_path/file2
 $ python3 hdzc path/file.hdz -d
 ```
 
-+ --help - displays user manual
++ -c - removes all of the log statements printed during compilation
+```
+$ python3 hdzc path/file.hdz -c
+```
+
++ -h, --help - displays user manual
 ```
 $ python3 hdzc --help
 ```
@@ -61,7 +66,7 @@ $ python3 hdzc path/file.hdz -s -r new_path/file2 -n
 ## Dependencies:
 all of the dependencies are listed in the Docker file and source code files but for more transparency I will list them here also
 + Python 3.12.3
-+ libraries: sys, os, dataclasses, typing
++ libraries: sys, os, dataclasses, typing, time
 + NASM version 2.16.01
 + GNU ld 2.42
 
