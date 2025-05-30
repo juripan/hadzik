@@ -1,0 +1,4 @@
+Failed here: tests/_errors/empty_char/empty_char.hdz:1:20
+znak empty_char = ''
+                   ^
+[31mSyntaxError[0m: (line 1 column 20) empty char literal is not supported

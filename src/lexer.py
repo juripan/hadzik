@@ -93,11 +93,15 @@ class Tokenizer(ErrorHandler):
         if self.curr_char == "\\":
             self.advance()
             ascii_value = str(self.escape_char())
+        elif self.curr_char == "'":
+            self.compiler_error("Syntax", "empty char literal is not supported", (self.line_number, self.column_number))
         elif self.curr_char is not None:
             ascii_value = str(ord(self.curr_char))
         else:
             self.compiler_error("Syntax", "unclosed `'` started here", (self.line_number, self.column_number))
+        
         self.tokens.append(Token(type=tt.CHAR_LIT, value=ascii_value, line=self.line_number, col=self.column_number)) # type: ignore (never unbound since else catches it)
+        
         self.advance()
         if self.curr_char is None or self.curr_char != "'":
             self.compiler_error("Syntax", "expected `'`", (self.line_number, self.column_number))
