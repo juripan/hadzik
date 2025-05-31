@@ -94,6 +94,12 @@ class TypeChecker(ErrorHandler):
             self.typecheck_term(term.var.term) # type: ignore
             if self.stack[-1].type_ != BOOL_DEF:
                 self.compiler_error("Type", f"expected type `{BOOL_DEF}`, got `{self.stack[-1].type_}`", self.stack[-1].loc)
+        elif isinstance(term.var, NodeTermCast):
+            if term.var.type.type == STR_DEF:
+                #TODO: implement typecasting for strings
+                self.compiler_error("Type", "typecasting to a string is not implemented", term.var.type)
+            self.typecheck_expression(term.var.expr)
+            self.stack[-1].type_ = term.var.type.type
         else:
             raise ValueError("Unreachable")
 

@@ -60,12 +60,16 @@ class NodeTermParen:
 class NodeTermNot: # type: ignore (has to be predeclared)
     pass
 
+@dataclass(slots=True)
+class NodeTermCast:
+    expr: NodeExpr
+    type: Token
 
 @dataclass(slots=True)
 class NodeTerm:
     var: Union[
         NodeTermIdent, NodeTermInt, NodeTermChar, NodeTermStr, 
-        NodeTermParen, NodeTermNot, NodeTermBool
+        NodeTermParen, NodeTermNot, NodeTermBool, NodeTermCast,
         ]
 
 

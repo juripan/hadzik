@@ -247,6 +247,14 @@ class Generator(ErrorHandler):
             self.output.append(f"    test {rb}, {rb}\n")
             self.output.append("    sete al\n")
             self.push_stack(ra)
+        elif isinstance(term.var, NodeTermCast):
+            self.gen_expression(term.var.expr)
+            ra = self.get_reg(0)
+            self.pop_stack(ra)
+            ra_sized = self.reg_lookup_table[
+                tt.get_type_size[term.var.type.type]
+                ][0]
+            self.push_stack(ra_sized)
         else:
             raise ValueError("Unreachable")
     
