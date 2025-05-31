@@ -180,6 +180,10 @@ class Generator(ErrorHandler):
     
     def make_str(self, str_term: NodeTermStr):
         # TODO: make a string with a 64 bit pointer and length can stay 32 bit
+        if not str_term.string.value:
+            str_term.string.value = "0"
+            str_term.length = "1"
+        
         lbl = self.create_label("str")
         self.section_data.append(f"{lbl} db {str_term.string.value}\n")
         self.push_stack_complex((str_term.length, lbl), ("DWORD", )*2, (4, )*2)
