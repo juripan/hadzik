@@ -75,8 +75,8 @@ class Generator(ErrorHandler):
             NodeStmtBreak: self.gen_break,
         }
 
-    def align_stack(self) -> None:
-        if self.stack_size % 2 != 0:
+    def align_stack(self, size: size_bytes) -> None:
+        if self.stack_size % 2 != 0 and size > 1:
             self.stack_size += 2 - self.stack_size % 2
 
     def push_stack(self, src: str, size_words: str = ""):
@@ -98,7 +98,7 @@ class Generator(ErrorHandler):
         else:
             raise ValueError("Invalid register / WORD size")
         
-        self.align_stack()
+        self.align_stack(size)
 
         self.stack_size += size
         self.stack_item_sizes.append(size)
@@ -122,8 +122,8 @@ class Generator(ErrorHandler):
         if ErrorHandler.debug_mode:
             print("pop", self.stack_size, self.stack_item_sizes, self.variables)
     
-    def push_stack_complex(self, src: tuple[str, ...], sizes_w: tuple[size_words, ...], sizes_b: tuple[size_bytes, ...]):
-        self.align_stack()
+    def push_stack_complex(self, src: list[str], sizes_w: list[size_words], sizes_b: list[size_bytes]):
+        self.align_stack(sum(sizes_b))
 
         for item, byte_s, word_s in zip(src, sizes_b, sizes_w):
             self.stack_size += byte_s
@@ -179,14 +179,15 @@ class Generator(ErrorHandler):
         del self.scopes[-1]
     
     def make_str(self, str_term: NodeTermStr):
-        # TODO: make a string with a 64 bit pointer and length can stay 32 bit
         if not str_term.string.value:
             str_term.string.value = "0"
             str_term.length = "1"
         
-        lbl = self.create_label("str")
-        self.section_data.append(f"{lbl} db {str_term.string.value}\n")
-        self.push_stack_complex((str_term.length, lbl), ("DWORD", )*2, (4, )*2)
+        str_data = str_term.string.value.split(",")[::-1]
+        str_data.append(str_term.length)
+        str_data_sizew = ["BYTE"] * int(str_term.length) + ["DWORD"]
+        str_data_sizeb = [1] * int(str_term.length) + [4]
+        self.push_stack_complex(str_data, str_data_sizew, str_data_sizeb)
 
 
     def gen_term(self, term: NodeTerm) -> None:
@@ -209,11 +210,20 @@ class Generator(ErrorHandler):
             found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == term.var.ident.value, self.variables)) # type: ignore (says types are unknown even though they are known)
             if not found_vars:
                 self.compiler_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
-            if found_vars[-1].size_w == "STR": # reading a complex type
+            if found_vars[-1].size_w == "STR": # reading a str type
+                #TODO: copies a string every time its moved, introduce a str ref type
                 ptr_loc = found_vars[-1].loc
-                ptr_size = len_size = "DWORD"
-                self.push_stack(f"{ptr_size} [rbp - {ptr_loc - 4}]")
-                self.push_stack(f"{len_size} [rbp - {ptr_loc}]")
+                LEN_SIZE = "DWORD"
+                str_struct_size = found_vars[-1].size_b
+                
+                for i in range(str_struct_size - 4): #TODO: very scuffed, please unscuff this
+                    self.push_stack(f"BYTE [rbp - {ptr_loc - str_struct_size + i + 1}]")
+                    self.stack_item_sizes.pop()
+                self.stack_item_sizes.append(str_struct_size)
+
+                self.push_stack(f"{LEN_SIZE} [rbp - {ptr_loc}]")
+                self.stack_item_sizes.pop()
+                self.stack_item_sizes.append(str_struct_size)
                 return
             
             location, word_size = found_vars[-1].loc, found_vars[-1].size_w
@@ -415,6 +425,7 @@ class Generator(ErrorHandler):
             raise ValueError("Unreachable")
 
     def add_variable(self, decl_stmt: NodeStmtDeclare, word_size: size_words, byte_size: size_bytes):
+        print(f"{word_size=}, {byte_size=}")
         location: int = self.stack_size
         assert decl_stmt.ident.value is not None, "var name shouldn't be None here"
         self.variables.append(VariableContext(decl_stmt.ident.value, location, word_size, byte_size))
@@ -447,7 +458,7 @@ class Generator(ErrorHandler):
         elif decl_stmt.type_.type == tt.STR_DEF:
             self.output.append("    ;; --- string var declaration ---\n")
             self.gen_expression(decl_stmt.expr)
-            self.add_variable(decl_stmt, "STR", 8)
+            self.add_variable(decl_stmt, "STR", self.stack_item_sizes[-1])
         else:
             raise ValueError("Unreachable")
         
@@ -598,11 +609,11 @@ class Generator(ErrorHandler):
         elif print_stmt.cont_type == STR_DEF:
             self.output.append("    ;; --- print str ---\n")
             self.gen_expression(print_stmt.content)
-            PTR_SIZE = 4
+            LEN_SIZE = 4
             self.output.append("    mov rax, 1\n")
             self.output.append("    mov rdi, 1\n")
-            self.output.append(f"    mov esi, [rbp - {self.stack_size}]\n")
-            self.output.append(f"    mov edx, [rbp - {self.stack_size - PTR_SIZE}]\n")
+            self.output.append(f"    lea rsi, [rbp - {self.stack_size - LEN_SIZE}]\n")
+            self.output.append(f"    mov edx, [rbp - {self.stack_size}]\n")
             self.output.append("    syscall\n")
             self.stack_size -= self.stack_item_sizes.pop()
 
