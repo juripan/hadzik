@@ -71,6 +71,9 @@ class Tokenizer(ErrorHandler):
         self.tokens.append(self.search_for_keyword(buffer))
     
     def escape_char(self) -> int:
+        """
+        escapes a char in a string / char literal
+        """
         if self.curr_char is None:
             self.compiler_error("Syntax", "expected a character after \\ escape", (self.line_number, self.column_number))
         assert self.curr_char is not None, "char shouldn't be None here"
@@ -137,30 +140,6 @@ class Tokenizer(ErrorHandler):
                 self.lex_char()
             elif self.curr_char == '"':
                 self.lex_string()
-            elif self.curr_char == "=" and self.look_ahead() == "=":
-                self.tokens.append(Token(type=tt.IS_EQUAL, line=self.line_number, col=self.column_number))
-                self.advance()
-                self.advance()
-            elif self.curr_char == "!" and self.look_ahead() == "=":
-                self.tokens.append(Token(type=tt.IS_NOT_EQUAL, line=self.line_number, col=self.column_number))
-                self.advance()
-                self.advance()
-            elif self.curr_char == ">" and self.look_ahead() == "=":
-                self.tokens.append(Token(type=tt.LARGER_THAN_OR_EQ, line=self.line_number, col=self.column_number))
-                self.advance()
-                self.advance()
-            elif self.curr_char == "<" and self.look_ahead() == "=":
-                self.tokens.append(Token(type=tt.LESS_THAN_OR_EQ, line=self.line_number, col=self.column_number))
-                self.advance()
-                self.advance()
-            elif self.curr_char == "+" and self.look_ahead() == "+":
-                self.tokens.append(Token(type=tt.INCREMENT, line=self.line_number, col=self.column_number))
-                self.advance()
-                self.advance()
-            elif self.curr_char == "-" and self.look_ahead() == "-":
-                self.tokens.append(Token(type=tt.DECREMENT, line=self.line_number, col=self.column_number))
-                self.advance()
-                self.advance()
             elif self.curr_char == "/" and self.look_ahead() == "/":
                 self.advance()
                 while self.curr_char not in ("\n", None):
@@ -175,50 +154,17 @@ class Tokenizer(ErrorHandler):
                 self.advance()
                 if self.curr_char is None:
                     self.compiler_error("Syntax", "unclosed multiline comment", comment_start)
-            elif self.curr_char == "\n":
-                self.tokens.append(Token(type=tt.NEWLINE, line=self.line_number, col=self.column_number))
-                self.advance()
             elif self.curr_char == " ":
                 self.advance()
-            elif self.curr_char == "(":
-                self.tokens.append(Token(type=tt.LEFT_PAREN, line=self.line_number, col=self.column_number))
+            elif self.look_ahead() is not None and self.curr_char + self.look_ahead() in tt.SYMBOLS: # type: ignore
+                self.tokens.append(Token(type=self.curr_char + self.look_ahead(),  # type: ignore
+                                        line=self.line_number, col=self.column_number))
                 self.advance()
-            elif self.curr_char == ")":
-                self.tokens.append(Token(type=tt.RIGHT_PAREN, line=self.line_number, col=self.column_number))
                 self.advance()
-            elif self.curr_char == "{":
-                self.tokens.append(Token(type=tt.LEFT_CURLY, line=self.line_number, col=self.column_number))
-                self.advance()
-            elif self.curr_char == "}":
-                self.tokens.append(Token(type=tt.RIGHT_CURLY, line=self.line_number, col=self.column_number))
-                self.advance()
-            elif self.curr_char == ",":
-                self.tokens.append(Token(type=tt.COMMA, line=self.line_number, col=self.column_number))
-                self.advance()
-            elif self.curr_char == "=":
-                self.tokens.append(Token(type=tt.EQUALS, line=self.line_number, col=self.column_number))
-                self.advance()
-            elif self.curr_char == ">":
-                self.tokens.append(Token(type=tt.LARGER_THAN, line=self.line_number, col=self.column_number))
-                self.advance()
-            elif self.curr_char == "<":
-                self.tokens.append(Token(type=tt.LESS_THAN, line=self.line_number, col=self.column_number))
-                self.advance()
-            elif self.curr_char == "+":
-                self.tokens.append(Token(type=tt.PLUS, line=self.line_number, col=self.column_number))
-                self.advance()
-            elif self.curr_char == "-":
-                self.tokens.append(Token(type=tt.MINUS, line=self.line_number, col=self.column_number))
-                self.advance()
-            elif self.curr_char == "*":
-                self.tokens.append(Token(type=tt.STAR, line=self.line_number, col=self.column_number))
-                self.advance()
-            elif self.curr_char == "/":
-                self.tokens.append(Token(type=tt.SLASH, line=self.line_number, col=self.column_number))
-                self.advance()
-            elif self.curr_char == "%":
-                self.tokens.append(Token(type=tt.PERCENT, line=self.line_number, col=self.column_number))
-                self.advance()
+            elif self.curr_char in tt.SYMBOLS:
+                self.tokens.append(Token(type=self.curr_char, 
+                                        line=self.line_number, col=self.column_number))
+                self.advance() 
             else:
                 self.compiler_error("Syntax", "character not included in the language grammar", (self.line_number, self.column_number))
         return self.tokens

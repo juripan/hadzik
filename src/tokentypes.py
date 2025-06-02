@@ -6,7 +6,7 @@ LEFT_CURLY = "{"
 RIGHT_CURLY = "}"
 
 COMMA = ","
-NEWLINE = "newline"
+NEWLINE = "\n"
 
 EXIT = "exit"
 PRINT = "hutor"
@@ -54,6 +54,14 @@ AND = "aj"
 OR = "abo"
 NOT = "ne"
 
+SYMBOLS: tuple[token_type, ...] = (
+    INCREMENT, DECREMENT,
+    IS_EQUAL, IS_NOT_EQUAL, LARGER_THAN, LESS_THAN, LARGER_THAN_OR_EQ, LESS_THAN_OR_EQ,
+    PLUS, MINUS, STAR, SLASH, PERCENT, EQUALS,
+    COMMA, NEWLINE,
+    LEFT_PAREN, RIGHT_PAREN, RIGHT_CURLY, LEFT_CURLY,
+)
+
 # strings of tokens must be what is used in the hadzik syntax
 KEYWORD_TO_TOKEN_TYPE: dict[str, token_type] = {
     "vychod": EXIT,
@@ -100,7 +108,7 @@ get_type_size: dict[token_type, int] = {
 def get_prec_level(tt: token_type) -> int | None:
     """
     returns the precedence level of the token, 
-    returns None if that token doesn't have a precedence level (token isn't a binary operator or a logical operator)
+    returns None if that token doesn't have a precedence level (token isn't a binary operator)
     """
     if tt == AND or tt == OR:
         return 0

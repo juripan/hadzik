@@ -206,7 +206,9 @@ class NodeStmtReassignDec:
 
 @dataclass(slots=True)
 class NodeStmtReassign:
-    var: Union[NodeStmtReassignEq, NodeStmtReassignInc, NodeStmtReassignDec]
+    var: Union[
+        NodeStmtReassignEq, NodeStmtReassignInc, NodeStmtReassignDec
+        ]
 
 
 @dataclass(slots=True)
