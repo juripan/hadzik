@@ -99,8 +99,10 @@ class TypeChecker(ErrorHandler):
         elif isinstance(term.var, NodeTermCast):
             if term.var.type.type == STR_DEF:
                 #TODO: implement typecasting for strings
-                self.compiler_error("Type", "typecasting to a string is not implemented", term.var.type)
+                raise NotImplementedError("typecasting to a string is not implemented yet")
             self.typecheck_expression(term.var.expr)
+            if self.stack[-1].type_ == STR_DEF and term.var.type.type == CHAR_DEF:
+                self.compiler_error("Type", f"cannot cast `{STR_DEF}` to `{CHAR_DEF}`", term.var.type)
             self.stack[-1].type_ = term.var.type.type
         else:
             raise ValueError("Unreachable")
