@@ -215,7 +215,10 @@ class Generator(ErrorHandler):
 
         self.output.append(f"    lea rax, [rbp - {self.stack_size + str_len}]\n")
         str_data.append("rax")
-        str_data.append(str(str_len))
+        if str_term.string.value != "0":
+            str_data.append(str(str_len))
+        else:
+            str_data.append("0")
         str_data_sizew = ["BYTE"] * int(str_len) + ["QWORD", "DWORD"]
         str_data_sizeb = [1] * int(str_len) + [8, 4]
         self.push_stack_complex(str_data, str_data_sizew, str_data_sizeb)
@@ -286,8 +289,13 @@ class Generator(ErrorHandler):
         elif isinstance(term.var, NodeTermCast):
             self.gen_expression(term.var.expr)
             if self.stack_item_sizes[-1] not in (1, 2, 4, 8):
-                raise NotImplementedError(f"reading size {self.stack_item_sizes[-1]} is not implemented")
-            ra = self.get_reg(0)
+                if term.var.type.type == tt.BOOL_DEF:
+                    ra = "eax"
+                else:
+                    raise NotImplementedError(f"{term.var.type.type} casting has not been implemented yet")
+            else:
+                ra = self.get_reg(0)
+            
             self.pop_stack(ra)
             ra_sized = self.reg_lookup_table[
                 tt.get_type_size[term.var.type.type]
