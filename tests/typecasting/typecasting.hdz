@@ -1,0 +1,8 @@
+bul x = pravda
+cif n = cif(x)
+
+sicke(cif i = 0, i < 26, i++){
+    hutor(znak(cif('a') + i))
+}
+
+vychod(n)

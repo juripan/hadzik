@@ -86,6 +86,16 @@ COMPARISONS: tuple[token_type, ...] = (
     IS_EQUAL, IS_NOT_EQUAL, LARGER_THAN, LESS_THAN, LARGER_THAN_OR_EQ, LESS_THAN_OR_EQ
 )
 
+TYPE_KWS: tuple[token_type, ...] = (
+    INT_DEF, STR_DEF, BOOL_DEF, CHAR_DEF
+)
+
+get_type_size: dict[token_type, int] = {
+    BOOL_DEF: 1,
+    CHAR_DEF: 1,
+    INT_DEF: 4,
+    STR_DEF: 8
+}
 
 def get_prec_level(tt: token_type) -> int | None:
     """

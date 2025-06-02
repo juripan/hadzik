@@ -75,8 +75,8 @@ class Generator(ErrorHandler):
             NodeStmtBreak: self.gen_break,
         }
 
-    def align_stack(self) -> None:
-        if self.stack_size % 2 != 0:
+    def align_stack(self, size: size_bytes) -> None:
+        if self.stack_size % 2 != 0 and size > 1:
             self.stack_size += 2 - self.stack_size % 2
 
     def push_stack(self, src: str, size_words: str = ""):
@@ -96,9 +96,9 @@ class Generator(ErrorHandler):
             size: size_bytes = 1
             reg = "al"
         else:
-            raise ValueError("Invalid register / WORD size")
+            raise ValueError(f"Invalid register / WORD size {src}")
         
-        self.align_stack()
+        self.align_stack(size)
 
         self.stack_size += size
         self.stack_item_sizes.append(size)
@@ -117,15 +117,15 @@ class Generator(ErrorHandler):
         adds a pop instruction to the output and updates the stack size 
         """
         self.output.append(f"    mov {dest_reg}, [rbp - {self.stack_size}] ;pop\n")
+        #TODO: make this pop the padding too please god its so annoying
         size = self.stack_item_sizes.pop() # removes the last items size
         self.stack_size -= size
         if ErrorHandler.debug_mode:
             print("pop", self.stack_size, self.stack_item_sizes, self.variables)
     
-    def push_stack_complex(self, src: tuple[str, ...], sizes_w: tuple[size_words, ...], sizes_b: tuple[size_bytes, ...]):
-        self.align_stack()
-
+    def push_stack_complex(self, src: list[str], sizes_w: list[size_words], sizes_b: list[size_bytes]):
         for item, byte_s, word_s in zip(src, sizes_b, sizes_w):
+            self.align_stack(byte_s)
             self.stack_size += byte_s
             self.output.append(f"    mov {word_s} [rbp - {self.stack_size}], {item} ;push\n")
         
@@ -179,14 +179,18 @@ class Generator(ErrorHandler):
         del self.scopes[-1]
     
     def make_str(self, str_term: NodeTermStr):
-        # TODO: make a string with a 64 bit pointer and length can stay 32 bit
         if not str_term.string.value:
             str_term.string.value = "0"
-            str_term.length = "1"
         
-        lbl = self.create_label("str")
-        self.section_data.append(f"{lbl} db {str_term.string.value}\n")
-        self.push_stack_complex((str_term.length, lbl), ("DWORD", )*2, (4, )*2)
+        str_data = str_term.string.value.split(",")[::-1]
+        str_len = len(str_data)
+
+        self.output.append(f"    lea rax, [rbp - {self.stack_size + str_len}]\n")
+        str_data.append("rax")
+        str_data.append(str(str_len))
+        str_data_sizew = ["BYTE"] * int(str_len) + ["QWORD", "DWORD"]
+        str_data_sizeb = [1] * int(str_len) + [8, 4]
+        self.push_stack_complex(str_data, str_data_sizew, str_data_sizeb)
 
 
     def gen_term(self, term: NodeTerm) -> None:
@@ -207,12 +211,17 @@ class Generator(ErrorHandler):
             assert term.var.ident.value is not None, "term.var.ident.value shouldn't be None, probably a parsing error"
 
             found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == term.var.ident.value, self.variables)) # type: ignore (says types are unknown even though they are known)
+            if not found_vars:
+                self.compiler_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
+            if found_vars[-1].size_w == "STR": # reading a str type
+                len_loc = found_vars[-1].loc
+                LEN_SIZE = "DWORD"
+                PTR_SIZE = "QWORD"
 
-            if found_vars[-1].size_w == "STR": # reading a complex type
-                ptr_loc = found_vars[-1].loc
-                ptr_size = len_size = "DWORD"
-                self.push_stack(f"{ptr_size} [rbp - {ptr_loc - 4}]")
-                self.push_stack(f"{len_size} [rbp - {ptr_loc}]")
+                self.push_stack(f"{PTR_SIZE} [rbp - {len_loc - 4}]")
+                self.push_stack(f"{LEN_SIZE} [rbp - {len_loc}]")
+                accum_size = self.stack_item_sizes.pop() + self.stack_item_sizes.pop()
+                self.stack_item_sizes.append(accum_size)
                 return
             
             location, word_size = found_vars[-1].loc, found_vars[-1].size_w
@@ -246,6 +255,16 @@ class Generator(ErrorHandler):
             self.output.append(f"    test {rb}, {rb}\n")
             self.output.append("    sete al\n")
             self.push_stack(ra)
+        elif isinstance(term.var, NodeTermCast):
+            self.gen_expression(term.var.expr)
+            if self.stack_item_sizes[-1] not in (1, 2, 4, 8):
+                raise NotImplementedError(f"reading size {self.stack_item_sizes[-1]} is not implemented")
+            ra = self.get_reg(0)
+            self.pop_stack(ra)
+            ra_sized = self.reg_lookup_table[
+                tt.get_type_size[term.var.type.type]
+                ][0]
+            self.push_stack(ra_sized)
         else:
             raise ValueError("Unreachable")
     
@@ -313,40 +332,29 @@ class Generator(ErrorHandler):
         """
         ra = self.get_reg(0) #! note could cause problems with overwriting results
         rb = self.get_reg(1)
+        
+        if bin_expr.var is None:
+            self.compiler_error("Generator", "failed to generate binary expression")
+        assert bin_expr.var is not None
+        
+        self.gen_expression(bin_expr.var.rhs)
+        self.gen_expression(bin_expr.var.lhs)
+        self.pop_stack(ra)
+        self.pop_stack(rb)
 
         if isinstance(bin_expr.var, NodeBinExprAdd):
-            self.gen_expression(bin_expr.var.rhs)
-            self.gen_expression(bin_expr.var.lhs)
-            self.pop_stack(ra)
-            self.pop_stack(rb)
             self.output.append(f"    add {ra}, {rb}\n")
             self.push_stack(ra)
         elif isinstance(bin_expr.var, NodeBinExprMulti):
-            self.gen_expression(bin_expr.var.rhs)
-            self.gen_expression(bin_expr.var.lhs)
-            self.pop_stack(ra)
-            self.pop_stack(rb)
             self.output.append(f"    mul {rb}\n")
             self.push_stack(ra)
         elif isinstance(bin_expr.var, NodeBinExprSub):
-            self.gen_expression(bin_expr.var.rhs)
-            self.gen_expression(bin_expr.var.lhs)
-            self.pop_stack(ra)
-            self.pop_stack(rb)
             self.output.append(f"    sub {ra}, {rb}\n")
             self.push_stack(ra)
         elif isinstance(bin_expr.var, NodeBinExprDiv):
-            self.gen_expression(bin_expr.var.rhs)
-            self.gen_expression(bin_expr.var.lhs)
-            self.pop_stack(ra)
-            self.pop_stack(rb)
             self.output.append(f"    idiv {rb}\n") #! NOTE: idiv is used because div only works with unsigned numbers
             self.push_stack(ra)
         elif isinstance(bin_expr.var, NodeBinExprMod):
-            self.gen_expression(bin_expr.var.rhs)
-            self.gen_expression(bin_expr.var.lhs)
-            self.pop_stack(ra)
-            self.pop_stack(rb)
             self.output.append("    xor rdx, rdx\n")
             self.output.append("    cqo\n") # sign extends so the modulus result can be negative
             self.output.append(f"    idiv {rb}\n")
@@ -439,7 +447,7 @@ class Generator(ErrorHandler):
         elif decl_stmt.type_.type == tt.STR_DEF:
             self.output.append("    ;; --- string var declaration ---\n")
             self.gen_expression(decl_stmt.expr)
-            self.add_variable(decl_stmt, "STR", 8)
+            self.add_variable(decl_stmt, "STR", self.stack_item_sizes[-1])
         else:
             raise ValueError("Unreachable")
         
@@ -475,8 +483,8 @@ class Generator(ErrorHandler):
         """
         generates an exit syscall
         """
-        self.gen_expression(exit_stmt.expr)
         self.output.append("    ;; --- exit ---\n")
+        self.gen_expression(exit_stmt.expr)
         self.output.append("    mov rax, 60\n")
         rdi = self.get_reg(5) # rdi / di is 5th register
         self.pop_stack(rdi)
@@ -578,11 +586,10 @@ class Generator(ErrorHandler):
         if print_stmt.cont_type == CHAR_DEF:
             self.output.append("    ;; --- print char ---\n")
             self.gen_expression(print_stmt.content)
-            
-            expr_loc = f"[rbp - {self.stack_size}]"
+
             self.output.append("    mov rax, 1\n")
             self.output.append("    mov rdi, 1\n")
-            self.output.append(f"    lea rsi, {expr_loc}\n")
+            self.output.append(f"    lea rsi, [rbp - {self.stack_size}]\n")
             self.output.append("    mov rdx, 1\n")
             self.output.append("    syscall\n")
             # it removes the printed expression because it causes a mess in the stack when looping
@@ -590,11 +597,11 @@ class Generator(ErrorHandler):
         elif print_stmt.cont_type == STR_DEF:
             self.output.append("    ;; --- print str ---\n")
             self.gen_expression(print_stmt.content)
-            PTR_SIZE = 4
+            LEN_SIZE = 4
             self.output.append("    mov rax, 1\n")
             self.output.append("    mov rdi, 1\n")
-            self.output.append(f"    mov esi, [rbp - {self.stack_size}]\n")
-            self.output.append(f"    mov edx, [rbp - {self.stack_size - PTR_SIZE}]\n")
+            self.output.append(f"    mov rsi, [rbp - {self.stack_size - LEN_SIZE}]\n")
+            self.output.append(f"    mov edx, [rbp - {self.stack_size}]\n")
             self.output.append("    syscall\n")
             self.stack_size -= self.stack_item_sizes.pop()
 

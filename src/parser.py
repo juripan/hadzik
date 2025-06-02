@@ -97,6 +97,24 @@ class Parser(ErrorHandler):
             
             assert term is not None, "Should be handled in the if statement above"
             return NodeTerm(NodeTermNot(term))
+        elif self.current_token is not None and self.current_token.type in tt.TYPE_KWS:
+            cast_type = self.current_token
+            assert cast_type is not None, "Should never be None here"
+            self.next_token()
+            
+            self.try_compiler_error(tt.LEFT_PAREN, "Syntax", "expected a `(`")
+            self.next_token()
+            
+            expr = self.parse_expr()
+            if expr is None:
+                self.compiler_error("Syntax", "invalid expression", self.current_token)
+            assert expr is not None, "Shouldn't be None here, if guard failed"
+            
+            self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected a `)`")
+
+            return NodeTerm(NodeTermCast(expr, cast_type)) 
+
+
         else:
             return None
 
