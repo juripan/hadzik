@@ -11,6 +11,7 @@ class Generator(ErrorHandler):
     stack_item_sizes: list[size_bytes] = []
 
     variables: list[VariableContext] = [] # stores all variables on the stack
+    functions: list[str] = []
     
     # scopes stores the amount of variables in the scope
     # defaulted with 0 so the global scope doesn't throw an exception when slicing the vars list
@@ -78,8 +79,36 @@ class Generator(ErrorHandler):
     def align_stack(self, size: size_bytes) -> None:
         if self.stack_size % 2 != 0 and size > 1:
             self.stack_size += 2 - self.stack_size % 2
+    
+    def call_func(self, name: str) -> None:
+        #TODO: remove the stack updating if it hasn't changed 
+        self.output.append(f"    lea rsp, [rbp - {self.stack_size}]\n")
+        self.output.append(f"    call {name}\n")
 
-    def push_stack(self, src: str, size_words: str = ""):
+        if name not in self.functions:
+            self.functions.append(name)
+    
+    def add_funcs(self) -> None:
+        for func in self.functions:
+            self.output.append(f"{func}:\n")
+            if func == "exit":
+                self.output.append("    mov rax, 60\n")
+                self.output.append("    syscall\n")
+            elif func == "print_char":
+                self.output.append("    mov rax, 1\n")
+                self.output.append("    mov rdi, 1\n")
+                self.output.append("    mov rdx, 1\n")
+                self.output.append("    syscall\n")
+                self.output.append("    ret\n")
+            elif func == "print_str":
+                self.output.append("    mov rax, 1\n")
+                self.output.append("    mov rdi, 1\n")
+                self.output.append("    syscall\n")
+                self.output.append("    ret\n")
+            else:
+                raise ValueError("Unreachable")
+
+    def push_stack(self, src: str, size_words: str = "") -> None:
         """
         adds a push instruction to the output and updates the stack size 
         """
@@ -485,10 +514,9 @@ class Generator(ErrorHandler):
         """
         self.output.append("    ;; --- exit ---\n")
         self.gen_expression(exit_stmt.expr)
-        self.output.append("    mov rax, 60\n")
         rdi = self.get_reg(5) # rdi / di is 5th register
         self.pop_stack(rdi)
-        self.output.append("    syscall\n")
+        self.call_func("exit")
 
     def gen_if_statement(self, if_stmt: NodeStmtIf) -> None:
         self.output.append("    ;; --- if block ---\n")
@@ -587,22 +615,19 @@ class Generator(ErrorHandler):
             self.output.append("    ;; --- print char ---\n")
             self.gen_expression(print_stmt.content)
 
-            self.output.append("    mov rax, 1\n")
-            self.output.append("    mov rdi, 1\n")
             self.output.append(f"    lea rsi, [rbp - {self.stack_size}]\n")
-            self.output.append("    mov rdx, 1\n")
-            self.output.append("    syscall\n")
+            self.call_func("print_char")
             # it removes the printed expression because it causes a mess in the stack when looping
             self.stack_size -= self.stack_item_sizes.pop()
         elif print_stmt.cont_type == STR_DEF:
             self.output.append("    ;; --- print str ---\n")
             self.gen_expression(print_stmt.content)
             LEN_SIZE = 4
-            self.output.append("    mov rax, 1\n")
-            self.output.append("    mov rdi, 1\n")
             self.output.append(f"    mov rsi, [rbp - {self.stack_size - LEN_SIZE}]\n")
             self.output.append(f"    mov edx, [rbp - {self.stack_size}]\n")
-            self.output.append("    syscall\n")
+
+            self.call_func("print_str")
+            # it removes the printed expression because it causes a mess in the stack when looping
             self.stack_size -= self.stack_item_sizes.pop()
 
     def gen_break(self, break_stmt: NodeStmtBreak) -> None:
@@ -643,6 +668,7 @@ class Generator(ErrorHandler):
             self.gen_statement(stmt)
 
         self.output.append("    ;; --- default exit ---\n    mov rax, 60\n    mov rdi, 0\n    syscall\n" )
+        self.add_funcs()
         self.output.append("section .data\n")
         self.output.extend(self.section_data)
         self.output.append("section .bss\n")
