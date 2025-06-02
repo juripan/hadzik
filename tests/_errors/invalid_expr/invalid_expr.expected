@@ -1,0 +1,4 @@
+Failed here: tests/_errors/invalid_expr/invalid_expr.hdz:1:12
+cif x = 8 +
+           ^
+[31mValueError[0m: (line 1 column 12) invalid expression

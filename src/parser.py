@@ -110,7 +110,7 @@ class Parser(ErrorHandler):
                 self.compiler_error("Syntax", "invalid expression", self.current_token) #skipped this in the testing errors
             assert expr is not None, "Shouldn't be None here, if guard failed"
             
-            self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected a `)`") #skipped this in the testing errors
+            self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected a `)`") # skipped this in the testing errors
 
             return NodeTerm(NodeTermCast(expr, cast_type)) 
 
@@ -194,23 +194,23 @@ class Parser(ErrorHandler):
         
         type_def = self.current_token
         if type_def.type == tt.IDENT and is_const:
-            type_def = Token(tt.INFER_DEF, self.current_token.line, self.current_token.col) # allows for type inference without `naj` just with `furt`
+            # allows for type inference without `naj` just with `furt`
+            type_def = Token(tt.INFER_DEF, self.current_token.line, self.current_token.col)
         else:
-            self.try_compiler_error((tt.BOOL_DEF, tt.CHAR_DEF, tt.INT_DEF, tt.INFER_DEF, tt.STR_DEF), "Syntax", f"expected a valid type {self.current_token}")
             self.next_token() # removes type def
 
         self.try_compiler_error(tt.IDENT, "Syntax", "expected valid identifier")
         ident = self.current_token
         self.next_token()
 
-        self.try_compiler_error(tt.EQUALS, "Syntax", "expected '='")
+        self.try_compiler_error(tt.EQUALS, "Syntax", "expected `=`")
         self.next_token()
 
         assert type_def is not None, "type_def should never be None"
         value = self.parse_expr()
 
         if value is None:
-            self.compiler_error("Syntax", "invalid expression", self.current_token)
+            self.compiler_error("Syntax", "invalid expression", self.current_token) # skipped this in the testing errors
 
         assert ident is not None, "Identifier should never be None"
         assert value is not None, "Value should never be None, maybe a missing if value is None"
@@ -219,17 +219,17 @@ class Parser(ErrorHandler):
     def parse_exit(self) -> NodeStmtExit:
         self.next_token() # removes exit token
         
-        self.try_compiler_error(tt.LEFT_PAREN, "Syntax", "expected '('")
+        self.try_compiler_error(tt.LEFT_PAREN, "Syntax", "expected `(`") # skipped this in the testing errors
         self.next_token()
 
         expr = self.parse_expr()
         
         if expr is None:
-            self.compiler_error("Syntax", "invalid expression", self.current_token)
+            self.compiler_error("Syntax", "invalid expression", self.current_token) # skipped this in the testing errors
         
         assert expr is not None, "expr shouldn't be None, handled in the above if statement"
 
-        self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
+        self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected `)`") # skipped this in the testing errors
         self.next_token()
 
         return NodeStmtExit(expr=expr)

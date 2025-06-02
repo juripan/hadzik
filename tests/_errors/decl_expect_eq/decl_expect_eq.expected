@@ -1,0 +1,4 @@
+Failed here: tests/_errors/decl_expect_eq/decl_expect_eq.hdz:1:7
+naj x 
+      ^
+[31mSyntaxError[0m: (line 1 column 7) expected `=`
