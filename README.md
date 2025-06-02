@@ -74,17 +74,5 @@ all of the dependencies are listed in the Docker file and source code files but 
 + for loop rewrite
 + macros
 
-## Docker:
-To run this project in a docker you first need to install docker and then run these commands
-
-**NOTE: use the full file paths on windows** 
-```
-$ docker build -t <image name> <Dockerfile directory>
-$ docker run -it -v <src dir path>:/app <image name>
-```
-The container creates a volume of the source directory on the /app directory inside the docker container so it can access the src folder and modify its content
-
--it flag makes the container console accessible so you can run the start.sh file yourself or run any commands in the container until you close it
-
 ## Credits:
 name of the programming language by: Miška Mašlonková
