@@ -117,6 +117,7 @@ class Generator(ErrorHandler):
         adds a pop instruction to the output and updates the stack size 
         """
         self.output.append(f"    mov {dest_reg}, [rbp - {self.stack_size}] ;pop\n")
+        #TODO: make this pop the padding too please god its so annoying
         size = self.stack_item_sizes.pop() # removes the last items size
         self.stack_size -= size
         if ErrorHandler.debug_mode:
@@ -256,6 +257,8 @@ class Generator(ErrorHandler):
             self.push_stack(ra)
         elif isinstance(term.var, NodeTermCast):
             self.gen_expression(term.var.expr)
+            if self.stack_item_sizes[-1] not in (1, 2, 4, 8):
+                raise NotImplementedError(f"reading size {self.stack_item_sizes[-1]} is not implemented")
             ra = self.get_reg(0)
             self.pop_stack(ra)
             ra_sized = self.reg_lookup_table[
@@ -328,40 +331,29 @@ class Generator(ErrorHandler):
         """
         ra = self.get_reg(0) #! note could cause problems with overwriting results
         rb = self.get_reg(1)
+        
+        if bin_expr.var is None:
+            self.compiler_error("Generator", "failed to generate binary expression")
+        assert bin_expr.var is not None
+        
+        self.gen_expression(bin_expr.var.rhs)
+        self.gen_expression(bin_expr.var.lhs)
+        self.pop_stack(ra)
+        self.pop_stack(rb)
 
         if isinstance(bin_expr.var, NodeBinExprAdd):
-            self.gen_expression(bin_expr.var.rhs)
-            self.gen_expression(bin_expr.var.lhs)
-            self.pop_stack(ra)
-            self.pop_stack(rb)
             self.output.append(f"    add {ra}, {rb}\n")
             self.push_stack(ra)
         elif isinstance(bin_expr.var, NodeBinExprMulti):
-            self.gen_expression(bin_expr.var.rhs)
-            self.gen_expression(bin_expr.var.lhs)
-            self.pop_stack(ra)
-            self.pop_stack(rb)
             self.output.append(f"    mul {rb}\n")
             self.push_stack(ra)
         elif isinstance(bin_expr.var, NodeBinExprSub):
-            self.gen_expression(bin_expr.var.rhs)
-            self.gen_expression(bin_expr.var.lhs)
-            self.pop_stack(ra)
-            self.pop_stack(rb)
             self.output.append(f"    sub {ra}, {rb}\n")
             self.push_stack(ra)
         elif isinstance(bin_expr.var, NodeBinExprDiv):
-            self.gen_expression(bin_expr.var.rhs)
-            self.gen_expression(bin_expr.var.lhs)
-            self.pop_stack(ra)
-            self.pop_stack(rb)
             self.output.append(f"    idiv {rb}\n") #! NOTE: idiv is used because div only works with unsigned numbers
             self.push_stack(ra)
         elif isinstance(bin_expr.var, NodeBinExprMod):
-            self.gen_expression(bin_expr.var.rhs)
-            self.gen_expression(bin_expr.var.lhs)
-            self.pop_stack(ra)
-            self.pop_stack(rb)
             self.output.append("    xor rdx, rdx\n")
             self.output.append("    cqo\n") # sign extends so the modulus result can be negative
             self.output.append(f"    idiv {rb}\n")
@@ -593,11 +585,10 @@ class Generator(ErrorHandler):
         if print_stmt.cont_type == CHAR_DEF:
             self.output.append("    ;; --- print char ---\n")
             self.gen_expression(print_stmt.content)
-            
-            expr_loc = f"[rbp - {self.stack_size}]"
+
             self.output.append("    mov rax, 1\n")
             self.output.append("    mov rdi, 1\n")
-            self.output.append(f"    lea rsi, {expr_loc}\n")
+            self.output.append(f"    lea rsi, [rbp - {self.stack_size}]\n")
             self.output.append("    mov rdx, 1\n")
             self.output.append("    syscall\n")
             # it removes the printed expression because it causes a mess in the stack when looping
