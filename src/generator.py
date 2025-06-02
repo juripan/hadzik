@@ -667,7 +667,8 @@ class Generator(ErrorHandler):
         generates the whole assembly based on the nodes that are given,
         returns a list of strings that contains the assembly instructions
         """
-        self.output.append("section .text\n    global _start\n")
+        self.output.append("format ELF64 executable 3\nsegment readable executable\nentry _start\n")
+        # self.output.append("section .text\n    global _start\n")
         self.output.append("_start:\n    mov rbp, rsp\n")
 
         for stmt in self.main_program.stmts:
@@ -676,7 +677,8 @@ class Generator(ErrorHandler):
 
         self.output.append("    ;; --- default exit ---\n    mov rax, 60\n    mov rdi, 0\n    syscall\n" )
         self.add_funcs()
-        self.output.append("section .data\n")
-        self.output.extend(self.section_data)
-        self.output.append("section .bss\n")
+        # self.output.append("section .data\n")
+        if self.section_data:
+            self.output.append("segment readable writeable\n")
+            self.output.extend(self.section_data)
         return self.output

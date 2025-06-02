@@ -67,8 +67,7 @@ $ python3 hdzc path/file.hdz -s -r new_path/file2 -n
 all of the dependencies are listed in the Docker file and source code files but for more transparency I will list them here also
 + Python 3.12.3
 + libraries: sys, os, dataclasses, typing, time
-+ NASM version 2.16.01
-+ GNU ld 2.42
++ FASM version 1.73.32
 
 ## Priorities:
 + typecasting

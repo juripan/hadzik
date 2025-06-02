@@ -84,14 +84,13 @@ def compile_to_asm(file_path: str) -> list[str]:
 
 def asm_to_bin(filepath_no_hdz: str, content: list[str]):
     """
-    makes an assembly file and links and assembles it by calling nasm and ld
+    makes an assembly file and links and assembles it by calling fasm
     if linking or assembling fails it throws an error and exits with 1
     """
     with open("./" + filepath_no_hdz + ".asm", "w") as f:
         f.writelines(content)
     start = time.time()
-    if os.system("nasm -felf64 " + filepath_no_hdz + ".asm") \
-    or os.system("ld " + filepath_no_hdz + ".o -o " + filepath_no_hdz):
+    if os.system("fasm " + filepath_no_hdz + ".asm >> /dev/null"):
         print("ERROR: assembly failed", file=sys.stderr)
         exit(1)
     elapsed = time.time() - start
