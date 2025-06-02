@@ -207,8 +207,7 @@ class Generator(ErrorHandler):
             assert term.var.ident.value is not None, "term.var.ident.value shouldn't be None, probably a parsing error"
 
             found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == term.var.ident.value, self.variables)) # type: ignore (says types are unknown even though they are known)
-            if not found_vars:
-                self.compiler_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
+
             if found_vars[-1].size_w == "STR": # reading a complex type
                 ptr_loc = found_vars[-1].loc
                 ptr_size = len_size = "DWORD"
@@ -261,6 +260,7 @@ class Generator(ErrorHandler):
         rb = self.get_reg(1)
         self.pop_stack(ra)
         self.pop_stack(rb)
+
         self.output.append(f"    cmp {ra}, {rb}\n")
         if comparison.comp_sign.type == tt.IS_EQUAL:
             self.output.append("    sete al\n")
@@ -275,7 +275,7 @@ class Generator(ErrorHandler):
         elif comparison.comp_sign.type == tt.LESS_THAN_OR_EQ:
             self.output.append("    setle al\n")
         else:
-            self.compiler_error("Syntax", "Invalid comparison expression", comparison.comp_sign)
+            raise TypeError("Unreachable")
         self.push_stack("al")
 
     def gen_logical_expression(self, logic_expr: NodeExprLogic) -> None:
@@ -301,7 +301,7 @@ class Generator(ErrorHandler):
             self.output.append(f"    jz {label}\n")
             self.output.append(f"    mov {rc}, {rb}\n")
         else:
-            self.compiler_error("Syntax", "Invalid logic expression", logic_expr.logical_operator)
+            raise ValueError("Unreachable")
         self.output.append(f"{label}:\n")
         self.output.append(f"    test {ra}, {ra}\n")
         self.output.append("    setne al\n")
@@ -353,7 +353,7 @@ class Generator(ErrorHandler):
             #TODO: make division be generic for any size
             self.push_stack("edx") # assembly stores the modulus in rdx after the standard division instruction
         else:
-            self.compiler_error("Generator", "failed to generate binary expression")
+            raise ValueError("Unreachable")
 
     def gen_bool_expression(self, expression: NodeExprBool):
         if isinstance(expression.var, NodePredExpr):
