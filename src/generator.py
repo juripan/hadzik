@@ -81,7 +81,6 @@ class Generator(ErrorHandler):
             self.stack_size += 2 - self.stack_size % 2
     
     def call_func(self, name: str) -> None:
-        #TODO: remove the stack updating if it hasn't changed 
         self.output.append(f"    lea rsp, [rbp - {self.stack_size}]\n")
         self.output.append(f"    call {name}\n")
 
