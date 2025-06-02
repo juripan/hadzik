@@ -1,0 +1,4 @@
+Failed here: tests/_errors/negative_not_term/negative_not_term.hdz:1:9
+bul x = -ne pravda
+        ^
+[31mSyntaxError[0m: (line 1 column 9) logical `ne` expression cannot be negative

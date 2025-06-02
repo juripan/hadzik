@@ -82,13 +82,13 @@ class Parser(ErrorHandler):
             if expr is None:
                 self.compiler_error("Value", "expected expression", self.current_token)
 
-            self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected ')'") # TODO: add tests for other errors below this one
+            self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected `)`") # TODO: add tests for other errors below this one
 
             assert expr is not None, "Should be handled in the if statement above"
             return NodeTerm(NodeTermParen(expr, is_negative))
         elif self.current_token is not None and self.current_token.type == tt.NOT:
             if is_negative:
-                self.compiler_error("Syntax", f"boolean expression literal cannot be negative", self.get_token_at(-1))
+                self.compiler_error("Syntax", f"logical `ne` expression cannot be negative", self.get_token_at(-1))
             self.next_token()
             
             term = self.parse_term()
@@ -102,15 +102,15 @@ class Parser(ErrorHandler):
             assert cast_type is not None, "Should never be None here"
             self.next_token()
             
-            self.try_compiler_error(tt.LEFT_PAREN, "Syntax", "expected a `(`")
+            self.try_compiler_error(tt.LEFT_PAREN, "Syntax", "expected a `(`") #skipped this in the testing errors
             self.next_token()
             
             expr = self.parse_expr()
             if expr is None:
-                self.compiler_error("Syntax", "invalid expression", self.current_token)
+                self.compiler_error("Syntax", "invalid expression", self.current_token) #skipped this in the testing errors
             assert expr is not None, "Shouldn't be None here, if guard failed"
             
-            self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected a `)`")
+            self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected a `)`") #skipped this in the testing errors
 
             return NodeTerm(NodeTermCast(expr, cast_type)) 
 

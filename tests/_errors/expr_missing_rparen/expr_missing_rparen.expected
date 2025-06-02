@@ -1,4 +1,4 @@
 Failed here: tests/_errors/expr_missing_rparen/expr_missing_rparen.hdz:1:24
 naj missing_rparen = (8
                        ^
-[31mSyntaxError[0m: (line 1 column 24) expected ')'
+[31mSyntaxError[0m: (line 1 column 24) expected `)`

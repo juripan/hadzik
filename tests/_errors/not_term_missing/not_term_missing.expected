@@ -1,0 +1,4 @@
+Failed here: tests/_errors/not_term_missing/not_term_missing.hdz:1:11
+bul x = ne
+          ^
+[31mValueError[0m: (line 1 column 11) expected term
