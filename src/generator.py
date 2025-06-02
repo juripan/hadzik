@@ -96,7 +96,7 @@ class Generator(ErrorHandler):
             size: size_bytes = 1
             reg = "al"
         else:
-            raise ValueError("Invalid register / WORD size")
+            raise ValueError(f"Invalid register / WORD size {src}")
         
         self.align_stack(size)
 
@@ -123,9 +123,8 @@ class Generator(ErrorHandler):
             print("pop", self.stack_size, self.stack_item_sizes, self.variables)
     
     def push_stack_complex(self, src: list[str], sizes_w: list[size_words], sizes_b: list[size_bytes]):
-        self.align_stack(sum(sizes_b))
-
         for item, byte_s, word_s in zip(src, sizes_b, sizes_w):
+            self.align_stack(byte_s)
             self.stack_size += byte_s
             self.output.append(f"    mov {word_s} [rbp - {self.stack_size}], {item} ;push\n")
         
@@ -181,12 +180,15 @@ class Generator(ErrorHandler):
     def make_str(self, str_term: NodeTermStr):
         if not str_term.string.value:
             str_term.string.value = "0"
-            str_term.length = "1"
         
         str_data = str_term.string.value.split(",")[::-1]
-        str_data.append(str_term.length)
-        str_data_sizew = ["BYTE"] * int(str_term.length) + ["DWORD"]
-        str_data_sizeb = [1] * int(str_term.length) + [4]
+        str_len = len(str_data)
+
+        self.output.append(f"    lea rax, [rbp - {self.stack_size + str_len}]\n")
+        str_data.append("rax")
+        str_data.append(str(str_len))
+        str_data_sizew = ["BYTE"] * int(str_len) + ["QWORD", "DWORD"]
+        str_data_sizeb = [1] * int(str_len) + [8, 4]
         self.push_stack_complex(str_data, str_data_sizew, str_data_sizeb)
 
 
@@ -211,19 +213,14 @@ class Generator(ErrorHandler):
             if not found_vars:
                 self.compiler_error("Value", f"variable was not declared: {term.var.ident.value}", term.var.ident)
             if found_vars[-1].size_w == "STR": # reading a str type
-                #TODO: copies a string every time its moved, introduce a str ref type
-                ptr_loc = found_vars[-1].loc
+                len_loc = found_vars[-1].loc
                 LEN_SIZE = "DWORD"
-                str_struct_size = found_vars[-1].size_b
-                
-                for i in range(str_struct_size - 4): #TODO: very scuffed, please unscuff this
-                    self.push_stack(f"BYTE [rbp - {ptr_loc - str_struct_size + i + 1}]")
-                    self.stack_item_sizes.pop()
-                self.stack_item_sizes.append(str_struct_size)
+                PTR_SIZE = "QWORD"
 
-                self.push_stack(f"{LEN_SIZE} [rbp - {ptr_loc}]")
-                self.stack_item_sizes.pop()
-                self.stack_item_sizes.append(str_struct_size)
+                self.push_stack(f"{PTR_SIZE} [rbp - {len_loc - 4}]")
+                self.push_stack(f"{LEN_SIZE} [rbp - {len_loc}]")
+                accum_size = self.stack_item_sizes.pop() + self.stack_item_sizes.pop()
+                self.stack_item_sizes.append(accum_size)
                 return
             
             location, word_size = found_vars[-1].loc, found_vars[-1].size_w
@@ -425,7 +422,6 @@ class Generator(ErrorHandler):
             raise ValueError("Unreachable")
 
     def add_variable(self, decl_stmt: NodeStmtDeclare, word_size: size_words, byte_size: size_bytes):
-        print(f"{word_size=}, {byte_size=}")
         location: int = self.stack_size
         assert decl_stmt.ident.value is not None, "var name shouldn't be None here"
         self.variables.append(VariableContext(decl_stmt.ident.value, location, word_size, byte_size))
@@ -494,8 +490,8 @@ class Generator(ErrorHandler):
         """
         generates an exit syscall
         """
-        self.gen_expression(exit_stmt.expr)
         self.output.append("    ;; --- exit ---\n")
+        self.gen_expression(exit_stmt.expr)
         self.output.append("    mov rax, 60\n")
         rdi = self.get_reg(5) # rdi / di is 5th register
         self.pop_stack(rdi)
@@ -612,7 +608,7 @@ class Generator(ErrorHandler):
             LEN_SIZE = 4
             self.output.append("    mov rax, 1\n")
             self.output.append("    mov rdi, 1\n")
-            self.output.append(f"    lea rsi, [rbp - {self.stack_size - LEN_SIZE}]\n")
+            self.output.append(f"    mov rsi, [rbp - {self.stack_size - LEN_SIZE}]\n")
             self.output.append(f"    mov edx, [rbp - {self.stack_size}]\n")
             self.output.append("    syscall\n")
             self.stack_size -= self.stack_item_sizes.pop()
