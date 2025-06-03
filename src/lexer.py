@@ -132,7 +132,8 @@ class Tokenizer(ErrorHandler):
 
     def tokenize(self):
         while self.curr_char is not None:
-            if self.curr_char.isalpha() or self.curr_char == "_": # makes keywords, if not a keyword makes an identifier
+            # makes keywords, if not a keyword makes an identifier
+            if self.curr_char.isalpha() or self.curr_char == "_":
                 self.lex_keyword()
             elif self.curr_char.isnumeric():
                 self.lex_number()

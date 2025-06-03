@@ -168,6 +168,8 @@ class Generator(ErrorHandler):
         """
         assert len(self.stack_item_sizes) > 0, "Stack underflow"
         size = self.stack_item_sizes[-1]
+        if size not in self.reg_lookup_table.keys():
+            raise ValueError(self.stack_item_sizes)
         return self.reg_lookup_table[size][idx]
 
     def create_label(self, custom_lbl: str="") -> str:
@@ -301,6 +303,18 @@ class Generator(ErrorHandler):
                 tt.get_type_size[term.var.type.type]
                 ][0]
             self.push_stack(ra_sized)
+        elif isinstance(term.var, NodeTermIndex):
+            self.gen_term(term.var.term) # type: ignore (type checking freaking out)
+            self.gen_expression(term.var.index) # type: ignore (type checking freaking out)
+
+            LEN_SIZE = INDEX_SIZE = 4
+            ITEM_SIZE_W = "BYTE"
+            ITEM_SIZE_B = 1
+            self.output.append(f"    mov rax, [rbp - {self.stack_size - LEN_SIZE - INDEX_SIZE}]\n")
+            rb = self.get_reg(1)
+            self.output.append(f"    xor rbx, rbx\n")
+            self.pop_stack(rb)
+            self.push_stack(f"{ITEM_SIZE_W} [rax + rbx * {ITEM_SIZE_B}]")
         else:
             raise ValueError("Unreachable")
     
@@ -366,15 +380,14 @@ class Generator(ErrorHandler):
         """
         generates a binary expression that gets pushed on top of the stack
         """
-        ra = self.get_reg(0) #! note could cause problems with overwriting results
-        rb = self.get_reg(1)
-        
         if bin_expr.var is None:
             self.compiler_error("Generator", "failed to generate binary expression")
         assert bin_expr.var is not None
         
         self.gen_expression(bin_expr.var.rhs)
         self.gen_expression(bin_expr.var.lhs)
+        ra = self.get_reg(0) #note: could cause problems with overwriting results
+        rb = self.get_reg(1)
         self.pop_stack(ra)
         self.pop_stack(rb)
 
@@ -660,7 +673,7 @@ class Generator(ErrorHandler):
         elif isinstance(statement.stmt_var, NodeStmtEmpty):
             pass
         else:
-            assert False, "Unreachable" 
+            raise ValueError("Unreachable") 
 
     def gen_program(self) -> list[str]:
         """

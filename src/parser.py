@@ -53,29 +53,35 @@ class Parser(ErrorHandler):
             self.next_token()
 
         if self.current_token is not None and self.current_token.type == tt.INT_LIT:
-            return NodeTerm(NodeTermInt(self.current_token, is_negative))
+            ret_term = NodeTerm(NodeTermInt(self.current_token, is_negative))
+            self.next_token()
         elif self.current_token is not None and self.current_token.type == tt.IDENT:
-            return NodeTerm(NodeTermIdent(self.current_token, is_negative))
+            ret_term = NodeTerm(NodeTermIdent(self.current_token, is_negative))
+            self.next_token()
         elif self.current_token is not None and self.current_token.type == tt.CHAR_LIT:
             if is_negative:
                 self.compiler_error("Syntax", f"`{CHAR_DEF}` literal cannot be negative", self.get_token_at(-1))
-            return NodeTerm(NodeTermChar(self.current_token))
+            ret_term = NodeTerm(NodeTermChar(self.current_token))
+            self.next_token()
         elif self.current_token is not None and self.current_token.type == tt.STR_LIT:
             if is_negative:
                 self.compiler_error("Syntax", f"`{STR_DEF}` literal cannot be negative", self.get_token_at(-1))
             assert self.current_token.value is not None, "string value shouldn't be None here, bug in lexing"
             length = len(self.current_token.value.split(","))
-            return NodeTerm(NodeTermStr(self.current_token, str(length)))
+            ret_term = NodeTerm(NodeTermStr(self.current_token, str(length)))
+            self.next_token()
         elif self.current_token is not None and self.current_token.type == tt.TRUE:
             if is_negative:
                 self.compiler_error("Syntax", f"`{BOOL_DEF}` literal cannot be negative", self.get_token_at(-1))
             self.current_token.value = "1"
-            return NodeTerm(NodeTermBool(bool=self.current_token))
+            ret_term = NodeTerm(NodeTermBool(bool=self.current_token))
+            self.next_token()
         elif self.current_token is not None and self.current_token.type == tt.FALSE:
             if is_negative:
                 self.compiler_error("Syntax", f"`{BOOL_DEF}` literal cannot be negative", self.get_token_at(-1))
             self.current_token.value = "0"
-            return NodeTerm(NodeTermBool(bool=self.current_token))
+            ret_term = NodeTerm(NodeTermBool(bool=self.current_token))
+            self.next_token()
         elif self.current_token is not None and self.current_token.type == tt.LEFT_PAREN:
             self.next_token()
             expr = self.parse_expr()
@@ -85,7 +91,8 @@ class Parser(ErrorHandler):
             self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected `)`") # TODO: add tests for other errors below this one
 
             assert expr is not None, "Should be handled in the if statement above"
-            return NodeTerm(NodeTermParen(expr, is_negative))
+            ret_term = NodeTerm(NodeTermParen(expr, is_negative))
+            self.next_token()
         elif self.current_token is not None and self.current_token.type == tt.NOT:
             if is_negative:
                 self.compiler_error("Syntax", f"logical `ne` expression cannot be negative", self.get_token_at(-1))
@@ -96,7 +103,8 @@ class Parser(ErrorHandler):
                 self.compiler_error("Value", "expected term", self.current_token)
             
             assert term is not None, "Should be handled in the if statement above"
-            return NodeTerm(NodeTermNot(term))
+            ret_term = NodeTerm(NodeTermNot(term))
+            #no next token here because it breaks the term call here
         elif self.current_token is not None and self.current_token.type in tt.TYPE_KWS:
             cast_type = self.current_token
             assert cast_type is not None, "Should never be None here"
@@ -112,18 +120,29 @@ class Parser(ErrorHandler):
             
             self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected a `)`") # skipped this in the testing errors
 
-            return NodeTerm(NodeTermCast(expr, cast_type)) 
-
-
+            ret_term = NodeTerm(NodeTermCast(expr, cast_type))
+            self.next_token()
         else:
-            return None
+            ret_term = None
+        
+        if self.current_token is not None and self.current_token.type == tt.LEFT_BRACKET:
+            self.next_token()
+            expr = self.parse_expr()
+            self.next_token()
+            if expr is None:
+                self.compiler_error("Syntax", "invalid expression", self.current_token)
+            assert expr is not None, "comiler error failed"
+            
+            assert ret_term is not None, "ret_term else branch got triggered"
+            ret_term = NodeTerm(NodeTermIndex(ret_term, expr))
+        
+        return ret_term
 
     def parse_expr(self, min_prec: int = 0) -> NodeExpr | None:
         term_lhs = self.parse_term()
         
         if term_lhs is None:
             return None
-        self.next_token()
 
         expr_lhs = NodeExpr(var=term_lhs)
 
