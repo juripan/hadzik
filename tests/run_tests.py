@@ -82,7 +82,7 @@ def testing(folders: tuple[str, ...], subfolder: str = ""):
             print(f"{"\033[31m"}[FAIL] {folder}{"\033[0m"} \nExpected: {out_record} \nGot: {out_hadzik}")
     
     assert folder_count > 0, f"{folders}"
-    print(f"{success_count} / {folder_count} Success rate: {success_count/folder_count:.2%}")
+    print(f"{subfolder} {success_count} / {folder_count} Success rate: {success_count/folder_count:.2%}")
 
 
 def main():
