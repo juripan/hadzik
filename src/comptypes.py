@@ -190,18 +190,18 @@ class NodeStmtIf:
 
 @dataclass(slots=True)
 class NodeStmtReassignEq:
-    ident: Token
-    expr: NodeExpr
+    ident: NodeTerm
+    rvalue: NodeExpr
 
 
 @dataclass(slots=True)
 class NodeStmtReassignInc:
-    ident: Token
+    ident: NodeTerm
 
 
 @dataclass(slots=True)
 class NodeStmtReassignDec:
-    ident: Token
+    ident: NodeTerm
 
 
 @dataclass(slots=True)

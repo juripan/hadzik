@@ -383,18 +383,17 @@ class Parser(ErrorHandler):
         return NodeStmtDoWhile(scope, expr)
 
     def parse_reassign(self) -> NodeStmtReassign:
-        self.try_compiler_error(tt.IDENT, "Syntax", "expected identifier")
-        ident = self.current_token
-        self.next_token()
-        
-        assert ident is not None, "identifier shouldn't be None here, triggered the parse_reassign function"
+        term = self.parse_term()
+        if term is None or not isinstance(term.var, NodeTermIdent):
+            self.compiler_error("Syntax", "expected identifier", self.current_token)
+        assert term is not None, "should have thrown a compiler error here"
         
         if self.current_token is not None and self.current_token.type == tt.INCREMENT:
             self.next_token()
-            return NodeStmtReassign(var=NodeStmtReassignInc(ident))
+            return NodeStmtReassign(var=NodeStmtReassignInc(term))
         elif self.current_token is not None and self.current_token.type == tt.DECREMENT:
             self.next_token()
-            return NodeStmtReassign(var=NodeStmtReassignDec(ident))
+            return NodeStmtReassign(var=NodeStmtReassignDec(term))
 
         self.try_compiler_error(tt.EQUALS, "Syntax", "expected '='")
         self.next_token()
@@ -405,7 +404,7 @@ class Parser(ErrorHandler):
         
         assert expr is not None, "expr shouldn't be None here, handled by the previous if condition"
         
-        return NodeStmtReassign(var=NodeStmtReassignEq(ident, expr))
+        return NodeStmtReassign(var=NodeStmtReassignEq(term, expr))
 
     def parse_print(self) -> NodeStmtPrint:
         self.next_token() # removes print token
@@ -447,7 +446,6 @@ class Parser(ErrorHandler):
         if parse_func is None:
             self.compiler_error("Syntax", "invalid statement start", self.current_token)
         assert parse_func is not None, "shouldn't be None here"
-        assert callable(parse_func), "should be callable since its a function"
 
         statement = parse_func()
         

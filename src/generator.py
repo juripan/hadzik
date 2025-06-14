@@ -505,16 +505,33 @@ class Generator(ErrorHandler):
         """
         generates a var reassignment, increment and decrement
         """
-        found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == reassign_stmt.var.ident.value, self.variables))
+        assert isinstance(reassign_stmt.var.ident.var, NodeTermIdent)
+        found_vars: tuple[VariableContext, ...] = tuple(filter(lambda x: x.name == reassign_stmt.var.ident.var.ident.value, self.variables)) # type: ignore
         
         if isinstance(reassign_stmt.var, NodeStmtReassignEq):
             self.output.append("    ;; --- var reassign ---\n")
-            self.gen_expression(reassign_stmt.var.expr)
-            ra = self.get_reg(0)
-            self.pop_stack(ra)
             var_ctx = found_vars[-1]
-            location = var_ctx.loc
-            self.output.append(f"    mov [rbp - {location}], {ra}\n")
+
+            if reassign_stmt.var.ident.index is not None:
+                LEN_SIZE = 4
+                ITEM_SIZE_B = 1
+                self.gen_expression(reassign_stmt.var.ident.index)
+                rb = "rbx"
+                self.output.append(f"    xor rbx, rbx\n")
+                self.pop_stack("ebx") # saves the offset
+
+                offset = f"{rb} * {ITEM_SIZE_B}"
+                location = var_ctx.loc - LEN_SIZE
+                self.output.append(f"    mov rcx, [rbp - {location}]\n")
+                self.gen_expression(reassign_stmt.var.rvalue)
+                ra = self.get_reg(0)
+                self.pop_stack(ra)
+                self.output.append(f"    mov [rcx + {offset}], {ra}\n")
+            else:
+                self.gen_expression(reassign_stmt.var.rvalue)
+                ra = self.get_reg(0)
+                self.pop_stack(ra)
+                self.output.append(f"    mov [rbp - {var_ctx.loc}], {ra}\n")
         elif isinstance(reassign_stmt.var, (NodeStmtReassignInc, NodeStmtReassignDec)): # type: ignore (using an else branch to catch errors)
             self.output.append("    ;; --- var inc / dec ---\n")
             var_ctx = found_vars[-1]

@@ -189,21 +189,25 @@ class TypeChecker(ErrorHandler):
         self.variables.append(StackItem(decl_stmt.type_.type, decl_stmt.ident, decl_stmt.ident.value, decl_stmt.is_const)) # type: ignore (freaking out about str | None)
     
     def typecheck_reassign(self, reassign_stmt: NodeStmtReassign):
-        found_vars = tuple(filter(lambda x: x.name == reassign_stmt.var.ident.value, self.variables))
+        assert isinstance(reassign_stmt.var.ident.var, NodeTermIdent), "has to be this, error in parsing"
+        found_vars = tuple(filter(lambda x: x.name == reassign_stmt.var.ident.var.ident.value, self.variables)) # type: ignore
 
         if not found_vars:
-            self.compiler_error("Value", f"undeclared identifier: {reassign_stmt.var.ident.value}", reassign_stmt.var.ident)
+            self.compiler_error("Value", f"undeclared identifier: {reassign_stmt.var.ident.var.ident.value}", reassign_stmt.var.ident.var.ident)
         elif found_vars[-1].is_const:
-            self.compiler_error("Value", f"reassignment of const identifier: {reassign_stmt.var.ident.value}", reassign_stmt.var.ident)
-        
+            self.compiler_error("Value", f"reassignment of const identifier: {reassign_stmt.var.ident.var.ident.value}", reassign_stmt.var.ident.var.ident)
+
         if isinstance(reassign_stmt.var, NodeStmtReassignEq):
-            self.typecheck_expression(reassign_stmt.var.expr)
+            self.typecheck_expression(reassign_stmt.var.rvalue)
             item = self.pop_stack()
             if item.type_ == STR_DEF:
-                self.compiler_error("Type", f"reassigning of type `{item.type_}` is not allowed", reassign_stmt.var.ident)
+                self.compiler_error("Type", f"reassigning of type `{item.type_}` is not allowed", reassign_stmt.var.ident.var.ident)
+            elif reassign_stmt.var.ident.index is not None:
+                if found_vars[-1].type_ != STR_DEF:
+                    self.compiler_error("Type", f"expected indexable type, got `{found_vars[-1].type_}`", found_vars[-1].loc)
             elif item.type_ != found_vars[-1].type_:
-                self.compiler_error("Type", f"expected type `{found_vars[-1].type_}`, got `{item.type_}`", reassign_stmt.var.ident)
-        elif isinstance(reassign_stmt.var, (NodeStmtReassignInc, NodeStmtReassignDec)): # type: ignore (using an else branch to catch errors)
+                self.compiler_error("Type", f"expected type `{found_vars[-1].type_}`, got `{item.type_}`", reassign_stmt.var.ident.var.ident)
+        elif isinstance(reassign_stmt.var, (NodeStmtReassignInc, NodeStmtReassignDec)):
             if found_vars[-1].type_ != INT_DEF:
                 self.compiler_error("Type", f"cannot increment or decrement a variable of `{found_vars[-1].type_}` type", found_vars[-1].loc)
         else:
