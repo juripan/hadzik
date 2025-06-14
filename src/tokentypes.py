@@ -107,6 +107,12 @@ get_type_size: dict[token_type, int] = {
     STR_DEF: 8
 }
 
+COLLECTIONS: tuple[token_type, ...] = (STR_DEF, )
+
+get_collection_subtype: dict[token_type, token_type] = {
+    STR_DEF: CHAR_DEF
+}
+
 def get_prec_level(tt: token_type) -> int | None:
     """
     returns the precedence level of the token, 

@@ -74,10 +74,10 @@ class TypeChecker(ErrorHandler):
         if term.index is not None:
             term2 = NodeTerm(term.var)
             self.typecheck_term(term2)
-            if (res := self.pop_stack()).type_ != STR_DEF:
+            if (res := self.pop_stack()).type_ not in COLLECTIONS:
                 self.compiler_error("Type", f"expected indexable type, got `{res.type_}`", res.loc)
             else:
-                res.type_ = CHAR_DEF
+                res.type_ = get_collection_subtype[res.type_]
             
             self.typecheck_expression(term.index)
             if (idx := self.pop_stack()).type_ != INT_DEF:
@@ -203,7 +203,7 @@ class TypeChecker(ErrorHandler):
             if item.type_ == STR_DEF:
                 self.compiler_error("Type", f"reassigning of type `{item.type_}` is not allowed", reassign_stmt.var.ident.var.ident)
             elif reassign_stmt.var.ident.index is not None:
-                if found_vars[-1].type_ != STR_DEF:
+                if found_vars[-1].type_ not in COLLECTIONS:
                     self.compiler_error("Type", f"expected indexable type, got `{found_vars[-1].type_}`", found_vars[-1].loc)
             elif item.type_ != found_vars[-1].type_:
                 self.compiler_error("Type", f"expected type `{found_vars[-1].type_}`, got `{item.type_}`", reassign_stmt.var.ident.var.ident)

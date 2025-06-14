@@ -1,9 +1,9 @@
 znak f = 'a'
 naj str = "012345\n"
-str[0] = 's'
 sicke(cif i = 0, i < 6, i++){
-    znak f = str[i]
     hutor(str)
+    znak f = str[i]
+    str[i] = 's'
     hutor(f)
     hutor('\n')
 }

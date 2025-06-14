@@ -1,13 +1,13 @@
-stdout: s12345
-s
+stdout: 012345
+0
 s12345
 1
-s12345
+ss2345
 2
-s12345
+sss345
 3
-s12345
+ssss45
 4
-s12345
+sssss5
 5
 | stderr: | returncode: 0
