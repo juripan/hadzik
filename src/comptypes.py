@@ -66,25 +66,17 @@ class NodeTermCast:
     type: Token
 
 @dataclass(slots=True)
-class NodeTermIndex: # type: ignore (has to be predeclared)
-    pass
-
-@dataclass(slots=True)
 class NodeTerm:
     var: Union[
         NodeTermIdent, NodeTermInt, NodeTermChar, NodeTermStr, 
-        NodeTermParen, NodeTermNot, NodeTermBool, NodeTermCast, NodeTermIndex,
+        NodeTermParen, NodeTermNot, NodeTermBool, NodeTermCast,
         ]
+    index: Optional[NodeExpr] = None
 
 
 @dataclass(slots=True)
 class NodeTermNot:
     term: NodeTerm
-
-@dataclass(slots=True)
-class NodeTermIndex:
-    term: NodeTerm
-    index: NodeExpr
 
 @dataclass(slots=True)
 class NodeBinExpr: # type: ignore (has to be predeclared)

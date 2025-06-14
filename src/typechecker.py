@@ -71,7 +71,19 @@ class TypeChecker(ErrorHandler):
             raise ValueError(f"Unreachable {stmt.stmt_var}")
     
     def typecheck_term(self, term: NodeTerm):
-        if isinstance(term.var, NodeTermInt):
+        if term.index is not None:
+            term2 = NodeTerm(term.var)
+            self.typecheck_term(term2)
+            if (res := self.pop_stack()).type_ != STR_DEF:
+                self.compiler_error("Type", f"expected indexable type, got `{res.type_}`", res.loc)
+            else:
+                res.type_ = CHAR_DEF
+            
+            self.typecheck_expression(term.index)
+            if (idx := self.pop_stack()).type_ != INT_DEF:
+                self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{idx.type_}`", idx.loc)
+            self.push_stack(res)
+        elif isinstance(term.var, NodeTermInt):
             assert term.var.int_lit.value is not None, "term.var.int_lit.value shouldn't be None, probably a parsing error"
             self.push_stack(StackItem(INT_DEF, (term.var.int_lit.line, term.var.int_lit.col)))
         elif isinstance(term.var, NodeTermIdent):
@@ -102,17 +114,6 @@ class TypeChecker(ErrorHandler):
                 self.compiler_error("Type", "typecasting to a string is not implemented", term.var.type)
             self.typecheck_expression(term.var.expr)
             self.stack[-1].type_ = term.var.type.type
-        elif isinstance(term.var, NodeTermIndex):
-            self.typecheck_term(term.var.term) # type: ignore
-            if (res := self.pop_stack()).type_ != STR_DEF:
-                self.compiler_error("Type", f"expected indexable type, got `{res.type_}`", res.loc)
-            else:
-                res.type_ = CHAR_DEF
-            
-            self.typecheck_expression(term.var.index) # type: ignore
-            if (idx := self.pop_stack()).type_ != INT_DEF:
-                self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{idx.type_}`", idx.loc)
-            self.push_stack(res)
         else:
             raise ValueError("Unreachable")
 

@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from comptypes import * # uh-oh a wildcard import
 import tokentypes as tt
 from errors import ErrorHandler
@@ -11,7 +12,7 @@ class Parser(ErrorHandler):
     def __init__(self, tokens: list[Token], file_content: str):
         super().__init__(file_content)
         self.all_tokens: list[Token] = tokens
-        self.map_parse_func: dict[token_type, function] = {
+        self.map_parse_func: dict[token_type, Callable] = {
             tt.EXIT: self.parse_exit,
             tt.PRINT: self.parse_print,
             tt.INFER_DEF: self.parse_decl,
@@ -131,10 +132,10 @@ class Parser(ErrorHandler):
             self.next_token()
             if expr is None:
                 self.compiler_error("Syntax", "invalid expression", self.current_token)
-            assert expr is not None, "comiler error failed"
+            assert expr is not None, "expression cant be None here"
             
             assert ret_term is not None, "ret_term else branch got triggered"
-            ret_term = NodeTerm(NodeTermIndex(ret_term, expr))
+            ret_term.index = expr
         
         return ret_term
 
@@ -439,7 +440,7 @@ class Parser(ErrorHandler):
             return None
         statement = None
         
-        parse_func: function | None = self.map_parse_func.get(self.current_token.type)
+        parse_func: Callable | None = self.map_parse_func.get(self.current_token.type)
         
         if self.current_token.type == tt.RIGHT_CURLY: # here to handle fully empty scopes like this -> {{}}
             return NodeStmt(stmt_var=NodeStmtEmpty())

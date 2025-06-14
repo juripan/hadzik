@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from errors import ErrorHandler
 from comptypes import *
 import tokentypes as tt
@@ -63,7 +64,7 @@ class Generator(ErrorHandler):
 
         # What if every Node had its generation as its own method and not a method of the generator?
         # Hmmmmmmmmm
-        self.map_generate_func: dict[object, function] = {
+        self.map_generate_func: dict[object, Callable] = {
             NodeStmtExit: self.gen_exit,
             NodeStmtDeclare: self.gen_decl,
             NodeScope: self.gen_scope,
@@ -234,7 +235,19 @@ class Generator(ErrorHandler):
         if ErrorHandler.debug_mode:
             print(term.var)
         
-        if isinstance(term.var, NodeTermInt):
+        if term.index is not None:
+            self.gen_term(NodeTerm(term.var))
+            self.gen_expression(term.index)
+
+            LEN_SIZE = INDEX_SIZE = 4
+            ITEM_SIZE_W = "BYTE"
+            ITEM_SIZE_B = 1
+            self.output.append(f"    mov rax, [rbp - {self.stack_size - LEN_SIZE - INDEX_SIZE}]\n")
+            rb = self.get_reg(1)
+            self.output.append(f"    xor rbx, rbx\n")
+            self.pop_stack(rb)
+            self.push_stack(f"{ITEM_SIZE_W} [rax + rbx * {ITEM_SIZE_B}]")
+        elif isinstance(term.var, NodeTermInt):
             assert term.var.int_lit.value is not None, "term.var.int_lit.value shouldn't be None, probably a parsing error"
             
             if term.var.negative:
@@ -303,18 +316,6 @@ class Generator(ErrorHandler):
                 tt.get_type_size[term.var.type.type]
                 ][0]
             self.push_stack(ra_sized)
-        elif isinstance(term.var, NodeTermIndex):
-            self.gen_term(term.var.term) # type: ignore (type checking freaking out)
-            self.gen_expression(term.var.index) # type: ignore (type checking freaking out)
-
-            LEN_SIZE = INDEX_SIZE = 4
-            ITEM_SIZE_W = "BYTE"
-            ITEM_SIZE_B = 1
-            self.output.append(f"    mov rax, [rbp - {self.stack_size - LEN_SIZE - INDEX_SIZE}]\n")
-            rb = self.get_reg(1)
-            self.output.append(f"    xor rbx, rbx\n")
-            self.pop_stack(rb)
-            self.push_stack(f"{ITEM_SIZE_W} [rax + rbx * {ITEM_SIZE_B}]")
         else:
             raise ValueError("Unreachable")
     
@@ -664,11 +665,9 @@ class Generator(ErrorHandler):
         """
         generates a statement based on the node passed in
         """
-        gen_func: function | None = self.map_generate_func.get(statement.stmt_var.__class__)
+        gen_func: Callable | None = self.map_generate_func.get(statement.stmt_var.__class__)
         
         if gen_func is not None: #can be None for NodeStmtEmpty
-            assert callable(gen_func), "it should be callable since its a function"
-
             gen_func(statement.stmt_var)
         elif isinstance(statement.stmt_var, NodeStmtEmpty):
             pass
