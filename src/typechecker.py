@@ -142,12 +142,11 @@ class TypeChecker(ErrorHandler):
     def typecheck_predicate_expression(self, pred_expr: NodePredExpr):
         self.typecheck_expression(pred_expr.lhs)
         self.typecheck_expression(pred_expr.rhs)
-        
         a = self.pop_stack()
-        if a.type_ != INT_DEF:
+        if a.type_ not in (INT_DEF, CHAR_DEF):
             self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{a.type_}`", a.loc)
         b = self.pop_stack()
-        if b.type_ != INT_DEF:
+        if b.type_ not in (INT_DEF, CHAR_DEF):
             self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{b.type_}`", b.loc)
         self.push_stack(StackItem(BOOL_DEF, a.loc))
 

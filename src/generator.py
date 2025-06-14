@@ -236,6 +236,9 @@ class Generator(ErrorHandler):
             print(term.var)
         
         if term.index is not None:
+            self.output.append("    ; --- indexing ---\n")
+            old_stack_size = self.stack_size
+            old_stack_sizes = self.stack_item_sizes
             self.gen_term(NodeTerm(term.var))
             self.gen_expression(term.index)
 
@@ -246,6 +249,8 @@ class Generator(ErrorHandler):
             rb = self.get_reg(1)
             self.output.append(f"    xor rbx, rbx\n")
             self.pop_stack(rb)
+            self.stack_size = old_stack_size
+            self.stack_item_sizes = old_stack_sizes
             self.push_stack(f"{ITEM_SIZE_W} [rax + rbx * {ITEM_SIZE_B}]")
         elif isinstance(term.var, NodeTermInt):
             assert term.var.int_lit.value is not None, "term.var.int_lit.value shouldn't be None, probably a parsing error"
@@ -302,6 +307,7 @@ class Generator(ErrorHandler):
             self.output.append("    sete al\n")
             self.push_stack(ra)
         elif isinstance(term.var, NodeTermCast):
+            self.output.append("    ;--- typecast ---\n")
             self.gen_expression(term.var.expr)
             if self.stack_item_sizes[-1] not in (1, 2, 4, 8):
                 if term.var.type.type == tt.BOOL_DEF:
@@ -311,10 +317,12 @@ class Generator(ErrorHandler):
             else:
                 ra = self.get_reg(0)
             
-            self.pop_stack(ra)
             ra_sized = self.reg_lookup_table[
                 tt.get_type_size[term.var.type.type]
-                ][0]
+            ][0]
+            
+            self.output.append(f"    xor {ra_sized}, {ra_sized}\n")
+            self.pop_stack(ra)
             self.push_stack(ra_sized)
         else:
             raise ValueError("Unreachable")
