@@ -237,20 +237,25 @@ class Generator(ErrorHandler):
         
         if term.index is not None:
             self.output.append("    ; --- indexing ---\n")
-            old_stack_size = self.stack_size
-            old_stack_sizes = self.stack_item_sizes
-            self.gen_term(NodeTerm(term.var))
-            self.gen_expression(term.index)
-
-            LEN_SIZE = INDEX_SIZE = 4
+            # print(f"before {self.stack_size=} {self.stack_item_sizes=}")
+            old_stack_size = self.stack_size # solves the incorrect reads
+            LEN_SIZE = 4
             ITEM_SIZE_W = "BYTE"
             ITEM_SIZE_B = 1
-            self.output.append(f"    mov rax, [rbp - {self.stack_size - LEN_SIZE - INDEX_SIZE}]\n")
+            
+            self.gen_expression(term.index)
+
             rb = self.get_reg(1)
             self.output.append(f"    xor rbx, rbx\n")
             self.pop_stack(rb)
+
+            self.gen_term(NodeTerm(term.var))
+            self.output.append(f"    mov rax, [rbp - {self.stack_size - LEN_SIZE}]\n") # reads the pointer to the string
+            
             self.stack_size = old_stack_size
-            self.stack_item_sizes = old_stack_sizes
+            self.stack_item_sizes.pop()
+            # print(f"after {self.stack_size=} {self.stack_item_sizes=}")
+
             self.push_stack(f"{ITEM_SIZE_W} [rax + rbx * {ITEM_SIZE_B}]")
         elif isinstance(term.var, NodeTermInt):
             assert term.var.int_lit.value is not None, "term.var.int_lit.value shouldn't be None, probably a parsing error"
