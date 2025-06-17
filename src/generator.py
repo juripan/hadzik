@@ -159,13 +159,14 @@ class Generator(ErrorHandler):
             print("pop", self.stack_size, self.stack_item_sizes, self.variables)
     
     def push_stack_complex(self, src: list[str], sizes_w: list[size_words], sizes_b: list[size_bytes]):
+        padding = 0
         for item, byte_s, word_s in zip(src, sizes_b, sizes_w):
-            padding = self.align_stack(byte_s) #TODO: figure out what to do with padding here
+            padding += self.align_stack(byte_s)
             self.stack_size += byte_s
             self.output.append(f"    mov {word_s} [rbp - {self.stack_size}], {item} ;push\n")
         
         self.stack_item_sizes.append(sum(sizes_b))
-        
+        self.stack_padding.append(padding)
         if ErrorHandler.debug_mode:
             print("push multi", self.stack_size, self.stack_item_sizes, self.variables)
 
@@ -207,12 +208,13 @@ class Generator(ErrorHandler):
             del self.scopes[-1]
             return # nothing to remove, if its not here then slice accepts all of the stack -> list[0:] == list
 
-        popped_size: int = sum(self.stack_item_sizes[-pop_count:])
+        popped_size: int = sum(self.stack_item_sizes[-pop_count:]) + sum(self.stack_padding[-pop_count:])
         self.stack_size -= popped_size
 
         for _ in range(pop_count):
             self.variables.pop()
             self.stack_item_sizes.pop()
+            self.stack_padding.pop()
         del self.scopes[-1]
     
     def make_str(self, str_term: NodeTermStr):
@@ -224,10 +226,12 @@ class Generator(ErrorHandler):
 
         self.output.append(f"    lea rax, [rbp - {self.stack_size + str_len}]\n")
         str_data.append("rax")
+        
         if str_term.string.value != "0":
             str_data.append(str(str_len))
         else:
             str_data.append("0")
+        
         str_data_sizew = ["BYTE"] * int(str_len) + ["QWORD", "DWORD"]
         str_data_sizeb = [1] * int(str_len) + [8, 4]
         self.push_stack_complex(str_data, str_data_sizew, str_data_sizeb)
@@ -283,7 +287,9 @@ class Generator(ErrorHandler):
                 self.push_stack(f"{PTR_SIZE} [rbp - {len_loc - 4}]")
                 self.push_stack(f"{LEN_SIZE} [rbp - {len_loc}]")
                 accum_size = self.stack_item_sizes.pop() + self.stack_item_sizes.pop()
+                accum_padding = self.stack_padding.pop() + self.stack_padding.pop()
                 self.stack_item_sizes.append(accum_size)
+                self.stack_padding.append(accum_padding)
             else:
                 location, word_size = found_vars[-1].loc, found_vars[-1].size_w
                 self.push_stack(f"{word_size} [rbp - {location}]")
@@ -681,7 +687,7 @@ class Generator(ErrorHandler):
             self.output.append(f"    lea rsi, [rbp - {self.stack_size}]\n")
             self.call_func("print_char")
             # it removes the printed expression because it causes a mess in the stack when looping
-            self.stack_size -= self.stack_item_sizes.pop()
+            self.stack_size -= self.stack_item_sizes.pop() + self.stack_padding.pop()
         elif print_stmt.cont_type == STR_DEF:
             self.output.append("    ;; --- print str ---\n")
             self.gen_expression(print_stmt.content)
@@ -691,7 +697,7 @@ class Generator(ErrorHandler):
 
             self.call_func("print_str")
             # it removes the printed expression because it causes a mess in the stack when looping
-            self.stack_size -= self.stack_item_sizes.pop()
+            self.stack_size -= self.stack_item_sizes.pop() + self.stack_padding.pop()
 
     def gen_break(self, break_stmt: NodeStmtBreak) -> None:
         """
