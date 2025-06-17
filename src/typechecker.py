@@ -38,31 +38,31 @@ class TypeChecker(ErrorHandler):
         return self.stack.pop()
 
 
-    def typecheck_program(self):
+    def check_program(self):
         for stmt in self.main_program.stmts:
             assert stmt is not None, "None statement shouldn't make it here"
-            self.typecheck_statement(stmt)
+            self.check_statement(stmt)
             self.line_number+=1
 
-    def typecheck_statement(self, stmt: NodeStmt):
+    def check_statement(self, stmt: NodeStmt):
         if isinstance(stmt.stmt_var, NodeStmtExit):
-            self.typecheck_exit(stmt.stmt_var)
+            self.check_exit(stmt.stmt_var)
         elif isinstance(stmt.stmt_var, NodeStmtDeclare):
-            self.typecheck_decl(stmt.stmt_var)
+            self.check_decl(stmt.stmt_var)
         elif isinstance(stmt.stmt_var, NodeScope):
-            self.typecheck_scope(stmt.stmt_var)
+            self.check_scope(stmt.stmt_var)
         elif isinstance(stmt.stmt_var, NodeStmtIf):
-            self.typecheck_if_statement(stmt.stmt_var)
+            self.check_if_statement(stmt.stmt_var)
         elif isinstance(stmt.stmt_var, NodeStmtReassign):
-            self.typecheck_reassign(stmt.stmt_var)
+            self.check_reassign(stmt.stmt_var)
         elif isinstance(stmt.stmt_var, NodeStmtWhile):
-            self.typecheck_while(stmt.stmt_var)
+            self.check_while(stmt.stmt_var)
         elif isinstance(stmt.stmt_var, NodeStmtDoWhile):
-            self.typecheck_dowhile(stmt.stmt_var)
+            self.check_do_while(stmt.stmt_var)
         elif isinstance(stmt.stmt_var, NodeStmtFor):
-            self.typecheck_for(stmt.stmt_var)
+            self.check_for(stmt.stmt_var)
         elif isinstance(stmt.stmt_var, NodeStmtPrint):
-            self.typecheck_print(stmt.stmt_var)
+            self.check_print(stmt.stmt_var)
         elif isinstance(stmt.stmt_var, NodeStmtEmpty):
             pass
         elif isinstance(stmt.stmt_var, NodeStmtBreak): # type: ignore
@@ -70,16 +70,16 @@ class TypeChecker(ErrorHandler):
         else:
             raise ValueError(f"Unreachable {stmt.stmt_var}")
     
-    def typecheck_term(self, term: NodeTerm):
+    def check_term(self, term: NodeTerm):
         if term.index is not None:
             term2 = NodeTerm(term.var)
-            self.typecheck_term(term2)
+            self.check_term(term2)
             if (res := self.pop_stack()).type_ not in COLLECTIONS:
                 self.compiler_error("Type", f"expected indexable type, got `{res.type_}`", res.loc)
             else:
                 res.type_ = get_collection_subtype[res.type_]
             
-            self.typecheck_expression(term.index)
+            self.check_expression(term.index)
             if (idx := self.pop_stack()).type_ != INT_DEF:
                 self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{idx.type_}`", idx.loc)
             self.push_stack(res)
@@ -97,31 +97,31 @@ class TypeChecker(ErrorHandler):
             assert term.var.bool.value is not None, "shouldn't be None here"
             self.push_stack(StackItem(BOOL_DEF, (term.var.bool.line, term.var.bool.col)))
         elif isinstance(term.var, NodeTermParen):
-            self.typecheck_expression(term.var.expr)
+            self.check_expression(term.var.expr)
             if term.var.negative and self.stack[-1].type_ != INT_DEF:
                 self.compiler_error("Type", f"`{self.stack[-1].type_}` cannot be negative", self.stack[-1].loc)
         elif isinstance(term.var, NodeTermChar):
             self.push_stack(StackItem(CHAR_DEF, (term.var.char.line, term.var.char.col)))
         elif isinstance(term.var, NodeTermStr):
             self.push_stack(StackItem(STR_DEF, (term.var.string.line, term.var.string.col)))
-        elif isinstance(term.var, NodeTermNot): # type: ignore
-            self.typecheck_term(term.var.term) # type: ignore
+        elif isinstance(term.var, NodeTermNot):
+            self.check_term(term.var.term) # type: ignore
             if self.stack[-1].type_ != BOOL_DEF:
                 self.compiler_error("Type", f"expected type `{BOOL_DEF}`, got `{self.stack[-1].type_}`", self.stack[-1].loc)
         elif isinstance(term.var, NodeTermCast):
             if term.var.type.type == STR_DEF:
                 #TODO: implement typecasting for strings
                 raise NotImplementedError("typecasting to a string is not implemented yet")
-            self.typecheck_expression(term.var.expr)
+            self.check_expression(term.var.expr)
             if self.stack[-1].type_ == STR_DEF and term.var.type.type == CHAR_DEF:
                 self.compiler_error("Type", f"cannot cast `{STR_DEF}` to `{CHAR_DEF}`", term.var.type)
             self.stack[-1].type_ = term.var.type.type
         else:
             raise ValueError("Unreachable")
 
-    def typecheck_binary_expression(self, bin_expr: NodeBinExpr):
-        self.typecheck_expression(bin_expr.var.lhs) # type: ignore
-        self.typecheck_expression(bin_expr.var.rhs) # type: ignore
+    def check_binary_expression(self, bin_expr: NodeBinExpr):
+        self.check_expression(bin_expr.var.lhs) # type: ignore
+        self.check_expression(bin_expr.var.rhs) # type: ignore
         a = self.pop_stack()
         if a.type_ != INT_DEF:
             self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{a.type_}`", a.loc)
@@ -130,9 +130,9 @@ class TypeChecker(ErrorHandler):
             self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{b.type_}`", b.loc)
         self.push_stack(a)
 
-    def typecheck_logical_expression(self, log_expr: NodeExprLogic):
-        self.typecheck_expression(log_expr.lhs)
-        self.typecheck_expression(log_expr.rhs)
+    def check_logical_expression(self, log_expr: NodeExprLogic):
+        self.check_expression(log_expr.lhs)
+        self.check_expression(log_expr.rhs)
         a = self.pop_stack()
         if a.type_ != BOOL_DEF:
             self.compiler_error("Type", f"expected type `{BOOL_DEF}`, got `{a.type_}`", a.loc)
@@ -141,9 +141,9 @@ class TypeChecker(ErrorHandler):
             self.compiler_error("Type", f"expected type `{BOOL_DEF}`, got `{b.type_}`", b.loc)
         self.push_stack(a)
 
-    def typecheck_predicate_expression(self, pred_expr: NodePredExpr):
-        self.typecheck_expression(pred_expr.lhs)
-        self.typecheck_expression(pred_expr.rhs)
+    def check_predicate_expression(self, pred_expr: NodePredExpr):
+        self.check_expression(pred_expr.lhs)
+        self.check_expression(pred_expr.rhs)
         a = self.pop_stack()
         if a.type_ not in (INT_DEF, CHAR_DEF):
             self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{a.type_}`", a.loc)
@@ -152,36 +152,36 @@ class TypeChecker(ErrorHandler):
             self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{b.type_}`", b.loc)
         self.push_stack(StackItem(BOOL_DEF, a.loc))
 
-    def typecheck_bool_expression(self, bool_expr: NodeExprBool):
+    def check_bool_expression(self, bool_expr: NodeExprBool):
         if isinstance(bool_expr.var, NodePredExpr):
-            self.typecheck_predicate_expression(bool_expr.var)
+            self.check_predicate_expression(bool_expr.var)
         elif isinstance(bool_expr.var, NodeExprLogic):
-            self.typecheck_logical_expression(bool_expr.var)
+            self.check_logical_expression(bool_expr.var)
         else:
             raise ValueError("Unreachable")
 
-    def typecheck_expression(self, expr: NodeExpr):
+    def check_expression(self, expr: NodeExpr):
         if isinstance(expr.var, NodeTerm):
-            self.typecheck_term(expr.var)
+            self.check_term(expr.var)
         elif isinstance(expr.var, NodeBinExpr):
-            self.typecheck_binary_expression(expr.var)
+            self.check_binary_expression(expr.var)
         elif isinstance(expr.var, NodeExprBool):
-            self.typecheck_bool_expression(expr.var)
+            self.check_bool_expression(expr.var)
         else:
             raise ValueError("Unreachable")
 
-    def typecheck_exit(self, exit_stmt: NodeStmtExit):
-        self.typecheck_expression(exit_stmt.expr)
+    def check_exit(self, exit_stmt: NodeStmtExit):
+        self.check_expression(exit_stmt.expr)
 
         if (item := self.stack.pop()).type_ != INT_DEF:
             self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{item.type_}`", item.loc)
     
-    def typecheck_decl(self, decl_stmt: NodeStmtDeclare):
+    def check_decl(self, decl_stmt: NodeStmtDeclare):
         """
         checks if the type fits the keyword used to declare the variable,
         if the type is supposed to be inferred then it just takes whatever type is on top of the stack
         """
-        self.typecheck_expression(decl_stmt.expr)
+        self.check_expression(decl_stmt.expr)
 
         if decl_stmt.type_.type == INFER_DEF:
             decl_stmt.type_.type = self.stack[-1].type_
@@ -189,7 +189,7 @@ class TypeChecker(ErrorHandler):
             self.compiler_error("Type", f"expected type `{decl_stmt.type_.type}`, got `{self.stack[-1].type_}`", decl_stmt.type_)
         self.variables.append(StackItem(decl_stmt.type_.type, decl_stmt.ident, decl_stmt.ident.value, decl_stmt.is_const)) # type: ignore (freaking out about str | None)
     
-    def typecheck_reassign(self, reassign_stmt: NodeStmtReassign):
+    def check_reassign(self, reassign_stmt: NodeStmtReassign):
         assert isinstance(reassign_stmt.var.ident.var, NodeTermIdent), "has to be this, error in parsing"
         found_vars = tuple(filter(lambda x: x.name == reassign_stmt.var.ident.var.ident.value, self.variables)) # type: ignore
 
@@ -199,7 +199,7 @@ class TypeChecker(ErrorHandler):
             self.compiler_error("Value", f"modification of const identifier: {reassign_stmt.var.ident.var.ident.value}", reassign_stmt.var.ident.var.ident)
 
         if isinstance(reassign_stmt.var, NodeStmtReassignEq):
-            self.typecheck_expression(reassign_stmt.var.rvalue)
+            self.check_expression(reassign_stmt.var.rvalue)
             item = self.pop_stack()
             # if item.type_ == STR_DEF:
             #     self.compiler_error("Type", f"reassigning of type `{item.type_}` is not allowed", reassign_stmt.var.ident.var.ident)
@@ -214,58 +214,58 @@ class TypeChecker(ErrorHandler):
         else:
             raise ValueError("out of reach")
     
-    def typecheck_scope(self, scope_stmt: NodeScope):
+    def check_scope(self, scope_stmt: NodeScope):
         for stmt in scope_stmt.stmts:
-            self.typecheck_statement(stmt)
+            self.check_statement(stmt)
     
-    def typecheck_if_statement(self, if_stmt: NodeStmtIf):
-        self.typecheck_expression(if_stmt.expr)
+    def check_if_statement(self, if_stmt: NodeStmtIf):
+        self.check_expression(if_stmt.expr)
         if (item := self.pop_stack()).type_ not in (BOOL_DEF, INT_DEF):
             self.compiler_error("Type", f"expected type `{BOOL_DEF}` or `{INT_DEF}`, got `{item.type_}`", item.loc)
         
-        self.typecheck_scope(if_stmt.scope)
+        self.check_scope(if_stmt.scope)
         
         if if_stmt.ifpred is not None:
-            self.typecheck_if_predicate(if_stmt.ifpred)
+            self.check_if_predicate(if_stmt.ifpred)
     
-    def typecheck_if_predicate(self, ifpred: NodeIfPred):
+    def check_if_predicate(self, ifpred: NodeIfPred):
         if isinstance(ifpred.var, NodeIfPredElif):
-            self.typecheck_expression(ifpred.var.expr)
+            self.check_expression(ifpred.var.expr)
             if (item := self.pop_stack()).type_ not in (BOOL_DEF, INT_DEF):
                 self.compiler_error("Type", f"expected type `{BOOL_DEF}` or `{INT_DEF}`, got `{item.type_}`", item.loc)
-            self.typecheck_scope(ifpred.var.scope)
+            self.check_scope(ifpred.var.scope)
             if ifpred.var.pred is not None:
-                self.typecheck_if_predicate(ifpred.var.pred)
+                self.check_if_predicate(ifpred.var.pred)
         elif isinstance(ifpred.var, NodeIfPredElse): # type: ignore (uses else for error catching)
-            self.typecheck_scope(ifpred.var.scope)
+            self.check_scope(ifpred.var.scope)
         else:
             raise ValueError("Unreachable")
     
-    def typecheck_while(self, while_stmt: NodeStmtWhile):
-        self.typecheck_expression(while_stmt.expr)
+    def check_while(self, while_stmt: NodeStmtWhile):
+        self.check_expression(while_stmt.expr)
         if (item := self.pop_stack()).type_ not in (BOOL_DEF, INT_DEF):
             self.compiler_error("Type", f"expected type `{BOOL_DEF}` or `{INT_DEF}`, got `{item.type_}`", item.loc)
-        self.typecheck_scope(while_stmt.scope)
+        self.check_scope(while_stmt.scope)
     
-    def typecheck_dowhile(self, do_while_stmt: NodeStmtDoWhile):
-        self.typecheck_scope(do_while_stmt.scope)
-        self.typecheck_expression(do_while_stmt.expr)
+    def check_do_while(self, do_while_stmt: NodeStmtDoWhile):
+        self.check_scope(do_while_stmt.scope)
+        self.check_expression(do_while_stmt.expr)
         if (item := self.pop_stack()).type_ not in (BOOL_DEF, INT_DEF):
             self.compiler_error("Type", f"expected type `{BOOL_DEF}` or `{INT_DEF}`, got `{item.type_}`", item.loc)
     
-    def typecheck_for(self, for_stmt: NodeStmtFor):
-        self.typecheck_decl(for_stmt.ident_def)
+    def check_for(self, for_stmt: NodeStmtFor):
+        self.check_decl(for_stmt.ident_def)
 
-        self.typecheck_predicate_expression(for_stmt.condition)
+        self.check_predicate_expression(for_stmt.condition)
         if (item := self.pop_stack()).type_ != BOOL_DEF:
             self.compiler_error("Type", f"expected type `{BOOL_DEF}`, got `{item.type_}`", item.loc)
         
-        self.typecheck_scope(for_stmt.scope)
+        self.check_scope(for_stmt.scope)
 
-        self.typecheck_reassign(for_stmt.ident_assign)
+        self.check_reassign(for_stmt.ident_assign)
     
-    def typecheck_print(self, print_stmt: NodeStmtPrint):
-        self.typecheck_expression(print_stmt.content)
+    def check_print(self, print_stmt: NodeStmtPrint):
+        self.check_expression(print_stmt.content)
         if (item := self.pop_stack()).type_ not in (CHAR_DEF, STR_DEF):
             self.compiler_error("Type", f"expected type `{CHAR_DEF}` or `{STR_DEF}`, got `{item.type_}`", item.loc)
         print_stmt.cont_type = item.type_
