@@ -4,7 +4,7 @@
 __This language is in its infancy. All current design principles are subject to change.__
 
 A programming language with keywords based on east slovak dialect.  
-Heavily inspired by Python and C.  
+Heavily inspired by Python and C.
 For now only compiles to x86_64 linux assembly.  
 
 File extension: **.hdz**
@@ -64,15 +64,13 @@ $ python3 hdzc path/file.hdz -s -r new_path/file2 -n
 
 
 ## Dependencies:
-all of the dependencies are listed in the Docker file and source code files but for more transparency I will list them here also
 + Python 3.12.3
-+ libraries: sys, os, dataclasses, typing, time
 + FASM version 1.73.32
 
 ## Priorities:
-+ typecasting
++ typecasting (full implementation)
 + for loop rewrite
-+ macros
++ macros (and some macro safety too)
 
 ## Credits:
 name of the programming language by: Miška Mašlonková
