@@ -1,7 +1,7 @@
 # HADZIK DOCUMENTATION
 
 ## Variables
-### Declaration:
+### Declaration
 + cif \*ident\* = \*value\* - creates a 32-bit integer with a given value on the stack
 ```
 cif y = 5
@@ -14,17 +14,19 @@ bul x = pravda
 ```
 znak d = 'd'
 ```
-+ lancok \*ident\* = \*value\* - creates a 32-bit size and a 32-bit pointer to the string on the stack, string itself is located in the data section
++ lancok \*ident\* = \*value\* - creates a 32-bit length and a 64-bit pointer to the string on the stack, string itself is located on the stack as well
 ```
 lancok greeting = "ahoj\n"
 ```
-#### Type inference:
-Types can also be automatically inferred:
+*Note: strings are passed around as a pointer + length on the stack, so when reassigning it doesn't create a copy or can create memory bugs when the string is deallocated*
+
+#### Type inference
+Types can also be automatically inferred using the `naj` keyword:
 + naj \*ident\* = \*value\* - creates a variable with an inferred type by the typechecker on the stack
 ```
 naj grade = 'D'
 ```
-#### Constants:
+#### Constants
 Constants can be declared by using the `furt` keyword, they cannot be reassigned or modified
 + furt \*type\* \*ident\* = \*value\* - creates a constant with a give type on the stack
 ```
@@ -34,27 +36,37 @@ You can also let it infer the type by leaving out the type in the declaration of
 ```
 furt E = 2
 ```
-### Reassignment:
+### Reassignment
 + \*ident\* = \*value\* - assigns a different value fo the same type to a variable
 ```
 x = nepravda
 ```
-
+### Indexing
++ \*ident\*\[*n*\] - accesses the *n-th* value in the variable starting from 0, variable must be of indexable type and n must be an integer, supports reading and writing
+```
+greeting[3] = 'p'
+znak a = greeting[0]
+```
 ## Built-ins
 + vychod(\*int\*) - exits the program with the passed in exit code
 ```
 vychod(5)
 ```
-+ hutor(\*char\*) - prints the given string or char into stdin via system call
++ hutor(\*value\*) - prints the given string or char into stdin via system call
 ```
 hutor('a')
 hutor("cau")
+```
+### Typecasting
++ \*type\*(\*value\*) - changes the type of the value to the desired type
+```
+znak A = znak(65)
 ```
 
 ## Control flow
 ### If + Elseif + Else
 + kec \*condition\* \*scope\* - if statement
-note: conditions can be a boolean or arithmetic expression
+*note: conditions can be a boolean or an arithmetic expression*
 + ikec \*condition\* \*scope\* - else-if statement
 + inac \*scope\* - else statement 
 ```
