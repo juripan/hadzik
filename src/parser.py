@@ -280,6 +280,8 @@ class Parser(ErrorHandler):
         return scope
 
     def parse_ifpred(self) -> NodeIfPred | None:
+        while self.current_token is not None and self.current_token.type == tt.NEWLINE:
+            self.next_token()
         if self.current_token is not None and self.current_token.type == tt.ELIF:
             self.next_token()
             

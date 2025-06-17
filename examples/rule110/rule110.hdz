@@ -1,0 +1,50 @@
+//////////////////////////////////////////////////////////////////////////////////
+//                                  RULE 110                                    //
+//////////////////////////////////////////////////////////////////////////////////
+// Current pattern 	111 	110 	101 	100 	011 	010 	001 	000 //
+// Next cell         0 	     1 	     1 	     0 	     1 	     1       1 	     0  //
+//////////////////////////////////////////////////////////////////////////////////
+
+furt cif len = 43
+furt full = '*'
+furt empty = ' '
+lancok board1 = "                                         *\n"
+lancok board2 = "                                        **\n"
+lancok swap = board1
+
+sicke(cif _ = 0, _ < len - 2, _++){
+    hutor(board1)
+    sicke(cif i = 1, i < len - 1, i++) {
+        znak a = board1[i-1]
+        znak b = board1[i]
+        znak c = board1[i+1]
+
+        kec a == empty aj b == empty aj c == empty{
+            board2[i] = empty
+        }
+        ikec a == empty aj b == empty aj c == full{
+            board2[i] = full
+        }
+        ikec a == empty aj b == full aj c == empty{
+            board2[i] = full
+        }
+        ikec a == empty aj b == full aj c == full{
+            board2[i] = full
+        }
+        ikec a == full aj b == empty aj c == empty{
+            board2[i] = empty
+        }
+        ikec a == full aj b == empty aj c == full{
+            board2[i] = full
+        }
+        ikec a == full aj b == full aj c == empty{
+            board2[i] = full
+        }
+        ikec a == full aj b == full aj c == full{
+            board2[i] = empty
+        }
+    }
+    swap = board1
+    board1 = board2
+    board2 = swap
+}

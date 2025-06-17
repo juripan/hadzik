@@ -199,9 +199,9 @@ class TypeChecker(ErrorHandler):
         if isinstance(reassign_stmt.var, NodeStmtReassignEq):
             self.typecheck_expression(reassign_stmt.var.rvalue)
             item = self.pop_stack()
-            if item.type_ == STR_DEF:
-                self.compiler_error("Type", f"reassigning of type `{item.type_}` is not allowed", reassign_stmt.var.ident.var.ident)
-            elif reassign_stmt.var.ident.index is not None:
+            # if item.type_ == STR_DEF:
+            #     self.compiler_error("Type", f"reassigning of type `{item.type_}` is not allowed", reassign_stmt.var.ident.var.ident)
+            if reassign_stmt.var.ident.index is not None:
                 if found_vars[-1].type_ not in COLLECTIONS:
                     self.compiler_error("Type", f"expected indexable type, got `{found_vars[-1].type_}`", found_vars[-1].loc)
             elif item.type_ != found_vars[-1].type_:
