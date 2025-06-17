@@ -12,3 +12,7 @@ kec x == 10 abo y == 10{
 kec ne(x == 15){
     hutor('C')
 }
+
+kec x == 10 aj y == 5 aj t == -5{
+    hutor('D')
+}

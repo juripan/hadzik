@@ -10,6 +10,7 @@ class Generator(ErrorHandler):
 
     stack_size: size_bytes = 0
     stack_item_sizes: list[size_bytes] = []
+    stack_padding: list[size_bytes] = []
 
     variables: list[VariableContext] = [] # stores all variables on the stack
     functions: list[str] = []
@@ -77,9 +78,12 @@ class Generator(ErrorHandler):
             NodeStmtBreak: self.gen_break,
         }
 
-    def align_stack(self, size: size_bytes) -> None:
+    def align_stack(self, size: size_bytes) -> size_bytes:
+        padding = 0
         if self.stack_size % 2 != 0 and size > 1:
+            padding = 2 - self.stack_size % 2
             self.stack_size += 2 - self.stack_size % 2
+        return padding
     
     def call_func(self, name: str) -> None:
         self.output.append(f"    lea rsp, [rbp - {self.stack_size}]\n")
@@ -127,10 +131,12 @@ class Generator(ErrorHandler):
         else:
             raise ValueError(f"Invalid register / WORD size {src}")
         
-        self.align_stack(size)
+        padding = self.align_stack(size)
 
         self.stack_size += size
         self.stack_item_sizes.append(size)
+        self.stack_padding.append(padding)
+
 
         if "[" not in src:
             self.output.append(f"    mov {size_words} [rbp - {self.stack_size}], {src} ;push\n")
@@ -146,15 +152,15 @@ class Generator(ErrorHandler):
         adds a pop instruction to the output and updates the stack size 
         """
         self.output.append(f"    mov {dest_reg}, [rbp - {self.stack_size}] ;pop\n")
-        #TODO: make this pop the padding too please god its so annoying
         size = self.stack_item_sizes.pop() # removes the last items size
-        self.stack_size -= size
+        padding = self.stack_padding.pop()
+        self.stack_size -= size + padding
         if ErrorHandler.debug_mode:
             print("pop", self.stack_size, self.stack_item_sizes, self.variables)
     
     def push_stack_complex(self, src: list[str], sizes_w: list[size_words], sizes_b: list[size_bytes]):
         for item, byte_s, word_s in zip(src, sizes_b, sizes_w):
-            self.align_stack(byte_s)
+            padding = self.align_stack(byte_s) #TODO: figure out what to do with padding here
             self.stack_size += byte_s
             self.output.append(f"    mov {word_s} [rbp - {self.stack_size}], {item} ;push\n")
         
@@ -278,14 +284,12 @@ class Generator(ErrorHandler):
                 self.push_stack(f"{LEN_SIZE} [rbp - {len_loc}]")
                 accum_size = self.stack_item_sizes.pop() + self.stack_item_sizes.pop()
                 self.stack_item_sizes.append(accum_size)
-                return
-            
-            location, word_size = found_vars[-1].loc, found_vars[-1].size_w
+            else:
+                location, word_size = found_vars[-1].loc, found_vars[-1].size_w
+                self.push_stack(f"{word_size} [rbp - {location}]")
 
-            self.push_stack(f"{word_size} [rbp - {location}]")
-            
-            if term.var.negative:
-                self.output.append(f"    neg {word_size}[rbp - {self.stack_size - self.stack_item_sizes[-1]}]\n")
+                if term.var.negative:
+                    self.output.append(f"    neg {word_size}[rbp - {self.stack_size - self.stack_item_sizes[-1]}]\n")
         elif isinstance(term.var, NodeTermBool):
             assert term.var.bool.value is not None, "shouldn't be None here"
             self.push_stack(term.var.bool.value, "BYTE")
@@ -385,8 +389,9 @@ class Generator(ErrorHandler):
             self.output.append(f"    mov {rc}, {rb}\n")
         else:
             raise ValueError("Unreachable")
+        
         self.output.append(f"{label}:\n")
-        self.output.append(f"    test {ra}, {ra}\n")
+        self.output.append(f"    test {rc}, {rc}\n")
         self.output.append("    setne al\n")
         self.push_stack("al")
 
@@ -542,9 +547,16 @@ class Generator(ErrorHandler):
                 self.output.append(f"    mov [rcx + {offset}], {ra}\n")
             else:
                 self.gen_expression(reassign_stmt.var.rvalue)
-                ra = self.get_reg(0)
-                self.pop_stack(ra)
-                self.output.append(f"    mov [rbp - {var_ctx.loc}], {ra}\n")
+                if self.stack_item_sizes[-1] not in (1,2,4,8):
+                    self.output.append(f"    mov eax, [rbp - {self.stack_size}]\n")
+                    self.output.append(f"    mov [rbp - {var_ctx.loc}], eax\n")
+                    self.output.append(f"    mov rax, [rbp - {self.stack_size - 4}]\n")
+                    self.output.append(f"    mov [rbp - {var_ctx.loc - 4}], rax\n")
+                    self.stack_size -= self.stack_item_sizes.pop()
+                else:
+                    ra = self.get_reg(0)
+                    self.pop_stack(ra)
+                    self.output.append(f"    mov [rbp - {var_ctx.loc}], {ra}\n")
         elif isinstance(reassign_stmt.var, (NodeStmtReassignInc, NodeStmtReassignDec)): # type: ignore (using an else branch to catch errors)
             self.output.append("    ;; --- var inc / dec ---\n")
             var_ctx = found_vars[-1]
