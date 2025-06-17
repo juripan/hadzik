@@ -14,7 +14,7 @@ lancok swap = board1
 
 sicke(cif _ = 0, _ < len - 2, _++){
     hutor(board1)
-    sicke(cif i = 1, i < len - 1, i++) {
+    sicke(cif i = 1, i < len - 1, i++){
         znak a = board1[i-1]
         znak b = board1[i]
         znak c = board1[i+1]

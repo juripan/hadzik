@@ -194,7 +194,7 @@ class TypeChecker(ErrorHandler):
         if not found_vars:
             self.compiler_error("Value", f"undeclared identifier: {reassign_stmt.var.ident.var.ident.value}", reassign_stmt.var.ident.var.ident)
         elif found_vars[-1].is_const:
-            self.compiler_error("Value", f"reassignment of const identifier: {reassign_stmt.var.ident.var.ident.value}", reassign_stmt.var.ident.var.ident)
+            self.compiler_error("Value", f"modification of const identifier: {reassign_stmt.var.ident.var.ident.value}", reassign_stmt.var.ident.var.ident)
 
         if isinstance(reassign_stmt.var, NodeStmtReassignEq):
             self.typecheck_expression(reassign_stmt.var.rvalue)
