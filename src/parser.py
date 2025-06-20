@@ -172,36 +172,16 @@ class Parser(ErrorHandler):
             
             expr_lhs2 = NodeExpr(None) # prevents a recursion error, god knows why but it makes it work
             
-            if op.type == tt.PLUS:
+            if op.type in COMPARISONS or op.type == tt.AND or op.type == tt.OR:
+                assert isinstance(bin_expr, NodeExprBool)
                 expr_lhs2.var = expr_lhs.var
-                add = NodeBinExprAdd(expr_lhs2, expr_rhs, op)
-                bin_expr.var = add # type: ignore (typechecking is being weird)
-            elif op.type == tt.STAR:
-                expr_lhs2.var = expr_lhs.var
-                multi = NodeBinExprMulti(expr_lhs2, expr_rhs, op)
-                bin_expr.var = multi # type: ignore (typechecking is being weird)
-            elif op.type == tt.MINUS:
-                expr_lhs2.var = expr_lhs.var
-                sub = NodeBinExprSub(expr_lhs2, expr_rhs, op)
-                bin_expr.var = sub # type: ignore (typechecking is being weird)
-            elif op.type == tt.SLASH:
-                expr_lhs2.var = expr_lhs.var
-                div = NodeBinExprDiv(expr_lhs2, expr_rhs, op)
-                bin_expr.var = div # type: ignore (typechecking is being weird)
-            elif op.type == tt.PERCENT:
-                expr_lhs2.var = expr_lhs.var
-                mod = NodeBinExprMod(expr_lhs2, expr_rhs, op)
-                bin_expr.var = mod # type: ignore (typechecking is being weird)
-            elif op.type in COMPARISONS:
-                expr_lhs2.var = expr_lhs.var
-                comp = NodePredExpr(expr_lhs2, expr_rhs, op)
-                bin_expr.var = comp # type: ignore (typechecking is being weird)
-            elif op.type == tt.AND or op.type == tt.OR:
-                expr_lhs2.var = expr_lhs.var
-                log = NodeExprLogic(expr_lhs2, expr_rhs, op)
-                bin_expr.var = log # type: ignore (typechecking is being weird)
+                log_expr = NodeLogExpr(expr_lhs2, expr_rhs, op)
+                bin_expr.var = log_expr
             else:
-                raise ValueError("unreachable! in parse_expr()")
+                assert isinstance(bin_expr, NodeBinExpr)
+                expr_lhs2.var = expr_lhs.var
+                num_expr = NodeBinExprNum(expr_lhs2, expr_rhs, op)
+                bin_expr.var = num_expr
             expr_lhs.var = bin_expr
         return expr_lhs
     
@@ -352,10 +332,7 @@ class Parser(ErrorHandler):
         assert expr is not None, "expr shouldn't be None, handled in the previous if statement"
         assert expr.var is not None, "expr.var shouldn't be None, handled in the previous if statement"
 
-        condition = expr.var.var # gets the NodePredExpr
-
-        if not isinstance(condition, NodePredExpr):
-            self.compiler_error("Syntax", "invalid condition", self.current_token)
+        condition = expr.var # gets the predicate
 
         self.try_compiler_error(tt.COMMA, "Syntax", "expected ','")
         self.next_token()

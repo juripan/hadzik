@@ -342,7 +342,7 @@ class Generator(ErrorHandler):
         else:
             raise ValueError("Unreachable")
     
-    def gen_predicate_expression(self, comparison: NodePredExpr) -> None:
+    def gen_predicate_expression(self, comparison: NodeLogExpr) -> None:
         """
         generates a comparison expression that pushes a 8bit value onto the stack,
         type of binary expression that returns 1 or 0 depending on if its true or false
@@ -371,7 +371,7 @@ class Generator(ErrorHandler):
             raise TypeError("Unreachable")
         self.push_stack("al")
 
-    def gen_logical_expression(self, logic_expr: NodeExprLogic) -> None:
+    def gen_logical_expression(self, logic_expr: NodeLogExpr) -> None:
         """
         generates an eval for a logical expression (AND or OR) that pushes a 8bit value onto the stack,
         its result can be either 1 or 0
@@ -394,7 +394,7 @@ class Generator(ErrorHandler):
             self.output.append(f"    jz {label}\n")
             self.output.append(f"    mov {rc}, {rb}\n")
         else:
-            raise ValueError("Unreachable")
+            raise ValueError(f"Unreachable {logic_expr.op.type}")
         
         self.output.append(f"{label}:\n")
         self.output.append(f"    test {rc}, {rc}\n")
@@ -416,32 +416,35 @@ class Generator(ErrorHandler):
         self.pop_stack(ra)
         self.pop_stack(rb)
 
-        if isinstance(bin_expr.var, NodeBinExprAdd):
+        if bin_expr.var.op.type == tt.PLUS:
             self.output.append(f"    add {ra}, {rb}\n")
             self.push_stack(ra)
-        elif isinstance(bin_expr.var, NodeBinExprMulti):
+        elif bin_expr.var.op.type == tt.STAR:
             self.output.append(f"    mul {rb}\n")
             self.push_stack(ra)
-        elif isinstance(bin_expr.var, NodeBinExprSub):
+        elif bin_expr.var.op.type == tt.MINUS:
             self.output.append(f"    sub {ra}, {rb}\n")
             self.push_stack(ra)
-        elif isinstance(bin_expr.var, NodeBinExprDiv):
+        elif bin_expr.var.op.type == tt.SLASH:
             self.output.append(f"    idiv {rb}\n") #! NOTE: idiv is used because div only works with unsigned numbers
             self.push_stack(ra)
-        elif isinstance(bin_expr.var, NodeBinExprMod):
+        elif bin_expr.var.op.type == tt.PERCENT:
             self.output.append("    xor rdx, rdx\n")
             self.output.append("    cqo\n") # sign extends so the modulus result can be negative
             self.output.append(f"    idiv {rb}\n")
             #TODO: make division be generic for any size
             self.push_stack("edx") # assembly stores the modulus in rdx after the standard division instruction
         else:
-            raise ValueError("Unreachable")
+            raise ValueError(f"Unreachable")
 
     def gen_bool_expression(self, expression: NodeExprBool):
-        if isinstance(expression.var, NodePredExpr):
+        assert expression.var is not None
+        if expression.var.op.type in COMPARISONS:
             self.gen_predicate_expression(expression.var)
-        elif isinstance(expression.var, NodeExprLogic):
+        elif expression.var.op.type in (OR, AND):
             self.gen_logical_expression(expression.var)
+        else:
+            raise ValueError("Unreachable")
 
     def gen_expression(self, expression: NodeExpr) -> None:
         """
@@ -453,6 +456,8 @@ class Generator(ErrorHandler):
             self.gen_binary_expression(expression.var)
         elif isinstance(expression.var, NodeExprBool):
             self.gen_bool_expression(expression.var)
+        else:
+            raise ValueError("Unreachable")
 
     def gen_scope(self, scope: NodeScope) -> None:
         """
@@ -659,7 +664,8 @@ class Generator(ErrorHandler):
 
         self.output.append(f"{reset_label}:\n")
 
-        self.gen_predicate_expression(for_stmt.condition)
+        assert for_stmt.condition.var is not None
+        self.gen_predicate_expression(for_stmt.condition.var)
 
         first_reg = self.get_reg(0)
         self.pop_stack(first_reg)

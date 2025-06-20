@@ -84,48 +84,16 @@ class NodeBinExpr: # type: ignore (has to be predeclared)
 
 #TODO: Merge all of the BinExpr... classes into BinExpr class
 @dataclass(slots=True)
-class NodeBinExprMod:
+class NodeBinExprNum:
     lhs: NodeExpr
     rhs: NodeExpr
     op: Token
-
 
 @dataclass(slots=True)
-class NodeBinExprDiv:
+class NodeLogExpr:
     lhs: NodeExpr
     rhs: NodeExpr
     op: Token
-
-
-@dataclass(slots=True)
-class NodeBinExprSub:
-    lhs: NodeExpr
-    rhs: NodeExpr
-    op: Token
-
-
-@dataclass(slots=True)
-class NodeBinExprAdd:
-    lhs: NodeExpr
-    rhs: NodeExpr
-    op: Token
-
-
-@dataclass(slots=True)
-class NodeBinExprMulti:
-    lhs: NodeExpr
-    rhs: NodeExpr
-    op: Token
-
-
-
-@dataclass(slots=True)
-class NodePredExpr:
-    lhs: NodeExpr
-    rhs: NodeExpr
-    op: Token
-
-
 
 @dataclass(slots=True)
 class NodeExprLogic:
@@ -136,15 +104,11 @@ class NodeExprLogic:
 
 @dataclass(slots=True)
 class NodeBinExpr:
-    var: Union[
-        NodeBinExprAdd, NodeBinExprMulti, 
-        NodeBinExprSub, NodeBinExprDiv, 
-        NodeBinExprMod, None
-    ]
+    var: Union[NodeBinExprNum, None]
 
 @dataclass(slots=True)
 class NodeExprBool:
-    var: Union[NodePredExpr, NodeExprLogic, None]
+    var: Union[NodeLogExpr, None]
 
 @dataclass(slots=True)
 class NodeExpr:
@@ -233,7 +197,7 @@ class NodeStmtDoWhile:
 @dataclass(slots=True)
 class NodeStmtFor:
     ident_def: NodeStmtDeclare
-    condition: NodePredExpr
+    condition: NodeExprBool
     ident_assign: NodeStmtReassign
     scope: NodeScope
 

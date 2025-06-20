@@ -130,33 +130,24 @@ class TypeChecker(ErrorHandler):
             self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{b.type_}`", b.loc)
         self.push_stack(a)
 
-    def check_logical_expression(self, log_expr: NodeExprLogic):
-        self.check_expression(log_expr.lhs)
-        self.check_expression(log_expr.rhs)
-        a = self.pop_stack()
-        if a.type_ != BOOL_DEF:
-            self.compiler_error("Type", f"expected type `{BOOL_DEF}`, got `{a.type_}`", a.loc)
-        b = self.pop_stack()
-        if b.type_ != BOOL_DEF:
-            self.compiler_error("Type", f"expected type `{BOOL_DEF}`, got `{b.type_}`", b.loc)
-        self.push_stack(a)
-
-    def check_predicate_expression(self, pred_expr: NodePredExpr):
-        self.check_expression(pred_expr.lhs)
-        self.check_expression(pred_expr.rhs)
-        a = self.pop_stack()
-        if a.type_ not in (INT_DEF, CHAR_DEF):
-            self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{a.type_}`", a.loc)
-        b = self.pop_stack()
-        if b.type_ not in (INT_DEF, CHAR_DEF):
-            self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{b.type_}`", b.loc)
-        self.push_stack(StackItem(BOOL_DEF, a.loc))
-
     def check_bool_expression(self, bool_expr: NodeExprBool):
-        if isinstance(bool_expr.var, NodePredExpr):
-            self.check_predicate_expression(bool_expr.var)
-        elif isinstance(bool_expr.var, NodeExprLogic):
-            self.check_logical_expression(bool_expr.var)
+        assert bool_expr.var is not None
+        self.check_expression(bool_expr.var.lhs)
+        self.check_expression(bool_expr.var.rhs)
+        a = self.pop_stack()
+        b = self.pop_stack()
+        if bool_expr.var.op.type in COMPARISONS:
+            if a.type_ not in (INT_DEF, CHAR_DEF):
+                self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{a.type_}`", a.loc)
+            if b.type_ not in (INT_DEF, CHAR_DEF):
+                self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{b.type_}`", b.loc)
+            self.push_stack(StackItem(BOOL_DEF, a.loc))
+        elif bool_expr.var.op.type in (OR, AND):
+            if a.type_ != BOOL_DEF:
+                self.compiler_error("Type", f"expected type `{BOOL_DEF}`, got `{a.type_}`", a.loc)
+            if b.type_ != BOOL_DEF:
+                self.compiler_error("Type", f"expected type `{BOOL_DEF}`, got `{b.type_}`", b.loc)
+            self.push_stack(a)
         else:
             raise ValueError("Unreachable")
 
@@ -256,7 +247,7 @@ class TypeChecker(ErrorHandler):
     def check_for(self, for_stmt: NodeStmtFor):
         self.check_decl(for_stmt.ident_def)
 
-        self.check_predicate_expression(for_stmt.condition)
+        self.check_bool_expression(for_stmt.condition)
         if (item := self.pop_stack()).type_ != BOOL_DEF:
             self.compiler_error("Type", f"expected type `{BOOL_DEF}`, got `{item.type_}`", item.loc)
         
