@@ -163,9 +163,12 @@ class Tokenizer(ErrorHandler):
                 self.advance()
                 self.advance()
             elif self.curr_char in tt.SYMBOLS:
-                self.tokens.append(Token(type=self.curr_char, 
-                                        line=self.line_number, col=self.column_number))
-                self.advance() 
+                if self.curr_char == "\n" and self.tokens and self.tokens[-1].type == tt.NEWLINE:
+                    self.advance()
+                else:
+                    self.tokens.append(Token(type=self.curr_char, 
+                                            line=self.line_number, col=self.column_number))
+                    self.advance()
             else:
                 self.compiler_error("Syntax", "character not included in the language grammar", (self.line_number, self.column_number))
         return self.tokens

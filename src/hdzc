@@ -54,10 +54,6 @@ def compile_to_asm(file_path: str) -> list[str]:
     elapsed = time.time() - start
     if not compiler_silent:
         print(f"[INFO] Lexing took {elapsed:.6f} seconds")
-
-    if ErrorHandler.debug_mode:
-        print(tokens)
-        print("-" * 130)
     
     start = time.time()
     parse_tree = Parser(tokens, hdz_src).parse_program()
@@ -71,14 +67,15 @@ def compile_to_asm(file_path: str) -> list[str]:
     if not compiler_silent:
         print(f"[INFO] Typechecking took {elapsed:.6f} seconds")
     
-    if ErrorHandler.debug_mode:
-        print(parse_tree)
-        print("-" * 130)
     start = time.time()
     final_asm = Generator(parse_tree, hdz_src).gen_program()
     elapsed = time.time() - start
     if not compiler_silent:
         print(f"[INFO] Generating took {elapsed:.6f} seconds")
+    
+    if ErrorHandler.debug_mode:
+        with open(f"{file_path}.log", "w") as f:
+            f.write(f"{tokens}\n{"-"*130}\n{parse_tree}")
     return final_asm
 
 
