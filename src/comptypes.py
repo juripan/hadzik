@@ -70,7 +70,7 @@ class NodeTerm:
     var: Union[
         NodeTermIdent, NodeTermInt, NodeTermChar, NodeTermStr, 
         NodeTermParen, NodeTermNot, NodeTermBool, NodeTermCast,
-        ]
+    ]
     index: Optional[NodeExpr] = None
 
 
@@ -82,49 +82,56 @@ class NodeTermNot:
 class NodeBinExpr: # type: ignore (has to be predeclared)
     pass
 
-
+#TODO: Merge all of the BinExpr... classes into BinExpr class
 @dataclass(slots=True)
 class NodeBinExprMod:
     lhs: NodeExpr
     rhs: NodeExpr
+    op: Token
 
 
 @dataclass(slots=True)
 class NodeBinExprDiv:
     lhs: NodeExpr
     rhs: NodeExpr
+    op: Token
 
 
 @dataclass(slots=True)
 class NodeBinExprSub:
     lhs: NodeExpr
     rhs: NodeExpr
+    op: Token
 
 
 @dataclass(slots=True)
 class NodeBinExprAdd:
     lhs: NodeExpr
     rhs: NodeExpr
+    op: Token
 
 
 @dataclass(slots=True)
 class NodeBinExprMulti:
     lhs: NodeExpr
     rhs: NodeExpr
+    op: Token
+
 
 
 @dataclass(slots=True)
 class NodePredExpr:
-    comp_sign: Token
     lhs: NodeExpr
     rhs: NodeExpr
+    op: Token
+
 
 
 @dataclass(slots=True)
 class NodeExprLogic:
-    logical_operator: Token
     lhs: NodeExpr
     rhs: NodeExpr
+    op: Token
 
 
 @dataclass(slots=True)
@@ -208,7 +215,7 @@ class NodeStmtReassignDec:
 class NodeStmtReassign:
     var: Union[
         NodeStmtReassignEq, NodeStmtReassignInc, NodeStmtReassignDec
-        ]
+    ]
 
 
 @dataclass(slots=True)
@@ -253,7 +260,7 @@ class NodeStmt:
         NodeStmtDeclare, NodeStmtExit, NodeScope, 
         NodeStmtIf, NodeStmtReassign, NodeStmtWhile, 
         NodeStmtDoWhile, NodeStmtBreak, NodeStmtFor, NodeStmtPrint, NodeStmtEmpty
-        ]
+    ]
 
 
 @dataclass(slots=True)

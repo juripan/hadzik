@@ -105,7 +105,7 @@ class Parser(ErrorHandler):
             
             assert term is not None, "Should be handled in the if statement above"
             ret_term = NodeTerm(NodeTermNot(term))
-            #no next token here because it breaks the term call here
+            #NOTE: no next token here because it breaks the term call here
         elif self.current_token is not None and self.current_token.type in tt.TYPE_KWS:
             cast_type = self.current_token
             assert cast_type is not None, "Should never be None here"
@@ -166,7 +166,7 @@ class Parser(ErrorHandler):
                 self.compiler_error("Value", "invalid expression", self.current_token)
             assert expr_rhs is not None, "expression shouldn't be None, is handled in the above if statement"
 
-            expr = NodeBinExpr(None) if op.type in (
+            bin_expr = NodeBinExpr(None) if op.type in (
                 tt.PLUS, tt.MINUS, tt.STAR, tt.SLASH, tt.PERCENT
                 ) else NodeExprBool(None)
             
@@ -174,35 +174,35 @@ class Parser(ErrorHandler):
             
             if op.type == tt.PLUS:
                 expr_lhs2.var = expr_lhs.var
-                add = NodeBinExprAdd(lhs=expr_lhs2, rhs=expr_rhs)
-                expr.var = add # type: ignore (typechecking is being weird)
+                add = NodeBinExprAdd(expr_lhs2, expr_rhs, op)
+                bin_expr.var = add # type: ignore (typechecking is being weird)
             elif op.type == tt.STAR:
                 expr_lhs2.var = expr_lhs.var
-                multi = NodeBinExprMulti(lhs=expr_lhs2, rhs=expr_rhs)
-                expr.var = multi # type: ignore (typechecking is being weird)
+                multi = NodeBinExprMulti(expr_lhs2, expr_rhs, op)
+                bin_expr.var = multi # type: ignore (typechecking is being weird)
             elif op.type == tt.MINUS:
                 expr_lhs2.var = expr_lhs.var
-                sub = NodeBinExprSub(lhs=expr_lhs2, rhs=expr_rhs)
-                expr.var = sub # type: ignore (typechecking is being weird)
+                sub = NodeBinExprSub(expr_lhs2, expr_rhs, op)
+                bin_expr.var = sub # type: ignore (typechecking is being weird)
             elif op.type == tt.SLASH:
                 expr_lhs2.var = expr_lhs.var
-                div = NodeBinExprDiv(lhs=expr_lhs2, rhs=expr_rhs)
-                expr.var = div # type: ignore (typechecking is being weird)
+                div = NodeBinExprDiv(expr_lhs2, expr_rhs, op)
+                bin_expr.var = div # type: ignore (typechecking is being weird)
             elif op.type == tt.PERCENT:
                 expr_lhs2.var = expr_lhs.var
-                mod = NodeBinExprMod(lhs=expr_lhs2, rhs=expr_rhs)
-                expr.var = mod # type: ignore (typechecking is being weird)
+                mod = NodeBinExprMod(expr_lhs2, expr_rhs, op)
+                bin_expr.var = mod # type: ignore (typechecking is being weird)
             elif op.type in COMPARISONS:
                 expr_lhs2.var = expr_lhs.var
-                comp = NodePredExpr(lhs=expr_lhs2, rhs=expr_rhs, comp_sign=op)
-                expr.var = comp # type: ignore (typechecking is being weird)
+                comp = NodePredExpr(expr_lhs2, expr_rhs, op)
+                bin_expr.var = comp # type: ignore (typechecking is being weird)
             elif op.type == tt.AND or op.type == tt.OR:
                 expr_lhs2.var = expr_lhs.var
-                log = NodeExprLogic(lhs=expr_lhs2, rhs=expr_rhs, logical_operator=op)
-                expr.var = log # type: ignore (typechecking is being weird)
+                log = NodeExprLogic(expr_lhs2, expr_rhs, op)
+                bin_expr.var = log # type: ignore (typechecking is being weird)
             else:
                 raise ValueError("unreachable! in parse_expr()")
-            expr_lhs.var = expr
+            expr_lhs.var = bin_expr
         return expr_lhs
     
     def parse_decl(self) -> NodeStmtDeclare:

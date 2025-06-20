@@ -355,17 +355,17 @@ class Generator(ErrorHandler):
         self.pop_stack(rb)
 
         self.output.append(f"    cmp {ra}, {rb}\n")
-        if comparison.comp_sign.type == tt.IS_EQUAL:
+        if comparison.op.type == tt.IS_EQUAL:
             self.output.append("    sete al\n")
-        elif comparison.comp_sign.type == tt.IS_NOT_EQUAL:
+        elif comparison.op.type == tt.IS_NOT_EQUAL:
             self.output.append("    setne al\n")
-        elif comparison.comp_sign.type == tt.LARGER_THAN:
+        elif comparison.op.type == tt.LARGER_THAN:
             self.output.append("    setg al\n")
-        elif comparison.comp_sign.type == tt.LESS_THAN:
+        elif comparison.op.type == tt.LESS_THAN:
             self.output.append("    setl al\n")
-        elif comparison.comp_sign.type == tt.LARGER_THAN_OR_EQ:
+        elif comparison.op.type == tt.LARGER_THAN_OR_EQ:
             self.output.append("    setge al\n")
-        elif comparison.comp_sign.type == tt.LESS_THAN_OR_EQ:
+        elif comparison.op.type == tt.LESS_THAN_OR_EQ:
             self.output.append("    setle al\n")
         else:
             raise TypeError("Unreachable")
@@ -387,10 +387,10 @@ class Generator(ErrorHandler):
         self.output.append(f"    test {rb}, {rb}\n")
 
         label = self.create_label()
-        if logic_expr.logical_operator.type == tt.AND:
+        if logic_expr.op.type == tt.AND:
             self.output.append(f"    jnz {label}\n")
             self.output.append(f"    mov {rc}, {rb}\n")
-        elif logic_expr.logical_operator.type == tt.OR:
+        elif logic_expr.op.type == tt.OR:
             self.output.append(f"    jz {label}\n")
             self.output.append(f"    mov {rc}, {rb}\n")
         else:
