@@ -42,7 +42,7 @@ $ python3 hdzc path/file.hdz -r
 $ python3 hdzc path/file.hdz -n new_path/file2
 ```
 
-+ -d - dumps all of the compiler debug information available to the console
++ -d - dumps all of the compiler debug information available into a log file and the stack info to the console
 ```
 $ python3 hdzc path/file.hdz -d
 ```
