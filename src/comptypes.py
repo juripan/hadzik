@@ -79,10 +79,6 @@ class NodeTermNot:
     term: NodeTerm
 
 @dataclass(slots=True)
-class NodeBinExpr: # type: ignore (has to be predeclared)
-    pass
-
-@dataclass(slots=True)
 class NodeBinExpr:
     lhs: NodeExpr
     rhs: NodeExpr
@@ -192,7 +188,7 @@ class NodeStmtPrint:
 
 
 @dataclass(slots=True)
-class NodeStmtEmpty: #empty line that only contains newline token
+class NodeStmtEmpty: # empty line that only contains newline token
     pass
 
 
@@ -212,7 +208,7 @@ class NodeScope:
 
 @dataclass(slots=True)
 class NodeProgram:
-    stmts: list[Optional[NodeStmt]]
+    stmts: list[NodeStmt]
 
 
 #####################

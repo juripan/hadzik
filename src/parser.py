@@ -400,9 +400,8 @@ class Parser(ErrorHandler):
         self.next_token()
         return NodeStmtEmpty()
     
-    def parse_statement(self) -> NodeStmt | None:
-        if self.current_token is None:
-            return None
+    def parse_statement(self) -> NodeStmt:
+        assert self.current_token is not None, "checked in the while loop, should never be None here"
         statement = None
         
         parse_func: Callable | None = self.map_parse_func.get(self.current_token.type)
@@ -416,13 +415,13 @@ class Parser(ErrorHandler):
         statement = parse_func()
         
         assert statement is not None, "statement should never be None, handled by the if statements above"
-        return NodeStmt(stmt_var=statement) # type: ignore (I know the type but the checker keeps panicking)
+        return NodeStmt(stmt_var=statement)
 
     def parse_program(self) -> NodeProgram:
         program: NodeProgram = NodeProgram(stmts=[])
         while self.current_token is not None:
             stmt = self.parse_statement()
-            if not isinstance(stmt.stmt_var, (NodeStmtEmpty, NodeScope, NodeStmtIf)) and self.current_token:  # type: ignore (shouldn't be a problem if its None)
+            if not isinstance(stmt.stmt_var, (NodeStmtEmpty, NodeScope, NodeStmtIf)) and self.current_token:
                 self.try_compiler_error(tt.NEWLINE, "Syntax", "expected new line")
                 self.next_token()
             program.stmts.append(stmt)

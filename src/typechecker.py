@@ -42,7 +42,7 @@ class TypeChecker(ErrorHandler):
         for stmt in self.main_program.stmts:
             assert stmt is not None, "None statement shouldn't make it here"
             self.check_statement(stmt)
-            self.line_number+=1
+            self.line_number += 1
 
     def check_statement(self, stmt: NodeStmt):
         if isinstance(stmt.stmt_var, NodeStmtExit):
