@@ -342,7 +342,7 @@ class Generator(ErrorHandler):
         else:
             raise ValueError("Unreachable")
     
-    def gen_predicate_expression(self, comparison: NodeLogExpr) -> None:
+    def gen_predicate_expression(self, comparison: NodeExprBool) -> None:
         """
         generates a comparison expression that pushes a 8bit value onto the stack,
         type of binary expression that returns 1 or 0 depending on if its true or false
@@ -371,7 +371,7 @@ class Generator(ErrorHandler):
             raise TypeError("Unreachable")
         self.push_stack("al")
 
-    def gen_logical_expression(self, logic_expr: NodeLogExpr) -> None:
+    def gen_logical_expression(self, logic_expr: NodeExprBool) -> None:
         """
         generates an eval for a logical expression (AND or OR) that pushes a 8bit value onto the stack,
         its result can be either 1 or 0
@@ -438,11 +438,10 @@ class Generator(ErrorHandler):
             raise ValueError(f"Unreachable")
 
     def gen_bool_expression(self, expression: NodeExprBool):
-        assert expression.var is not None
-        if expression.var.op.type in COMPARISONS:
-            self.gen_predicate_expression(expression.var)
-        elif expression.var.op.type in (OR, AND):
-            self.gen_logical_expression(expression.var)
+        if expression.op.type in COMPARISONS:
+            self.gen_predicate_expression(expression)
+        elif expression.op.type in (OR, AND):
+            self.gen_logical_expression(expression)
         else:
             raise ValueError("Unreachable")
 
@@ -664,8 +663,7 @@ class Generator(ErrorHandler):
 
         self.output.append(f"{reset_label}:\n")
 
-        assert for_stmt.condition.var is not None
-        self.gen_predicate_expression(for_stmt.condition.var)
+        self.gen_predicate_expression(for_stmt.condition)
 
         first_reg = self.get_reg(0)
         self.pop_stack(first_reg)

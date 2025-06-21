@@ -131,18 +131,18 @@ class TypeChecker(ErrorHandler):
         self.push_stack(a)
 
     def check_bool_expression(self, bool_expr: NodeExprBool):
-        assert bool_expr.var is not None
-        self.check_expression(bool_expr.var.lhs)
-        self.check_expression(bool_expr.var.rhs)
+        assert bool_expr is not None
+        self.check_expression(bool_expr.lhs)
+        self.check_expression(bool_expr.rhs)
         a = self.pop_stack()
         b = self.pop_stack()
-        if bool_expr.var.op.type in COMPARISONS:
+        if bool_expr.op.type in COMPARISONS:
             if a.type_ not in (INT_DEF, CHAR_DEF):
                 self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{a.type_}`", a.loc)
             if b.type_ not in (INT_DEF, CHAR_DEF):
                 self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{b.type_}`", b.loc)
             self.push_stack(StackItem(BOOL_DEF, a.loc))
-        elif bool_expr.var.op.type in (OR, AND):
+        elif bool_expr.op.type in (OR, AND):
             if a.type_ != BOOL_DEF:
                 self.compiler_error("Type", f"expected type `{BOOL_DEF}`, got `{a.type_}`", a.loc)
             if b.type_ != BOOL_DEF:

@@ -90,25 +90,14 @@ class NodeBinExprNum:
     op: Token
 
 @dataclass(slots=True)
-class NodeLogExpr:
-    lhs: NodeExpr
-    rhs: NodeExpr
-    op: Token
-
-@dataclass(slots=True)
-class NodeExprLogic:
-    lhs: NodeExpr
-    rhs: NodeExpr
-    op: Token
-
-
-@dataclass(slots=True)
 class NodeBinExpr:
     var: Union[NodeBinExprNum, None]
 
 @dataclass(slots=True)
 class NodeExprBool:
-    var: Union[NodeLogExpr, None]
+    lhs: NodeExpr
+    rhs: NodeExpr
+    op: Token
 
 @dataclass(slots=True)
 class NodeExpr:

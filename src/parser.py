@@ -166,17 +166,15 @@ class Parser(ErrorHandler):
                 self.compiler_error("Value", "invalid expression", self.current_token)
             assert expr_rhs is not None, "expression shouldn't be None, is handled in the above if statement"
 
+            expr_lhs2 = NodeExpr(None) # prevents a recursion error, god knows why but it makes it work
+
             bin_expr = NodeBinExpr(None) if op.type in (
                 tt.PLUS, tt.MINUS, tt.STAR, tt.SLASH, tt.PERCENT
-                ) else NodeExprBool(None)
-            
-            expr_lhs2 = NodeExpr(None) # prevents a recursion error, god knows why but it makes it work
+                ) else NodeExprBool(expr_lhs2, expr_rhs, op)
             
             if op.type in COMPARISONS or op.type == tt.AND or op.type == tt.OR:
                 assert isinstance(bin_expr, NodeExprBool)
                 expr_lhs2.var = expr_lhs.var
-                log_expr = NodeLogExpr(expr_lhs2, expr_rhs, op)
-                bin_expr.var = log_expr
             else:
                 assert isinstance(bin_expr, NodeBinExpr)
                 expr_lhs2.var = expr_lhs.var
