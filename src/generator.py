@@ -341,65 +341,6 @@ class Generator(ErrorHandler):
             self.push_stack(ra_sized)
         else:
             raise ValueError("Unreachable")
-    
-    def gen_predicate_expression(self, comparison: NodeExprBool) -> None:
-        """
-        generates a comparison expression that pushes a 8bit value onto the stack,
-        type of binary expression that returns 1 or 0 depending on if its true or false
-        """
-        self.gen_expression(comparison.rhs)
-        self.gen_expression(comparison.lhs)
-        ra = self.get_reg(0)
-        rb = self.get_reg(1)
-        self.pop_stack(ra)
-        self.pop_stack(rb)
-
-        self.output.append(f"    cmp {ra}, {rb}\n")
-        if comparison.op.type == tt.IS_EQUAL:
-            self.output.append("    sete al\n")
-        elif comparison.op.type == tt.IS_NOT_EQUAL:
-            self.output.append("    setne al\n")
-        elif comparison.op.type == tt.LARGER_THAN:
-            self.output.append("    setg al\n")
-        elif comparison.op.type == tt.LESS_THAN:
-            self.output.append("    setl al\n")
-        elif comparison.op.type == tt.LARGER_THAN_OR_EQ:
-            self.output.append("    setge al\n")
-        elif comparison.op.type == tt.LESS_THAN_OR_EQ:
-            self.output.append("    setle al\n")
-        else:
-            raise TypeError("Unreachable")
-        self.push_stack("al")
-
-    def gen_logical_expression(self, logic_expr: NodeExprBool) -> None:
-        """
-        generates an eval for a logical expression (AND or OR) that pushes a 8bit value onto the stack,
-        its result can be either 1 or 0
-        """
-        self.gen_expression(logic_expr.rhs)
-        self.gen_expression(logic_expr.lhs)
-        ra = self.get_reg(0)
-        rb = self.get_reg(1)
-        rc = "cl"
-        self.pop_stack(ra)
-        self.pop_stack(rb)
-        self.output.append(f"    mov {rc}, {ra}\n")
-        self.output.append(f"    test {rb}, {rb}\n")
-
-        label = self.create_label()
-        if logic_expr.op.type == tt.AND:
-            self.output.append(f"    jnz {label}\n")
-            self.output.append(f"    mov {rc}, {rb}\n")
-        elif logic_expr.op.type == tt.OR:
-            self.output.append(f"    jz {label}\n")
-            self.output.append(f"    mov {rc}, {rb}\n")
-        else:
-            raise ValueError(f"Unreachable {logic_expr.op.type}")
-        
-        self.output.append(f"{label}:\n")
-        self.output.append(f"    test {rc}, {rc}\n")
-        self.output.append("    setne al\n")
-        self.push_stack("al")
 
     def gen_binary_expression(self, bin_expr: NodeBinExpr) -> None:
         """
@@ -432,16 +373,44 @@ class Generator(ErrorHandler):
             self.output.append(f"    idiv {rb}\n")
             #TODO: make division be generic for any size
             self.push_stack("edx") # assembly stores the modulus in rdx after the standard division instruction
-        else:
-            raise ValueError(f"Unreachable")
+        elif bin_expr.op.type in COMPARISONS:
+            self.output.append(f"    cmp {ra}, {rb}\n")
+            if bin_expr.op.type == tt.IS_EQUAL:
+                self.output.append("    sete al\n")
+            elif bin_expr.op.type == tt.IS_NOT_EQUAL:
+                self.output.append("    setne al\n")
+            elif bin_expr.op.type == tt.LARGER_THAN:
+                self.output.append("    setg al\n")
+            elif bin_expr.op.type == tt.LESS_THAN:
+                self.output.append("    setl al\n")
+            elif bin_expr.op.type == tt.LARGER_THAN_OR_EQ:
+                self.output.append("    setge al\n")
+            elif bin_expr.op.type == tt.LESS_THAN_OR_EQ:
+                self.output.append("    setle al\n")
+            else:
+                raise TypeError(f"Unreachable {bin_expr.op.type}")
+            self.push_stack("al")
+        elif bin_expr.op.type in (OR, AND):
+            rc = "cl"
+            self.output.append(f"    mov {rc}, {ra}\n")
+            self.output.append(f"    test {rb}, {rb}\n")
 
-    def gen_bool_expression(self, expression: NodeExprBool):
-        if expression.op.type in COMPARISONS:
-            self.gen_predicate_expression(expression)
-        elif expression.op.type in (OR, AND):
-            self.gen_logical_expression(expression)
+            label = self.create_label()
+            if bin_expr.op.type == tt.AND:
+                self.output.append(f"    jnz {label}\n")
+                self.output.append(f"    mov {rc}, {rb}\n")
+            elif bin_expr.op.type == tt.OR:
+                self.output.append(f"    jz {label}\n")
+                self.output.append(f"    mov {rc}, {rb}\n")
+            else:
+                raise ValueError(f"Unreachable {bin_expr.op.type}")
+            
+            self.output.append(f"{label}:\n")
+            self.output.append(f"    test {rc}, {rc}\n")
+            self.output.append("    setne al\n")
+            self.push_stack("al")
         else:
-            raise ValueError("Unreachable")
+            raise ValueError(f"Unreachable {bin_expr.op.type}")
 
     def gen_expression(self, expression: NodeExpr) -> None:
         """
@@ -451,8 +420,6 @@ class Generator(ErrorHandler):
             self.gen_term(expression.var)
         elif isinstance(expression.var, NodeBinExpr):
             self.gen_binary_expression(expression.var)
-        elif isinstance(expression.var, NodeExprBool):
-            self.gen_bool_expression(expression.var)
         else:
             raise ValueError("Unreachable")
 
@@ -661,7 +628,7 @@ class Generator(ErrorHandler):
 
         self.output.append(f"{reset_label}:\n")
 
-        self.gen_predicate_expression(for_stmt.condition)
+        self.gen_expression(for_stmt.condition)
 
         first_reg = self.get_reg(0)
         self.pop_stack(first_reg)

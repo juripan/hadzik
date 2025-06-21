@@ -33,7 +33,7 @@ options:
     -c          removes all of the log statements printed during compilation
     -r          runs the compiled file and prints its output after compilation is done
     -n DEST     determine a path and name of the compiled file
-    -d          dumps all of the compiler debug information available to the console""")
+    -d          dumps all of the compiler debug information available into a log file and the stack info into the console""")
     exit(0)
 
 

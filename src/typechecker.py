@@ -123,41 +123,31 @@ class TypeChecker(ErrorHandler):
         self.check_expression(bin_expr.lhs)
         self.check_expression(bin_expr.rhs)
         a = self.pop_stack()
-        if a.type_ != INT_DEF:
-            self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{a.type_}`", a.loc)
         b = self.pop_stack()
-        if b.type_ != INT_DEF:
-            self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{b.type_}`", b.loc)
-        self.push_stack(a)
-
-    def check_bool_expression(self, bool_expr: NodeExprBool):
-        assert bool_expr is not None
-        self.check_expression(bool_expr.lhs)
-        self.check_expression(bool_expr.rhs)
-        a = self.pop_stack()
-        b = self.pop_stack()
-        if bool_expr.op.type in COMPARISONS:
+        if bin_expr.op.type in COMPARISONS:
             if a.type_ not in (INT_DEF, CHAR_DEF):
                 self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{a.type_}`", a.loc)
             if b.type_ not in (INT_DEF, CHAR_DEF):
                 self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{b.type_}`", b.loc)
             self.push_stack(StackItem(BOOL_DEF, a.loc))
-        elif bool_expr.op.type in (OR, AND):
+        elif bin_expr.op.type in (OR, AND):
             if a.type_ != BOOL_DEF:
                 self.compiler_error("Type", f"expected type `{BOOL_DEF}`, got `{a.type_}`", a.loc)
             if b.type_ != BOOL_DEF:
                 self.compiler_error("Type", f"expected type `{BOOL_DEF}`, got `{b.type_}`", b.loc)
             self.push_stack(a)
         else:
-            raise ValueError("Unreachable")
+            if a.type_ != INT_DEF:
+                self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{a.type_}`", a.loc)
+            if b.type_ != INT_DEF:
+                self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{b.type_}`", b.loc)
+            self.push_stack(a)
 
     def check_expression(self, expr: NodeExpr):
         if isinstance(expr.var, NodeTerm):
             self.check_term(expr.var)
         elif isinstance(expr.var, NodeBinExpr):
             self.check_binary_expression(expr.var)
-        elif isinstance(expr.var, NodeExprBool):
-            self.check_bool_expression(expr.var)
         else:
             raise ValueError("Unreachable")
 
@@ -247,7 +237,7 @@ class TypeChecker(ErrorHandler):
     def check_for(self, for_stmt: NodeStmtFor):
         self.check_decl(for_stmt.ident_def)
 
-        self.check_bool_expression(for_stmt.condition)
+        self.check_expression(for_stmt.condition)
         if (item := self.pop_stack()).type_ != BOOL_DEF:
             self.compiler_error("Type", f"expected type `{BOOL_DEF}`, got `{item.type_}`", item.loc)
         

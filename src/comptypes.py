@@ -82,7 +82,6 @@ class NodeTermNot:
 class NodeBinExpr: # type: ignore (has to be predeclared)
     pass
 
-#TODO: Merge all of the BinExpr... classes into BinExpr class
 @dataclass(slots=True)
 class NodeBinExpr:
     lhs: NodeExpr
@@ -90,14 +89,8 @@ class NodeBinExpr:
     op: Token
 
 @dataclass(slots=True)
-class NodeExprBool:
-    lhs: NodeExpr
-    rhs: NodeExpr
-    op: Token
-
-@dataclass(slots=True)
 class NodeExpr:
-    var: Union[NodeTerm, NodeBinExpr, NodeExprBool, None]
+    var: Union[NodeTerm, NodeBinExpr, None]
 
 
 @dataclass(slots=True)
@@ -182,7 +175,7 @@ class NodeStmtDoWhile:
 @dataclass(slots=True)
 class NodeStmtFor:
     ident_def: NodeStmtDeclare
-    condition: NodeExprBool
+    condition: NodeExpr
     ident_assign: NodeStmtReassign
     scope: NodeScope
 

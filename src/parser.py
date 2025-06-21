@@ -168,16 +168,9 @@ class Parser(ErrorHandler):
 
             expr_lhs2 = NodeExpr(None) # prevents a recursion error, god knows why but it makes it work
 
-            bin_expr = NodeBinExpr(expr_lhs2, expr_rhs, op) if op.type in (
-                tt.PLUS, tt.MINUS, tt.STAR, tt.SLASH, tt.PERCENT
-                ) else NodeExprBool(expr_lhs2, expr_rhs, op)
+            bin_expr = NodeBinExpr(expr_lhs2, expr_rhs, op)
             
-            if op.type in COMPARISONS or op.type == tt.AND or op.type == tt.OR:
-                assert isinstance(bin_expr, NodeExprBool)
-                expr_lhs2.var = expr_lhs.var
-            else:
-                assert isinstance(bin_expr, NodeBinExpr)
-                expr_lhs2.var = expr_lhs.var
+            expr_lhs2.var = expr_lhs.var
             expr_lhs.var = bin_expr
         return expr_lhs
     
@@ -321,14 +314,12 @@ class Parser(ErrorHandler):
         self.try_compiler_error(tt.COMMA, "Syntax", "expected ','")
         self.next_token()
 
-        expr = self.parse_expr()
-        if expr is None or expr.var is None:
+        condition = self.parse_expr()
+        if condition is None or condition.var is None:
             self.compiler_error("Syntax", "missing condition", self.current_token)
         
-        assert expr is not None, "expr shouldn't be None, handled in the previous if statement"
-        assert expr.var is not None, "expr.var shouldn't be None, handled in the previous if statement"
-
-        condition = expr.var # gets the predicate
+        assert condition is not None, "expr shouldn't be None, handled in the previous if statement"
+        assert condition.var is not None, "expr.var shouldn't be None, handled in the previous if statement"
 
         self.try_compiler_error(tt.COMMA, "Syntax", "expected ','")
         self.next_token()
@@ -339,7 +330,7 @@ class Parser(ErrorHandler):
         self.next_token()
 
         scope = self.parse_scope()
-        return NodeStmtFor(ident_def, condition, assign, scope)  # type: ignore (type checker is going insane here)
+        return NodeStmtFor(ident_def, condition, assign, scope)
 
     def parse_do_while(self) -> NodeStmtDoWhile:
         self.next_token()
