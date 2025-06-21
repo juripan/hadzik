@@ -120,8 +120,8 @@ class TypeChecker(ErrorHandler):
             raise ValueError("Unreachable")
 
     def check_binary_expression(self, bin_expr: NodeBinExpr):
-        self.check_expression(bin_expr.var.lhs) # type: ignore
-        self.check_expression(bin_expr.var.rhs) # type: ignore
+        self.check_expression(bin_expr.lhs)
+        self.check_expression(bin_expr.rhs)
         a = self.pop_stack()
         if a.type_ != INT_DEF:
             self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{a.type_}`", a.loc)

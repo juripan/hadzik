@@ -168,7 +168,7 @@ class Parser(ErrorHandler):
 
             expr_lhs2 = NodeExpr(None) # prevents a recursion error, god knows why but it makes it work
 
-            bin_expr = NodeBinExpr(None) if op.type in (
+            bin_expr = NodeBinExpr(expr_lhs2, expr_rhs, op) if op.type in (
                 tt.PLUS, tt.MINUS, tt.STAR, tt.SLASH, tt.PERCENT
                 ) else NodeExprBool(expr_lhs2, expr_rhs, op)
             
@@ -178,8 +178,6 @@ class Parser(ErrorHandler):
             else:
                 assert isinstance(bin_expr, NodeBinExpr)
                 expr_lhs2.var = expr_lhs.var
-                num_expr = NodeBinExprNum(expr_lhs2, expr_rhs, op)
-                bin_expr.var = num_expr
             expr_lhs.var = bin_expr
         return expr_lhs
     

@@ -84,14 +84,10 @@ class NodeBinExpr: # type: ignore (has to be predeclared)
 
 #TODO: Merge all of the BinExpr... classes into BinExpr class
 @dataclass(slots=True)
-class NodeBinExprNum:
+class NodeBinExpr:
     lhs: NodeExpr
     rhs: NodeExpr
     op: Token
-
-@dataclass(slots=True)
-class NodeBinExpr:
-    var: Union[NodeBinExprNum, None]
 
 @dataclass(slots=True)
 class NodeExprBool:

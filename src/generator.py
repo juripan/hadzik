@@ -405,30 +405,28 @@ class Generator(ErrorHandler):
         """
         generates a binary expression that gets pushed on top of the stack
         """
-        if bin_expr.var is None:
-            self.compiler_error("Generator", "failed to generate binary expression")
-        assert bin_expr.var is not None
+        assert bin_expr is not None, "Should never trigger since its checked before calling"
         
-        self.gen_expression(bin_expr.var.rhs)
-        self.gen_expression(bin_expr.var.lhs)
+        self.gen_expression(bin_expr.rhs)
+        self.gen_expression(bin_expr.lhs)
         ra = self.get_reg(0) #note: could cause problems with overwriting results
         rb = self.get_reg(1)
         self.pop_stack(ra)
         self.pop_stack(rb)
 
-        if bin_expr.var.op.type == tt.PLUS:
+        if bin_expr.op.type == tt.PLUS:
             self.output.append(f"    add {ra}, {rb}\n")
             self.push_stack(ra)
-        elif bin_expr.var.op.type == tt.STAR:
+        elif bin_expr.op.type == tt.STAR:
             self.output.append(f"    mul {rb}\n")
             self.push_stack(ra)
-        elif bin_expr.var.op.type == tt.MINUS:
+        elif bin_expr.op.type == tt.MINUS:
             self.output.append(f"    sub {ra}, {rb}\n")
             self.push_stack(ra)
-        elif bin_expr.var.op.type == tt.SLASH:
+        elif bin_expr.op.type == tt.SLASH:
             self.output.append(f"    idiv {rb}\n") #! NOTE: idiv is used because div only works with unsigned numbers
             self.push_stack(ra)
-        elif bin_expr.var.op.type == tt.PERCENT:
+        elif bin_expr.op.type == tt.PERCENT:
             self.output.append("    xor rdx, rdx\n")
             self.output.append("    cqo\n") # sign extends so the modulus result can be negative
             self.output.append(f"    idiv {rb}\n")
