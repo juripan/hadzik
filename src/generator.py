@@ -86,6 +86,9 @@ class Generator(ErrorHandler):
         return padding
     
     def call_func(self, name: str) -> None:
+        """
+        adds a call instruction corresponding to the given function name
+        """
         self.output.append(f"    lea rsp, [rbp - {self.stack_size}]\n")
         self.output.append(f"    call {name}\n")
 
@@ -93,6 +96,9 @@ class Generator(ErrorHandler):
             self.functions.append(name)
     
     def add_funcs(self) -> None:
+        """
+        adds all of the function bodies that were used into the assembly
+        """
         for func in self.functions:
             self.output.append(f"{func}:\n")
             if func == "exit":
@@ -114,7 +120,7 @@ class Generator(ErrorHandler):
 
     def push_stack(self, src: str, size_words: str = "") -> None:
         """
-        adds a push instruction to the output and updates the stack size 
+        adds a 'push' instruction to the output and updates the stack size 
         """
         if src in self.registers_64bit or src.startswith("QWORD") or size_words == "QWORD":
             size: size_bytes = 8
@@ -149,7 +155,7 @@ class Generator(ErrorHandler):
 
     def pop_stack(self, dest_reg: str):
         """
-        adds a pop instruction to the output and updates the stack size 
+        adds a 'pop' instruction to the output and updates the stack size 
         """
         self.output.append(f"    mov {dest_reg}, [rbp - {self.stack_size}] ;pop\n")
         size = self.stack_item_sizes.pop() # removes the last items size
@@ -159,6 +165,9 @@ class Generator(ErrorHandler):
             print("pop", self.stack_size, self.stack_item_sizes, self.variables)
     
     def push_stack_complex(self, src: list[str], sizes_w: list[size_words], sizes_b: list[size_bytes]):
+        """
+        pushes multiple items onto the stack but only saves it as a whole item onto the compiler stack
+        """
         padding = 0
         for item, byte_s, word_s in zip(src, sizes_b, sizes_w):
             padding += self.align_stack(byte_s)
@@ -173,6 +182,7 @@ class Generator(ErrorHandler):
     def get_reg(self, idx: int) -> str:
         """
         returns a name of the correctly sized register based on the current top of the stack
+        if the size doesn't exist throws a ValueError
         """
         assert len(self.stack_item_sizes) > 0, "Stack underflow"
         size = self.stack_item_sizes[-1]
@@ -218,6 +228,9 @@ class Generator(ErrorHandler):
         del self.scopes[-1]
     
     def make_str(self, str_term: NodeTermStr):
+        """
+        adds a string onto the stack with its pointer to the start and length
+        """
         if not str_term.string.value:
             str_term.string.value = "0"
         
@@ -247,7 +260,6 @@ class Generator(ErrorHandler):
         
         if term.index is not None:
             self.output.append("    ; --- indexing ---\n")
-            # print(f"before {self.stack_size=} {self.stack_item_sizes=}")
             old_stack_size = self.stack_size # solves the incorrect reads
             LEN_SIZE = 4
             ITEM_SIZE_W = "BYTE"
@@ -264,7 +276,6 @@ class Generator(ErrorHandler):
             
             self.stack_size = old_stack_size
             self.stack_item_sizes.pop()
-            # print(f"after {self.stack_size=} {self.stack_item_sizes=}")
 
             self.push_stack(f"{ITEM_SIZE_W} [rax + rbx * {ITEM_SIZE_B}]")
         elif isinstance(term.var, NodeTermInt):
@@ -458,6 +469,9 @@ class Generator(ErrorHandler):
             raise ValueError("Unreachable")
 
     def add_variable(self, decl_stmt: NodeStmtDeclare, word_size: size_words, byte_size: size_bytes):
+        """
+        adds a VariableContext into the self.variables list
+        """
         location: int = self.stack_size
         assert decl_stmt.ident.value is not None, "var name shouldn't be None here"
         self.variables.append(VariableContext(decl_stmt.ident.value, location, word_size, byte_size))
@@ -532,7 +546,7 @@ class Generator(ErrorHandler):
                     ra = self.get_reg(0)
                     self.pop_stack(ra)
                     self.output.append(f"    mov [rbp - {var_ctx.loc}], {ra}\n")
-        elif isinstance(reassign_stmt.var, (NodeStmtReassignInc, NodeStmtReassignDec)): # type: ignore (using an else branch to catch errors)
+        elif isinstance(reassign_stmt.var, (NodeStmtReassignInc, NodeStmtReassignDec)):
             self.output.append("    ;; --- var inc / dec ---\n")
             var_ctx = found_vars[-1]
             location, size_words = var_ctx.loc, var_ctx.size_w
@@ -697,7 +711,6 @@ class Generator(ErrorHandler):
         returns a list of strings that contains the assembly instructions
         """
         self.output.append("format ELF64 executable 3\nsegment readable executable\nentry _start\n")
-        # self.output.append("section .text\n    global _start\n")
         self.output.append("_start:\n    mov rbp, rsp\n")
 
         for stmt in self.main_program.stmts:
@@ -706,7 +719,6 @@ class Generator(ErrorHandler):
 
         self.output.append("    ;; --- default exit ---\n    mov rax, 60\n    mov rdi, 0\n    syscall\n" )
         self.add_funcs()
-        # self.output.append("section .data\n")
         if self.section_data:
             self.output.append("segment readable writeable\n")
             self.output.extend(self.section_data)

@@ -228,7 +228,7 @@ class Parser(ErrorHandler):
             self.next_token()
         
         start_curly = self.current_token
-        self.try_compiler_error(tt.LEFT_CURLY, "Syntax", "expected '{'")
+        self.try_compiler_error(tt.LEFT_CURLY, "Syntax", "expected `{`")
         self.next_token()  # left curly
 
         scope = NodeScope(stmts=[])
@@ -236,7 +236,7 @@ class Parser(ErrorHandler):
             scope.stmts.append(stmt)
             if not isinstance(stmt.stmt_var, (NodeStmtEmpty, NodeStmtIf)) \
                     and self.current_token and self.current_token.type != tt.RIGHT_CURLY:
-                self.try_compiler_error(tt.NEWLINE, "Syntax", "expected new line")
+                self.try_compiler_error(tt.NEWLINE, "Syntax", "expected newline")
                 self.next_token()
             if self.current_token and self.current_token.type == tt.RIGHT_CURLY:
                 self.next_token() # right curly
@@ -306,12 +306,12 @@ class Parser(ErrorHandler):
     def parse_for_loop(self) -> NodeStmtFor:
         self.next_token()
 
-        self.try_compiler_error(tt.LEFT_PAREN, "Syntax", "expected '('")
+        self.try_compiler_error(tt.LEFT_PAREN, "Syntax", "expected `(`")
         self.next_token()
 
         ident_def = self.parse_decl()
 
-        self.try_compiler_error(tt.COMMA, "Syntax", "expected ','")
+        self.try_compiler_error(tt.COMMA, "Syntax", "expected `,`")
         self.next_token()
 
         condition = self.parse_expr()
@@ -321,12 +321,12 @@ class Parser(ErrorHandler):
         assert condition is not None, "expr shouldn't be None, handled in the previous if statement"
         assert condition.var is not None, "expr.var shouldn't be None, handled in the previous if statement"
 
-        self.try_compiler_error(tt.COMMA, "Syntax", "expected ','")
+        self.try_compiler_error(tt.COMMA, "Syntax", "expected `,`")
         self.next_token()
 
         assign = self.parse_reassign()
         
-        self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
+        self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected `)`")
         self.next_token()
 
         scope = self.parse_scope()
@@ -337,7 +337,7 @@ class Parser(ErrorHandler):
 
         scope = self.parse_scope()
         
-        self.try_compiler_error(tt.WHILE, "Syntax", "expected 'kim'")
+        self.try_compiler_error(tt.WHILE, "Syntax", "expected `kim`")
         self.next_token()
 
         expr = self.parse_expr()
@@ -361,7 +361,7 @@ class Parser(ErrorHandler):
             self.next_token()
             return NodeStmtReassign(var=NodeStmtReassignDec(term))
 
-        self.try_compiler_error(tt.EQUALS, "Syntax", "expected '='")
+        self.try_compiler_error(tt.EQUALS, "Syntax", "expected `=`")
         self.next_token()
 
         expr = self.parse_expr()
@@ -375,7 +375,7 @@ class Parser(ErrorHandler):
     def parse_print(self) -> NodeStmtPrint:
         self.next_token() # removes print token
 
-        self.try_compiler_error(tt.LEFT_PAREN, "Syntax", "expected '('")
+        self.try_compiler_error(tt.LEFT_PAREN, "Syntax", "expected `(`")
         self.next_token()
 
         cont = self.parse_expr()
@@ -385,7 +385,7 @@ class Parser(ErrorHandler):
         
         assert cont is not None, "content shouldn't be None, handled by the previous if statement"
 
-        self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected ')'")
+        self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected `)`")
         self.next_token()
         
         return NodeStmtPrint(cont, cont_type=INFER_DEF)
@@ -422,7 +422,7 @@ class Parser(ErrorHandler):
         while self.current_token is not None:
             stmt = self.parse_statement()
             if not isinstance(stmt.stmt_var, (NodeStmtEmpty, NodeScope, NodeStmtIf)) and self.current_token:
-                self.try_compiler_error(tt.NEWLINE, "Syntax", "expected new line")
+                self.try_compiler_error(tt.NEWLINE, "Syntax", "expected newline")
                 self.next_token()
             program.stmts.append(stmt)
         return program

@@ -108,7 +108,6 @@ class NodeScope: # type: ignore (has to be predeclared)
 class NodeIfPred: # type: ignore (has to be predeclared)
     pass
 
-
 @dataclass(slots=True)
 class NodeIfPredElse:
     scope: NodeScope
