@@ -168,11 +168,16 @@ class Generator(ErrorHandler):
         """
         pushes multiple items onto the stack but only saves it as a whole item onto the compiler stack
         """
+        #TODO: figure out what to do with the padding here
         padding = 0
         for item, byte_s, word_s in zip(src, sizes_b, sizes_w):
-            padding += self.align_stack(byte_s)
+            # padding += self.align_stack(byte_s)
             self.stack_size += byte_s
-            self.output.append(f"    mov {word_s} [rbp - {self.stack_size}], {item} ;push\n")
+            if word_s == "QWORD" and item not in self.registers_64bit:
+                self.output.append(f"    mov rbx, {item}\n")
+                self.output.append(f"    mov {word_s} [rbp - {self.stack_size}], rbx ;push\n")
+            else:
+                self.output.append(f"    mov {word_s} [rbp - {self.stack_size}], {item} ;push\n")
         
         self.stack_item_sizes.append(sum(sizes_b))
         self.stack_padding.append(padding)
@@ -234,20 +239,42 @@ class Generator(ErrorHandler):
         if not str_term.string.value:
             str_term.string.value = "0"
         
-        str_data = str_term.string.value.split(",")[::-1]
-        str_len = len(str_data)
+        str_data = list(map(lambda x: hex(int(x))[2:], str_term.string.value.split(",")[::-1]))
+        STR_LEN = len(str_data)
+        
+        str_chunks: list[str] = []
+        str_data_sizeb: list[size_bytes] = []
+        str_data_sizew: list[size_words] = []
+        
+        start = 0
+        end = 0
+        count = STR_LEN
 
-        self.output.append(f"    lea rax, [rbp - {self.stack_size + str_len}]\n")
-        str_data.append("rax")
+        for sizeb, sizew in zip((8, 4, 2, 1), ("QWORD", "DWORD", "WORD", "BYTE")):
+            res = count // sizeb
+            count %= sizeb
+
+            for i in range(res):
+                end += sizeb
+                str_chunks.append("0x" + "".join(str_data[start:end]))
+                str_data_sizeb.append(sizeb)
+                str_data_sizew.append(sizew)
+                start += sizeb
+        
+        self.output.append(f"    lea rax, [rbp - {self.stack_size + STR_LEN}]\n")
+        str_chunks.append("rax")
+        str_data_sizeb.append(8)
+        str_data_sizew.append("QWORD")
         
         if str_term.string.value != "0":
-            str_data.append(str(str_len))
+            str_chunks.append(str(STR_LEN))
         else:
-            str_data.append("0")
+            str_chunks.append("0")
         
-        str_data_sizew = ["BYTE"] * int(str_len) + ["QWORD", "DWORD"]
-        str_data_sizeb = [1] * int(str_len) + [8, 4]
-        self.push_stack_complex(str_data, str_data_sizew, str_data_sizeb)
+        str_data_sizeb.append(4)
+        str_data_sizew.append("DWORD")
+        
+        self.push_stack_complex(str_chunks, str_data_sizew, str_data_sizeb)
 
 
     def gen_term(self, term: NodeTerm) -> None:
