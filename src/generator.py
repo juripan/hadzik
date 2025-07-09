@@ -102,19 +102,25 @@ class Generator(ErrorHandler):
         for func in self.functions:
             self.output.append(f"{func}:\n")
             if func == "exit":
-                self.output.append("    mov rax, 60\n")
-                self.output.append("    syscall\n")
+                self.output.append(
+                    "    mov rax, 60\n"
+                    "    syscall\n"
+                )
             elif func == "print_char":
-                self.output.append("    mov rax, 1\n")
-                self.output.append("    mov rdi, 1\n")
-                self.output.append("    mov rdx, 1\n")
-                self.output.append("    syscall\n")
-                self.output.append("    ret\n")
+                self.output.append(
+                    "    mov rax, 1\n"
+                    "    mov rdi, 1\n"
+                    "    mov rdx, 1\n"
+                    "    syscall\n"
+                    "    ret\n"
+                )
             elif func == "print_str":
-                self.output.append("    mov rax, 1\n")
-                self.output.append("    mov rdi, 1\n")
-                self.output.append("    syscall\n")
-                self.output.append("    ret\n")
+                self.output.append(
+                    "    mov rax, 1\n"
+                    "    mov rdi, 1\n"
+                    "    syscall\n"
+                    "    ret\n"
+                    )
             else:
                 raise ValueError("Unreachable")
 
@@ -147,8 +153,10 @@ class Generator(ErrorHandler):
         if "[" not in src:
             self.output.append(f"    mov {size_words} [rbp - {self.stack_size}], {src} ;push\n")
         else:
-            self.output.append(f"    mov {reg}, {src}\n")
-            self.output.append(f"    mov {size_words} [rbp - {self.stack_size}], {reg} ;push\n")
+            self.output.append(
+                f"    mov {reg}, {src}\n"
+                f"    mov {size_words} [rbp - {self.stack_size}], {reg} ;push\n"
+            )
         
         if ErrorHandler.debug_mode:
             print("push", self.stack_size, self.stack_item_sizes, self.variables)
@@ -174,8 +182,9 @@ class Generator(ErrorHandler):
             # padding += self.align_stack(byte_s)
             self.stack_size += byte_s
             if word_s == "QWORD" and item not in self.registers_64bit:
-                self.output.append(f"    mov rbx, {item}\n")
-                self.output.append(f"    mov {word_s} [rbp - {self.stack_size}], rbx ;push\n")
+                self.output.append(f"    mov rbx, {item}\n"
+                    f"    mov {word_s} [rbp - {self.stack_size}], rbx ;push\n"
+                )
             else:
                 self.output.append(f"    mov {word_s} [rbp - {self.stack_size}], {item} ;push\n")
         
@@ -355,9 +364,11 @@ class Generator(ErrorHandler):
             ra = self.get_reg(0)
             rb = self.get_reg(1)
             self.pop_stack(rb)
-            self.output.append(f"    xor {ra}, {ra}\n")
-            self.output.append(f"    test {rb}, {rb}\n")
-            self.output.append("    sete al\n")
+            self.output.append(
+                f"    xor {ra}, {ra}\n"
+                f"    test {rb}, {rb}\n"
+                "    sete al\n"
+            )
             self.push_stack(ra)
         elif isinstance(term.var, NodeTermCast):
             self.output.append("    ;--- typecast ---\n")
@@ -406,9 +417,11 @@ class Generator(ErrorHandler):
             self.output.append(f"    idiv {rb}\n") #! NOTE: idiv is used because div only works with unsigned numbers
             self.push_stack(ra)
         elif bin_expr.op.type == tt.PERCENT:
-            self.output.append("    xor rdx, rdx\n")
-            self.output.append("    cqo\n") # sign extends so the modulus result can be negative
-            self.output.append(f"    idiv {rb}\n")
+            self.output.append(
+                "    xor rdx, rdx\n"
+                "    cqo\n" # sign extends so the modulus result can be negative
+                f"    idiv {rb}\n"
+            )
             #TODO: make division be generic for any size
             self.push_stack("edx") # assembly stores the modulus in rdx after the standard division instruction
         elif bin_expr.op.type in COMPARISONS:
@@ -430,22 +443,30 @@ class Generator(ErrorHandler):
             self.push_stack("al")
         elif bin_expr.op.type in (OR, AND):
             rc = "cl"
-            self.output.append(f"    mov {rc}, {ra}\n")
-            self.output.append(f"    test {rb}, {rb}\n")
+            self.output.append(
+                f"    mov {rc}, {ra}\n"
+                f"    test {rb}, {rb}\n"
+            )
 
             label = self.create_label()
             if bin_expr.op.type == tt.AND:
-                self.output.append(f"    jnz {label}\n")
-                self.output.append(f"    mov {rc}, {rb}\n")
+                self.output.append(
+                    f"    jnz {label}\n"
+                    f"    mov {rc}, {rb}\n"
+                )
             elif bin_expr.op.type == tt.OR:
-                self.output.append(f"    jz {label}\n")
-                self.output.append(f"    mov {rc}, {rb}\n")
+                self.output.append(
+                    f"    jz {label}\n"
+                    f"    mov {rc}, {rb}\n"
+                )
             else:
                 raise ValueError(f"Unreachable {bin_expr.op.type}")
             
-            self.output.append(f"{label}:\n")
-            self.output.append(f"    test {rc}, {rc}\n")
-            self.output.append("    setne al\n")
+            self.output.append(
+                f"{label}:\n"
+                f"    test {rc}, {rc}\n"
+                "    setne al\n"
+            )
             self.push_stack("al")
         else:
             raise ValueError(f"Unreachable {bin_expr.op.type}")
@@ -485,8 +506,10 @@ class Generator(ErrorHandler):
             
             self.output.append(f"    jz {label}\n")
             self.gen_scope(pred.var.scope)
-            self.output.append(f"    jmp {end_label}\n")
-            self.output.append(f"{label}:\n")
+            self.output.append(
+                f"    jmp {end_label}\n"
+                f"{label}:\n"
+            )
             if pred.var.pred is not None:
                 self.gen_if_predicate(pred.var.pred, end_label)
         elif isinstance(pred.var, NodeIfPredElse):
@@ -564,10 +587,12 @@ class Generator(ErrorHandler):
             else:
                 self.gen_expression(reassign_stmt.var.rvalue)
                 if self.stack_item_sizes[-1] not in (1,2,4,8):
-                    self.output.append(f"    mov eax, [rbp - {self.stack_size}]\n")
-                    self.output.append(f"    mov [rbp - {var_ctx.loc}], eax\n")
-                    self.output.append(f"    mov rax, [rbp - {self.stack_size - 4}]\n")
-                    self.output.append(f"    mov [rbp - {var_ctx.loc - 4}], rax\n")
+                    self.output.append(
+                        f"    mov eax, [rbp - {self.stack_size}]\n"
+                        f"    mov [rbp - {var_ctx.loc}], eax\n"
+                        f"    mov rax, [rbp - {self.stack_size - 4}]\n"
+                        f"    mov [rbp - {var_ctx.loc - 4}], rax\n"
+                    )
                     self.stack_size -= self.stack_item_sizes.pop()
                 else:
                     ra = self.get_reg(0)
@@ -580,10 +605,11 @@ class Generator(ErrorHandler):
             self.push_stack(f"{size_words} [rbp - {location}]") # QWORD 64 bits (word = 16 bits)
             ra = self.get_reg(0)
             self.pop_stack(ra)
-            self.output.append(f"    inc {ra}\n" 
-                                if isinstance(reassign_stmt.var, NodeStmtReassignInc) 
-                                else f"    dec {ra}\n")
-            self.output.append(f"    mov [rbp - {location}], {ra}\n")
+            inc_or_dec = f"    inc {ra}\n" if isinstance(reassign_stmt.var, NodeStmtReassignInc) else f"    dec {ra}\n"
+            self.output.append(
+                inc_or_dec +
+                f"    mov [rbp - {location}], {ra}\n"
+            )
         else:
             raise ValueError("Unreachable")
 
@@ -611,8 +637,10 @@ class Generator(ErrorHandler):
         
         if if_stmt.ifpred is not None:
             end_label = self.create_label()
-            self.output.append(f"    jmp {end_label}\n")
-            self.output.append(f"{label}:\n")
+            self.output.append(
+                f"    jmp {end_label}\n"
+                f"{label}:\n"
+            )
             self.gen_if_predicate(if_stmt.ifpred, end_label)
             self.output.append(f"{end_label}:\n")
         else:
@@ -629,13 +657,17 @@ class Generator(ErrorHandler):
         self.gen_expression(while_stmt.expr)
         first_reg = self.get_reg(0)
         self.pop_stack(first_reg)
-        self.output.append(f"    test {first_reg}, {first_reg}\n")
-        self.output.append(f"    jz {end_label}\n")
+        self.output.append(
+            f"    test {first_reg}, {first_reg}\n"
+            f"    jz {end_label}\n"
+        )
 
         self.gen_scope(while_stmt.scope)
         
-        self.output.append(f"    jmp {reset_label}\n")
-        self.output.append(f"{end_label}:\n")
+        self.output.append(
+            f"    jmp {reset_label}\n"
+            f"{end_label}:\n"
+        )
         self.loop_end_labels.pop()
 
     def gen_do_while(self, do_while_stmt: NodeStmtDoWhile) -> None:
@@ -652,11 +684,15 @@ class Generator(ErrorHandler):
         
         first_reg = self.get_reg(0)
         self.pop_stack(first_reg)
-        self.output.append(f"    test {first_reg}, {first_reg}\n")
-        self.output.append(f"    jz {end_label}\n")
+        self.output.append(
+            f"    test {first_reg}, {first_reg}\n"
+            f"    jz {end_label}\n"
+        )
 
-        self.output.append(f"    jmp {reset_label}\n")
-        self.output.append(f"{end_label}:\n")
+        self.output.append(
+            f"    jmp {reset_label}\n"
+            f"{end_label}:\n"
+        )
         self.loop_end_labels.pop()
 
     def gen_for(self, for_stmt: NodeStmtFor) -> None:
@@ -673,15 +709,19 @@ class Generator(ErrorHandler):
 
         first_reg = self.get_reg(0)
         self.pop_stack(first_reg)
-        self.output.append(f"    test {first_reg}, {first_reg}\n")
-        self.output.append(f"    jz {end_label}\n")
+        self.output.append(
+            f"    test {first_reg}, {first_reg}\n"
+            f"    jz {end_label}\n"
+        )
 
         self.gen_scope(for_stmt.scope)
         
         self.gen_reassign(for_stmt.ident_assign)
 
-        self.output.append(f"    jmp {reset_label}\n")
-        self.output.append(f"{end_label}:\n")
+        self.output.append(
+            f"    jmp {reset_label}\n"
+            f"{end_label}:\n"
+        )
         self.stack_size -= self.stack_item_sizes.pop() # does this to remove the variable after the i loop ends
         self.variables.pop()
         self.loop_end_labels.pop()
@@ -702,8 +742,10 @@ class Generator(ErrorHandler):
             self.output.append("    ;; --- print str ---\n")
             self.gen_expression(print_stmt.content)
             LEN_SIZE = 4
-            self.output.append(f"    mov rsi, [rbp - {self.stack_size - LEN_SIZE}]\n")
-            self.output.append(f"    mov edx, [rbp - {self.stack_size}]\n")
+            self.output.append(
+                f"    mov rsi, [rbp - {self.stack_size - LEN_SIZE}]\n"
+                f"    mov edx, [rbp - {self.stack_size}]\n"
+            )
 
             self.call_func("print_str")
             # it removes the printed expression because it causes a mess in the stack when looping
@@ -714,8 +756,10 @@ class Generator(ErrorHandler):
         adds a jump to the end of the loop if it exists, if not in a loop throws a compiler error
         """
         if self.loop_end_labels:
-            self.output.append("    ;; --- break --- \n")
-            self.output.append(f"    jmp {self.loop_end_labels[-1]}\n")
+            self.output.append(
+                "    ;; --- break --- \n"
+                f"    jmp {self.loop_end_labels[-1]}\n"
+            )
         else:
             self.compiler_error("Syntax", "cant break out of a loop when not inside one", break_stmt.break_tkn)
 
@@ -737,8 +781,10 @@ class Generator(ErrorHandler):
         generates the whole assembly based on the nodes that are given,
         returns a list of strings that contains the assembly instructions
         """
-        self.output.append("format ELF64 executable 3\nsegment readable executable\nentry _start\n")
-        self.output.append("_start:\n    mov rbp, rsp\n")
+        self.output.append(
+            "format ELF64 executable 3\nsegment readable executable\nentry _start\n"
+            "_start:\n    mov rbp, rsp\n"
+        )
 
         for stmt in self.main_program.stmts:
             assert stmt is not None, "None statement shouldn't make it here"
