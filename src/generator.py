@@ -377,6 +377,12 @@ class Generator(ErrorHandler):
                 "    sete al\n"
             )
             self.push_stack(ra)
+        elif isinstance(term.var, NodeTermBNot):
+            self.gen_term(term.var.term) # type: ignore (type checking freaking out)
+            ra = self.get_reg(0)
+            self.pop_stack(ra)
+            self.output.append(f"    not {ra}\n")
+            self.push_stack(ra)
         elif isinstance(term.var, NodeTermCast):
             self.output.append("    ;--- typecast ---\n")
             self.gen_expression(term.var.expr)

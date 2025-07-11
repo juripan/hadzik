@@ -60,6 +60,7 @@ NOT = "ne"
 BAND = "&"
 BOR = "|"
 XOR = "^"
+BNOT = "~"
 
 SYMBOLS: tuple[token_type, ...] = (
     INCREMENT, DECREMENT,
@@ -67,7 +68,7 @@ SYMBOLS: tuple[token_type, ...] = (
     PLUS, MINUS, STAR, SLASH, PERCENT, EQUALS,
     COMMA, NEWLINE,
     LEFT_PAREN, RIGHT_PAREN, RIGHT_CURLY, LEFT_CURLY, LEFT_BRACKET, RIGHT_BRACKET,
-    BAND, BOR, XOR
+    BAND, BOR, XOR, BNOT
 )
 
 # strings of tokens must be what is used in the hadzik syntax

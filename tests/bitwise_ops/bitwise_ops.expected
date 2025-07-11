@@ -1,1 +1,1 @@
-stdout: | stderr: | returncode: 27
+stdout: equal| stderr: | returncode: 27

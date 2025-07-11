@@ -106,6 +106,15 @@ class Parser(ErrorHandler):
             assert term is not None, "Should be handled in the if statement above"
             ret_term = NodeTerm(NodeTermNot(term))
             #NOTE: no next token here because it breaks the term call here
+        elif self.current_token is not None and self.current_token.type == tt.BNOT:
+            self.next_token()
+            
+            term = self.parse_term()
+            if term is None:
+                self.compiler_error("Value", "expected term", self.current_token)
+            
+            assert term is not None, "Should be handled in the if statement above"
+            ret_term = NodeTerm(NodeTermBNot(term))
         elif self.current_token is not None and self.current_token.type in tt.TYPE_KWS:
             cast_type = self.current_token
             assert cast_type is not None, "Should never be None here"

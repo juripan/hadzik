@@ -105,6 +105,10 @@ class TypeChecker(ErrorHandler):
             if self.stack[-1].type == STR_DEF and term.var.type.type == CHAR_DEF:
                 self.compiler_error("Type", f"cannot cast `{STR_DEF}` to `{CHAR_DEF}`", term.var.type)
             self.stack[-1].type = term.var.type.type
+        elif isinstance(term.var, NodeTermBNot):
+            self.check_term(term.var.term) # type: ignore
+            if self.stack[-1].type != INT_DEF:
+                self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{self.stack[-1].type}`", self.stack[-1].loc)
         else:
             raise ValueError("Unreachable")
 
