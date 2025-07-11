@@ -437,6 +437,9 @@ class Generator(ErrorHandler):
         elif bin_expr.op.type == tt.BAND:
             self.output.append(f"    and {ra}, {rb}\n")
             self.push_stack(ra)
+        elif bin_expr.op.type == tt.XOR:
+            self.output.append(f"    xor {ra}, {rb}\n")
+            self.push_stack(ra)
         elif bin_expr.op.type in COMPARISONS:
             self.output.append(f"    cmp {ra}, {rb}\n")
             if bin_expr.op.type == tt.IS_EQUAL:

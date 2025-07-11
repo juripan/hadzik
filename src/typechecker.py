@@ -125,7 +125,7 @@ class TypeChecker(ErrorHandler):
             if b.type != BOOL_DEF:
                 self.compiler_error("Type", f"expected type `{BOOL_DEF}`, got `{b.type}`", b.loc)
             self.push_stack(a)
-        elif bin_expr.op.type in (BOR, BAND, PLUS, MINUS, STAR, SLASH):
+        elif bin_expr.op.type in (BOR, BAND, XOR, PLUS, MINUS, STAR, SLASH):
             if a.type != INT_DEF:
                 self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{a.type}`", a.loc)
             if b.type != INT_DEF:

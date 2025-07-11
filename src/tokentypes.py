@@ -56,8 +56,10 @@ AND = "aj"
 OR = "abo"
 NOT = "ne"
 
+#add BNOT and bit shifts
 BAND = "&"
 BOR = "|"
+XOR = "^"
 
 SYMBOLS: tuple[token_type, ...] = (
     INCREMENT, DECREMENT,
@@ -65,7 +67,7 @@ SYMBOLS: tuple[token_type, ...] = (
     PLUS, MINUS, STAR, SLASH, PERCENT, EQUALS,
     COMMA, NEWLINE,
     LEFT_PAREN, RIGHT_PAREN, RIGHT_CURLY, LEFT_CURLY, LEFT_BRACKET, RIGHT_BRACKET,
-    BAND, BOR
+    BAND, BOR, XOR
 )
 
 # strings of tokens must be what is used in the hadzik syntax
@@ -113,9 +115,9 @@ def get_prec_level(tt: token_type) -> int | None:
         return 0
     elif tt in COMPARISONS:
         return 1
-    elif tt == PLUS or tt == MINUS:
+    elif tt in (BAND, BOR, XOR):
         return 2
-    elif tt == BAND or tt == BOR:
+    elif tt == PLUS or tt == MINUS:
         return 3
     elif tt == STAR or tt == SLASH or tt == PERCENT:
         return 4
