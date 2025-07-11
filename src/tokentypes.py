@@ -100,19 +100,6 @@ TYPE_KWS: tuple[token_type, ...] = (
     INT_DEF, STR_DEF, BOOL_DEF, CHAR_DEF
 )
 
-get_type_size: dict[token_type, int] = {
-    BOOL_DEF: 1,
-    CHAR_DEF: 1,
-    INT_DEF: 4,
-    STR_DEF: 8
-}
-
-COLLECTIONS: tuple[token_type, ...] = (STR_DEF, )
-
-get_collection_subtype: dict[token_type, token_type] = {
-    STR_DEF: CHAR_DEF
-}
-
 def get_prec_level(tt: token_type) -> int | None:
     """
     returns the precedence level of the token, 

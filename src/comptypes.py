@@ -209,6 +209,22 @@ class NodeScope:
 class NodeProgram:
     stmts: list[NodeStmt]
 
+#####################
+## Typechecker types ###################################################
+#####################
+
+@dataclass(slots=True)
+class StackItem:
+    """
+    class that stores the type name of the value,
+    if its a constant variable (if it is one)
+    and its location in the source code via Token (for error reporting)
+    """
+    type: token_type
+    loc: tuple[int, int] | Token
+    sub_type: token_type | None = None
+    name: str = ""
+    is_const: bool = False
 
 #####################
 ## Generator types ###################################################

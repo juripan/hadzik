@@ -56,6 +56,13 @@ class Generator(ErrorHandler):
         4: registers_32bit,
         8: registers_64bit,
     }
+
+    get_type_size: dict[token_type, int] = {
+        BOOL_DEF: 1,
+        CHAR_DEF: 1,
+        INT_DEF: 4,
+        STR_DEF: 8
+    }
     
     def __init__(self, program: NodeProgram, file_content: str) -> None:
         super().__init__(file_content)
@@ -382,7 +389,7 @@ class Generator(ErrorHandler):
                 ra = self.get_reg(0)
             
             ra_sized = self.reg_lookup_table[
-                tt.get_type_size[term.var.type.type]
+                self.get_type_size[term.var.type.type]
             ][0]
             
             self.output.append(f"    xor {ra_sized}, {ra_sized}\n")
