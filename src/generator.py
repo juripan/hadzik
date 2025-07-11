@@ -431,6 +431,12 @@ class Generator(ErrorHandler):
             )
             #TODO: make division be generic for any size
             self.push_stack("edx") # assembly stores the modulus in rdx after the standard division instruction
+        elif bin_expr.op.type == tt.BOR:
+            self.output.append(f"    or {ra}, {rb}\n")
+            self.push_stack(ra)
+        elif bin_expr.op.type == tt.BAND:
+            self.output.append(f"    and {ra}, {rb}\n")
+            self.push_stack(ra)
         elif bin_expr.op.type in COMPARISONS:
             self.output.append(f"    cmp {ra}, {rb}\n")
             if bin_expr.op.type == tt.IS_EQUAL:
