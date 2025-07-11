@@ -57,6 +57,24 @@ class Tokenizer(ErrorHandler):
             self.advance()
         type_of_number = tt.INT_LIT  # if "." not in buffer else tt.floating_number
         self.tokens.append(Token(type=type_of_number, value=buffer, line=self.line_number, col=self.column_number - 1))
+    
+    def lex_hex(self):
+        self.advance()
+        self.advance()
+
+        buffer = ""
+        assert self.curr_char is not None, "current char shouldn't be None here"
+        
+        while self.curr_char is not None and self.curr_char in "0123456789abcdefABCDEF":
+            buffer += self.curr_char
+            self.advance()
+        
+        if buffer == "":
+            self.compiler_error("Syntax", "invalid hexadecimal", (self.line_number, self.column_number))
+        
+        type_of_number = tt.INT_LIT
+        buffer = str(int(buffer, base=16))
+        self.tokens.append(Token(type=type_of_number, value=buffer, line=self.line_number, col=self.column_number - 1))
 
     def lex_keyword(self):
         """
@@ -86,7 +104,6 @@ class Tokenizer(ErrorHandler):
         else:
             ascii_value = ord(self.curr_char)
         return ascii_value
-
 
     def lex_char(self):
         """
@@ -135,6 +152,8 @@ class Tokenizer(ErrorHandler):
             # makes keywords, if not a keyword makes an identifier
             if self.curr_char.isalpha() or self.curr_char == "_":
                 self.lex_keyword()
+            elif self.curr_char == '0' and self.look_ahead() is not None and self.look_ahead() == 'x':
+                self.lex_hex()
             elif self.curr_char.isnumeric():
                 self.lex_number()
             elif self.curr_char == "'":
