@@ -1,4 +1,5 @@
 naj x = 100 & 12 // 4
 naj y = 30 | 17 // 31
+naj z = x ^ y // 27
 
-vychod(x + y)
+vychod(z)
