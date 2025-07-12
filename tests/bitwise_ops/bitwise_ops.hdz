@@ -5,6 +5,14 @@ naj z = x ^ y // 27
 naj bin_neg = ~100 + 1 // -100
 naj neg = -100
 
+kec 4 << 1 == 8 {
+    hutor("good ")
+}
+
+kec 4 >> 1 == 2 {
+    hutor("correct ")
+}
+
 kec bin_neg == neg {
     hutor("equal")
 }

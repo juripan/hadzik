@@ -414,6 +414,7 @@ class Generator(ErrorHandler):
         self.gen_expression(bin_expr.lhs)
         ra = self.get_reg(0) #note: could cause problems with overwriting results
         rb = self.get_reg(1)
+        rc_eq_rb = self.get_reg(2)
         self.pop_stack(ra)
         self.pop_stack(rb)
 
@@ -445,6 +446,15 @@ class Generator(ErrorHandler):
             self.push_stack(ra)
         elif bin_expr.op.type == tt.XOR:
             self.output.append(f"    xor {ra}, {rb}\n")
+            self.push_stack(ra)
+        elif bin_expr.op.type == tt.SHIFT_LEFT:
+            #NOTE: using arithmetic shifts because theres only signed numbers for now
+            self.output.append(f"    mov {rc_eq_rb}, {rb}\n")
+            self.output.append(f"    sal {ra}, cl\n")
+            self.push_stack(ra)
+        elif bin_expr.op.type == tt.SHIFT_RIGHT:
+            self.output.append(f"    mov {rc_eq_rb}, {rb}\n")
+            self.output.append(f"    sar {ra}, cl\n")
             self.push_stack(ra)
         elif bin_expr.op.type in COMPARISONS:
             self.output.append(f"    cmp {ra}, {rb}\n")
