@@ -61,25 +61,48 @@ class Parser(ErrorHandler):
             self.next_token()
         elif self.current_token is not None and self.current_token.type == tt.CHAR_LIT:
             if is_negative:
-                self.compiler_error("Syntax", f"`{CHAR_DEF}` literal cannot be negative", self.get_token_at(-1))
+                self.compiler_error("Value", f"`{CHAR_DEF}` literal cannot be negative", self.get_token_at(-1))
             ret_term = NodeTerm(NodeTermChar(self.current_token))
             self.next_token()
         elif self.current_token is not None and self.current_token.type == tt.STR_LIT:
             if is_negative:
-                self.compiler_error("Syntax", f"`{STR_DEF}` literal cannot be negative", self.get_token_at(-1))
+                self.compiler_error("Value", f"`{STR_DEF}` literal cannot be negative", self.get_token_at(-1))
             assert self.current_token.value is not None, "string value shouldn't be None here, bug in lexing"
             length = len(self.current_token.value.split(","))
             ret_term = NodeTerm(NodeTermStr(self.current_token, str(length)))
             self.next_token()
+        elif self.current_token is not None and self.current_token.type == tt.LEFT_BRACKET:
+            if is_negative:
+                self.compiler_error("Value", f"an array cannot be negative", self.get_token_at(-1))
+            self.next_token()
+
+            exprs: list[NodeExpr] = []
+            while self.current_token is not None:
+                expr = self.parse_expr()
+                if expr is None:
+                    self.compiler_error("Value", "invalid expression", self.current_token)
+                assert expr is not None
+                exprs.append(expr)
+                
+                if self.current_token is not None and self.current_token.type == tt.RIGHT_BRACKET:
+                    break
+                elif self.current_token is not None and self.current_token.type != tt.COMMA:
+                    self.compiler_error("Syntax", "expected `,`", self.current_token)
+                self.next_token()
+            
+            self.try_compiler_error(tt.RIGHT_BRACKET, "Syntax", "expected `]`")
+
+            ret_term = NodeTerm(NodeTermArray(exprs=exprs))
+            self.next_token()
         elif self.current_token is not None and self.current_token.type == tt.TRUE:
             if is_negative:
-                self.compiler_error("Syntax", f"`{BOOL_DEF}` literal cannot be negative", self.get_token_at(-1))
+                self.compiler_error("Value", f"`{BOOL_DEF}` literal cannot be negative", self.get_token_at(-1))
             self.current_token.value = "1"
             ret_term = NodeTerm(NodeTermBool(bool=self.current_token))
             self.next_token()
         elif self.current_token is not None and self.current_token.type == tt.FALSE:
             if is_negative:
-                self.compiler_error("Syntax", f"`{BOOL_DEF}` literal cannot be negative", self.get_token_at(-1))
+                self.compiler_error("Value", f"`{BOOL_DEF}` literal cannot be negative", self.get_token_at(-1))
             self.current_token.value = "0"
             ret_term = NodeTerm(NodeTermBool(bool=self.current_token))
             self.next_token()
@@ -191,6 +214,9 @@ class Parser(ErrorHandler):
     def parse_decl(self) -> NodeStmtDeclare:
         assert self.current_token is not None, "cant be None here since it triggered the method"
         is_const = False
+        is_array = False
+        #TODO: add parsing for types separately (type structs)
+
         if self.current_token.type == tt.CONST:
             is_const = True
             self.next_token()
@@ -203,7 +229,8 @@ class Parser(ErrorHandler):
             self.next_token() # removes type def
         
         if self.current_token.type == tt.ARRAY_DEF:
-            raise NotImplementedError("add array declaration parsing here")
+            is_array = True
+            self.next_token()
         
         self.try_compiler_error(tt.IDENT, "Syntax", "expected a valid identifier")
         ident = self.current_token
@@ -220,7 +247,7 @@ class Parser(ErrorHandler):
 
         assert ident is not None, "Identifier should never be None"
         assert value is not None, "Value should never be None, maybe a missing if value is None"
-        return NodeStmtDeclare(ident, value, type_def, is_const)
+        return NodeStmtDeclare(ident, value, type_def, is_array, is_const)
 
     def parse_exit(self) -> NodeStmtExit:
         self.next_token() # removes exit token

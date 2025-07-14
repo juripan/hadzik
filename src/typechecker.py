@@ -108,6 +108,17 @@ class TypeChecker(ErrorHandler):
             self.check_term(term.var.term) # type: ignore
             if self.stack[-1].type != INT_DEF:
                 self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{self.stack[-1].type}`", self.stack[-1].loc)
+        elif isinstance(term.var, NodeTermArray):
+            #TODO: make types into a struct instead of just two tokens
+            type_ = None
+            for expr in term.var.exprs:
+                self.check_expression(expr)
+                if type_ is None:
+                    type_ = self.stack.pop()
+                elif type_.type != (type2 := self.stack.pop()).type:
+                    self.compiler_error("Type", f"expected `{type_.type}`, got `{type2.type}`")
+            assert type_ is not None, "should never get to None here"
+            self.push_stack(StackItem(ARRAY_DEF, sub_type=type_.type, loc=type_.loc))
         else:
             raise ValueError("Unreachable")
 

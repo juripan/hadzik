@@ -70,11 +70,16 @@ class NodeTermCast:
     type: Token
 
 @dataclass(slots=True)
+class NodeTermArray:
+    exprs: list[NodeExpr]
+
+
+@dataclass(slots=True)
 class NodeTerm:
     var: Union[
         NodeTermIdent, NodeTermInt, NodeTermChar, NodeTermStr, 
         NodeTermParen, NodeTermNot, NodeTermBool, NodeTermCast,
-        NodeTermBNot
+        NodeTermBNot, NodeTermArray
     ]
     index: Optional[NodeExpr] = None
 
@@ -108,6 +113,7 @@ class NodeStmtDeclare:
     ident: Token
     expr: NodeExpr
     type_: Token
+    is_array: bool
     is_const: bool = False
 
 
