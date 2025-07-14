@@ -47,6 +47,35 @@ x = nepravda
 greeting[3] = 'p'
 znak a = greeting[0]
 ```
+
+## Operations
+### Numeric - (number) -> number
+#### Mathematical
++ \*number\* + \*number\* - adds two numbers together
++ \*number\* - \*number\* - subtracts a number from another
++ \*number\* \* \*number\* - multiplies two numbers together
++ \*number\* / \*number\* - divides a number by another (currently whole number division)
++ \*number\* % \*number\* - gives a remainder of division (whole number division)
++ -\*number\* - negates the number given
+#### Bitwise
++ ~\*number\* - bitwise NOT
++ \*number\* & \*number\* - bitwise AND
++ \*number\* | \*number\* - bitwise OR
++ \*number\* ^ \*number\* - bitwise XOR
++ \*number\* << \*number\* - bitwise shift left
++ \*number\* >> \*number\* - bitwise shift right
+### Predicative - (number | char) -> boolean
++ \*number\* == \*number\* - equal
++ \*number\* != \*number\* - not equal
++ \*number\* < \*number\* - less than
++ \*number\* > \*number\* - larger than
++ \*number\* <= \*number\* - less than or equal
++ \*number\* >= \*number\* - larger than or equal
+### Logical - (boolean) -> boolean
++ ne \*boolean\* - logical NOT
++ \*boolean\* aj \*boolean\* - logical AND
++ \*boolean\* abo \*boolean\* - logical OR
+
 ## Built-ins
 + vychod(\*int\*) - exits the program with the passed in exit code
 ```

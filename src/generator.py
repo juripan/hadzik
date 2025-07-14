@@ -412,7 +412,7 @@ class Generator(ErrorHandler):
         
         self.gen_expression(bin_expr.rhs)
         self.gen_expression(bin_expr.lhs)
-        ra = self.get_reg(0) #note: could cause problems with overwriting results
+        ra = self.get_reg(0) #NOTE: could cause problems with overwriting results
         rb = self.get_reg(1)
         rc_eq_rb = self.get_reg(2)
         self.pop_stack(ra)

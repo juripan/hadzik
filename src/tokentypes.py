@@ -123,7 +123,7 @@ def get_prec_level(tt: token_type) -> int | None:
         return 3
     elif tt == PLUS or tt == MINUS:
         return 4
-    elif tt == STAR or tt == SLASH or tt == PERCENT:
+    elif tt in (STAR, SLASH, PERCENT):
         return 5
     else:
         return None
