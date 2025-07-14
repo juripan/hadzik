@@ -138,13 +138,18 @@ class Parser(ErrorHandler):
         if self.current_token is not None and self.current_token.type == tt.LEFT_BRACKET:
             self.next_token()
             expr = self.parse_expr()
-            self.next_token()
             if expr is None:
-                self.compiler_error("Syntax", "invalid expression", self.current_token)
+                self.compiler_error("Syntax", "invalid index", self.current_token)
             assert expr is not None, "expression cant be None here"
             
+            self.try_compiler_error(tt.RIGHT_BRACKET, "Syntax", "expected `]`")
+            self.next_token()
+
             assert ret_term is not None, "ret_term else branch got triggered"
             ret_term.index = expr
+        elif self.current_token is not None and self.current_token.type == tt.ARRAY_DEF:
+            # has to be here because [] and [ ] are recognized as different tokens
+            self.compiler_error("Syntax", "invalid index", self.current_token)
         
         return ret_term
 
@@ -196,8 +201,11 @@ class Parser(ErrorHandler):
             type_def = Token(tt.INFER_DEF, self.current_token.line, self.current_token.col)
         else:
             self.next_token() # removes type def
-
-        self.try_compiler_error(tt.IDENT, "Syntax", "expected valid identifier")
+        
+        if self.current_token.type == tt.ARRAY_DEF:
+            raise NotImplementedError("add array declaration parsing here")
+        
+        self.try_compiler_error(tt.IDENT, "Syntax", "expected a valid identifier")
         ident = self.current_token
         self.next_token()
 

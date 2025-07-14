@@ -18,6 +18,7 @@ INT_DEF = "cif"
 BOOL_DEF = "bul"
 CHAR_DEF = "znak"
 STR_DEF = "lancok"
+ARRAY_DEF = "[]"
 
 IF = "kec"
 ELIF = "ikec"
@@ -69,7 +70,8 @@ SYMBOLS: tuple[token_type, ...] = (
     PLUS, MINUS, STAR, SLASH, PERCENT, EQUALS,
     COMMA, NEWLINE,
     LEFT_PAREN, RIGHT_PAREN, RIGHT_CURLY, LEFT_CURLY, LEFT_BRACKET, RIGHT_BRACKET,
-    BAND, BOR, XOR, BNOT, SHIFT_LEFT, SHIFT_RIGHT
+    BAND, BOR, XOR, BNOT, SHIFT_LEFT, SHIFT_RIGHT,
+    ARRAY_DEF,
 )
 
 # strings of tokens must be what is used in the hadzik syntax
