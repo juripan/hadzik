@@ -118,7 +118,7 @@ class TypeChecker(ErrorHandler):
                 elif type_.type != (type2 := self.stack.pop()).type:
                     self.compiler_error("Type", f"expected `{type_.type}`, got `{type2.type}`")
             assert type_ is not None, "should never get to None here"
-            self.push_stack(StackItem(ARRAY_DEF, sub_type=type_.type, loc=type_.loc))
+            self.push_stack(StackItem(ARRAY_TYPE, sub_type=type_.type, loc=type_.loc))
         else:
             raise ValueError("Unreachable")
 
@@ -167,17 +167,18 @@ class TypeChecker(ErrorHandler):
         checks if the type fits the keyword used to declare the variable,
         if the type is supposed to be inferred then it just takes whatever type is on top of the stack
         """
+        type_token = decl_stmt.type_.type_tok
         sub_type = None
         self.check_expression(decl_stmt.expr)
 
-        if decl_stmt.type_.type == INFER_DEF:
-            decl_stmt.type_.type = self.stack[-1].type
-        elif self.stack[-1].type != decl_stmt.type_.type:
-            self.compiler_error("Type", f"expected type `{decl_stmt.type_.type}`, got `{self.stack[-1].type}`", decl_stmt.type_)
-        if decl_stmt.type_.type == STR_DEF:
+        if type_token.type == INFER_DEF:
+            type_token.type = self.stack[-1].type
+        elif self.stack[-1].type != type_token.type:
+            self.compiler_error("Type", f"expected type `{type_token.type}`, got `{self.stack[-1].type}`", type_token)
+        if type_token.type == STR_DEF:
             sub_type = CHAR_DEF
         assert decl_stmt.ident.value is not None, "a variable has to have a name"
-        self.variables.append(StackItem(decl_stmt.type_.type, decl_stmt.ident, sub_type=sub_type, name=decl_stmt.ident.value, is_const=decl_stmt.is_const))
+        self.variables.append(StackItem(type_token.type, decl_stmt.ident, sub_type=sub_type, name=decl_stmt.ident.value, is_const=decl_stmt.is_const))
     
     def check_reassign(self, reassign_stmt: NodeStmtReassign):
         assert isinstance(reassign_stmt.var.ident.var, NodeTermIdent), "has to be this, error in parsing"

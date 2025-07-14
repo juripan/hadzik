@@ -170,9 +170,6 @@ class Parser(ErrorHandler):
 
             assert ret_term is not None, "ret_term else branch got triggered"
             ret_term.index = expr
-        elif self.current_token is not None and self.current_token.type == tt.ARRAY_DEF:
-            # has to be here because [] and [ ] are recognized as different tokens
-            self.compiler_error("Syntax", "invalid index", self.current_token)
         
         return ret_term
 
@@ -214,22 +211,22 @@ class Parser(ErrorHandler):
     def parse_decl(self) -> NodeStmtDeclare:
         assert self.current_token is not None, "cant be None here since it triggered the method"
         is_const = False
-        is_array = False
-        #TODO: add parsing for types separately (type structs)
 
         if self.current_token.type == tt.CONST:
             is_const = True
             self.next_token()
         
-        type_def = self.current_token
-        if type_def.type == tt.IDENT and is_const:
+        type_def = NodeType(self.current_token)
+        if type_def.type_tok.type == tt.IDENT and is_const:
             # allows for type inference without `naj` just with `furt`
-            type_def = Token(tt.INFER_DEF, self.current_token.line, self.current_token.col)
+            type_def.type_tok = Token(tt.INFER_DEF, self.current_token.line, self.current_token.col)
         else:
             self.next_token() # removes type def
         
-        if self.current_token.type == tt.ARRAY_DEF:
-            is_array = True
+        if self.current_token.type == tt.LEFT_BRACKET:
+            type_def.is_array = True
+            self.next_token()
+            self.try_compiler_error(tt.RIGHT_BRACKET, "Syntax", "expected `]`")
             self.next_token()
         
         self.try_compiler_error(tt.IDENT, "Syntax", "expected a valid identifier")
@@ -247,7 +244,7 @@ class Parser(ErrorHandler):
 
         assert ident is not None, "Identifier should never be None"
         assert value is not None, "Value should never be None, maybe a missing if value is None"
-        return NodeStmtDeclare(ident, value, type_def, is_array, is_const)
+        return NodeStmtDeclare(ident, value, type_def, is_const)
 
     def parse_exit(self) -> NodeStmtExit:
         self.next_token() # removes exit token

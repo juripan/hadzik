@@ -571,19 +571,19 @@ class Generator(ErrorHandler):
         if found_vars:
             self.compiler_error("Value", f"variable has been already declared in this scope: {decl_stmt.ident.value}", decl_stmt.ident)
 
-        if decl_stmt.type_.type == tt.INT_DEF:
+        if decl_stmt.type_.type_tok.type == tt.INT_DEF:
             self.output.append("    ;; --- int var declaration ---\n")
             self.gen_expression(decl_stmt.expr)
             self.add_variable(decl_stmt, "DWORD", 4)
-        elif decl_stmt.type_.type == tt.BOOL_DEF:
+        elif decl_stmt.type_.type_tok.type == tt.BOOL_DEF:
             self.output.append("    ;; --- bul var declaration ---\n")
             self.gen_expression(decl_stmt.expr)
             self.add_variable(decl_stmt, "BYTE", 1)
-        elif decl_stmt.type_.type == tt.CHAR_DEF:
+        elif decl_stmt.type_.type_tok.type == tt.CHAR_DEF:
             self.output.append("    ;; --- char var declaration ---\n")
             self.gen_expression(decl_stmt.expr)
             self.add_variable(decl_stmt, "BYTE", 1)
-        elif decl_stmt.type_.type == tt.STR_DEF:
+        elif decl_stmt.type_.type_tok.type == tt.STR_DEF:
             self.output.append("    ;; --- string var declaration ---\n")
             self.gen_expression(decl_stmt.expr)
             self.add_variable(decl_stmt, "STR", self.stack_item_sizes[-1])

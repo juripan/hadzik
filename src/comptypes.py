@@ -107,13 +107,16 @@ class NodeExpr:
 class NodeStmtExit:
     expr: NodeExpr
 
+@dataclass(slots=True)
+class NodeType:
+    type_tok: Token
+    is_array: bool = False
 
 @dataclass(slots=True)
 class NodeStmtDeclare:
     ident: Token
     expr: NodeExpr
-    type_: Token
-    is_array: bool
+    type_: NodeType
     is_const: bool = False
 
 

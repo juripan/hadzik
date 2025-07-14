@@ -1,4 +1,4 @@
 Failed here: tests/_errors/decl_missing_ident/decl_missing_ident.hdz:1:5
 naj =
     ^
-[31mSyntaxError[0m: (line 1 column 5) expected valid identifier
+[31mSyntaxError[0m: (line 1 column 5) expected a valid identifier
