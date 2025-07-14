@@ -218,9 +218,9 @@ class NodeScope:
 class NodeProgram:
     stmts: list[NodeStmt]
 
-#####################
+#######################
 ## Typechecker types ###################################################
-#####################
+#######################
 
 @dataclass(slots=True)
 class StackItem:
@@ -239,9 +239,13 @@ class StackItem:
 ## Generator types ###################################################
 #####################
 
-# primitive type, contains a size of object in bytes (8 bits)
+"""
+primitive type, contains a size of object in bytes (8 bits)
+"""
 size_bytes = int
-# primitive type, contains a size of object in words (WORD, QWORD, etc.)
+"""
+primitive type, contains a size of object in words (WORD, QWORD, etc.)
+"""
 size_words = str
 
 @dataclass(slots=True)

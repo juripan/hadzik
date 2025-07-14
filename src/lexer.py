@@ -55,7 +55,7 @@ class Tokenizer(ErrorHandler):
         while self.curr_char is not None and self.curr_char.isnumeric():
             buffer += self.curr_char
             self.advance()
-        type_of_number = tt.INT_LIT  # if "." not in buffer else tt.floating_number
+        type_of_number = tt.INT_LIT
         self.tokens.append(Token(type=type_of_number, value=buffer, line=self.line_number, col=self.column_number - 1))
     
     def lex_hex(self):
@@ -78,7 +78,7 @@ class Tokenizer(ErrorHandler):
 
     def lex_keyword(self):
         """
-        makes potential keyword / identifier
+        makes keywords, if its not a keyword makes an identifier
         """
         assert self.curr_char is not None, "current char is a char"
         buffer: str = self.curr_char
@@ -149,7 +149,6 @@ class Tokenizer(ErrorHandler):
 
     def tokenize(self):
         while self.curr_char is not None:
-            # makes keywords, if not a keyword makes an identifier
             if self.curr_char.isalpha() or self.curr_char == "_":
                 self.lex_keyword()
             elif self.curr_char == '0' and self.look_ahead() is not None and self.look_ahead() == 'x':
