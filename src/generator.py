@@ -182,14 +182,14 @@ class Generator(ErrorHandler):
         if ErrorHandler.debug_mode:
             print("pop", self.stack_size, self.stack_item_sizes, self.stack_padding, self.variables)
     
-    def push_stack_complex(self, src: list[str], sizes_w: list[size_words], sizes_b: list[size_bytes]):
+    def push_stack_chunk(self, src: list[str], sizes_w: list[size_words], sizes_b: list[size_bytes]):
         """
         pushes multiple items onto the stack but only saves it as a whole item onto the compiler stack
         """
-        #TODO: figure out what to do with the padding here
-        padding = 0
+        padding = [0] *  len(src) #here just to fill out the list
         for item, byte_s, word_s in zip(src, sizes_b, sizes_w):
-            # padding += self.align_stack(byte_s)
+            #FIXME: if padding isn't ignored it breaks
+            # padding.append(self.align_stack(byte_s))
             self.stack_size += byte_s
             if word_s == "QWORD" and item not in self.registers_64bit:
                 self.output.append(f"    mov rbx, {item}\n"
@@ -198,10 +198,10 @@ class Generator(ErrorHandler):
             else:
                 self.output.append(f"    mov {word_s} [rbp - {self.stack_size}], {item} ;push\n")
         
-        self.stack_item_sizes.append([sum(sizes_b)])
-        self.stack_padding.append([padding])
+        self.stack_item_sizes.append(sizes_b)
+        self.stack_padding.append(padding)
         if ErrorHandler.debug_mode:
-            print("push multi", self.stack_size, self.stack_item_sizes, self.variables)
+            print("push chunk", self.stack_size, self.stack_item_sizes, self.variables)
 
     def get_reg(self, idx: int) -> str:
         """
@@ -292,7 +292,7 @@ class Generator(ErrorHandler):
         str_data_sizeb.append(4)
         str_data_sizew.append("DWORD")
         
-        self.push_stack_complex(str_chunks, str_data_sizew, str_data_sizeb)
+        self.push_stack_chunk(str_chunks, str_data_sizew, str_data_sizeb)
 
 
     def gen_term(self, term: NodeTerm) -> None:
