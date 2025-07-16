@@ -1,4 +1,5 @@
 from collections.abc import Callable
+import itertools
 from errors import ErrorHandler
 from comptypes import *
 import tokentypes as tt
@@ -9,8 +10,8 @@ class Generator(ErrorHandler):
     section_data: list[str] = []
 
     stack_size: size_bytes = 0
-    stack_item_sizes: list[size_bytes] = []
-    stack_padding: list[size_bytes] = []
+    stack_item_sizes: list[list[size_bytes]] = []
+    stack_padding: list[list[size_bytes]] = []
 
     variables: list[VariableContext] = [] # stores all variables on the stack
     functions: list[str] = []
@@ -153,8 +154,8 @@ class Generator(ErrorHandler):
         padding = self.align_stack(size)
 
         self.stack_size += size
-        self.stack_item_sizes.append(size)
-        self.stack_padding.append(padding)
+        self.stack_item_sizes.append([size])
+        self.stack_padding.append([padding])
 
 
         if "[" not in src:
@@ -166,7 +167,7 @@ class Generator(ErrorHandler):
             )
         
         if ErrorHandler.debug_mode:
-            print("push", self.stack_size, self.stack_item_sizes, self.variables)
+            print("push", self.stack_size, self.stack_item_sizes, self.stack_padding, self.variables)
 
     def pop_stack(self, dest_reg: str):
         """
@@ -175,9 +176,11 @@ class Generator(ErrorHandler):
         self.output.append(f"    mov {dest_reg}, [rbp - {self.stack_size}] ;pop\n")
         size = self.stack_item_sizes.pop() # removes the last items size
         padding = self.stack_padding.pop()
-        self.stack_size -= size + padding
+        
+        self.stack_size -= sum(size + padding)
+        
         if ErrorHandler.debug_mode:
-            print("pop", self.stack_size, self.stack_item_sizes, self.variables)
+            print("pop", self.stack_size, self.stack_item_sizes, self.stack_padding, self.variables)
     
     def push_stack_complex(self, src: list[str], sizes_w: list[size_words], sizes_b: list[size_bytes]):
         """
@@ -195,8 +198,8 @@ class Generator(ErrorHandler):
             else:
                 self.output.append(f"    mov {word_s} [rbp - {self.stack_size}], {item} ;push\n")
         
-        self.stack_item_sizes.append(sum(sizes_b))
-        self.stack_padding.append(padding)
+        self.stack_item_sizes.append([sum(sizes_b)])
+        self.stack_padding.append([padding])
         if ErrorHandler.debug_mode:
             print("push multi", self.stack_size, self.stack_item_sizes, self.variables)
 
@@ -207,9 +210,9 @@ class Generator(ErrorHandler):
         """
         assert len(self.stack_item_sizes) > 0, "Stack underflow"
         size = self.stack_item_sizes[-1]
-        if size not in self.reg_lookup_table.keys():
+        if len(size) != 1:
             raise ValueError(self.stack_item_sizes)
-        return self.reg_lookup_table[size][idx]
+        return self.reg_lookup_table[size[0]][idx]
 
     def create_label(self, custom_lbl: str="") -> str:
         """
@@ -238,8 +241,7 @@ class Generator(ErrorHandler):
         if pop_count == 0:
             del self.scopes[-1]
             return # nothing to remove, if its not here then slice accepts all of the stack -> list[0:] == list
-
-        popped_size: int = sum(self.stack_item_sizes[-pop_count:]) + sum(self.stack_padding[-pop_count:])
+        popped_size: int = sum(itertools.chain.from_iterable(self.stack_item_sizes[-pop_count:] + self.stack_padding[-pop_count:]))
         self.stack_size -= popped_size
 
         for _ in range(pop_count):
@@ -349,7 +351,8 @@ class Generator(ErrorHandler):
                 self.push_stack(f"{word_size} [rbp - {location}]")
 
                 if term.var.negative:
-                    self.output.append(f"    neg {word_size}[rbp - {self.stack_size - self.stack_item_sizes[-1]}]\n")
+                    assert len(self.stack_item_sizes[-1]) == 1, "cannot negate a non primitive type (str or array)"
+                    self.output.append(f"    neg {word_size}[rbp - {self.stack_size - self.stack_item_sizes[-1][-1]}]\n")
         elif isinstance(term.var, NodeTermBool):
             assert term.var.bool.value is not None, "shouldn't be None here"
             self.push_stack(term.var.bool.value, "BYTE")
@@ -359,6 +362,29 @@ class Generator(ErrorHandler):
         elif isinstance(term.var, NodeTermStr):
             assert term.var.string.value is not None, "shouldn't be None here"
             self.make_str(term.var)
+        elif isinstance(term.var, NodeTermArray):
+            raise NotImplementedError("TODO: reimplement this")
+            size = 0
+            padding = 0
+            for expr in term.var.exprs:
+                self.gen_expression(expr)
+                size += self.stack_item_sizes.pop()
+                self.stack_padding.pop()
+            
+            self.output.append(f"    lea rax, [rbp - {self.stack_size}]\n")
+            self.push_stack("rax")
+
+            padding += self.stack_padding.pop()
+            size += self.stack_item_sizes.pop()
+
+            self.push_stack(str(len(term.var.exprs)), "DWORD")
+
+            padding += self.stack_padding.pop()
+            size += self.stack_item_sizes.pop()
+
+            self.stack_item_sizes.append(size)
+            self.stack_padding.append(padding)
+
         elif isinstance(term.var, NodeTermParen):
             self.gen_expression(term.var.expr)
             if term.var.negative:
@@ -386,7 +412,7 @@ class Generator(ErrorHandler):
         elif isinstance(term.var, NodeTermCast):
             self.output.append("    ;--- typecast ---\n")
             self.gen_expression(term.var.expr)
-            if self.stack_item_sizes[-1] not in (1, 2, 4, 8):
+            if self.stack_item_sizes[-1] not in ([1], [2], [4], [8]):
                 if term.var.type.type == tt.BOOL_DEF:
                     ra = "eax"
                 else:
@@ -556,7 +582,7 @@ class Generator(ErrorHandler):
         """
         location: int = self.stack_size
         assert decl_stmt.ident.value is not None, "var name shouldn't be None here"
-        self.variables.append(VariableContext(decl_stmt.ident.value, location, word_size, byte_size))
+        self.variables.append(VariableContext(decl_stmt.ident.value, location, decl_stmt.type_, word_size, byte_size))
 
     def gen_decl(self, decl_stmt: NodeStmtDeclare):
         """
@@ -571,22 +597,26 @@ class Generator(ErrorHandler):
         if found_vars:
             self.compiler_error("Value", f"variable has been already declared in this scope: {decl_stmt.ident.value}", decl_stmt.ident)
 
-        if decl_stmt.type_.type_tok.type == tt.INT_DEF:
+        if decl_stmt.type_.type == tt.INT_DEF:
             self.output.append("    ;; --- int var declaration ---\n")
             self.gen_expression(decl_stmt.expr)
             self.add_variable(decl_stmt, "DWORD", 4)
-        elif decl_stmt.type_.type_tok.type == tt.BOOL_DEF:
+        elif decl_stmt.type_.type == tt.BOOL_DEF:
             self.output.append("    ;; --- bul var declaration ---\n")
             self.gen_expression(decl_stmt.expr)
             self.add_variable(decl_stmt, "BYTE", 1)
-        elif decl_stmt.type_.type_tok.type == tt.CHAR_DEF:
+        elif decl_stmt.type_.type == tt.CHAR_DEF:
             self.output.append("    ;; --- char var declaration ---\n")
             self.gen_expression(decl_stmt.expr)
             self.add_variable(decl_stmt, "BYTE", 1)
-        elif decl_stmt.type_.type_tok.type == tt.STR_DEF:
+        elif decl_stmt.type_.type == tt.STR_DEF:
             self.output.append("    ;; --- string var declaration ---\n")
             self.gen_expression(decl_stmt.expr)
-            self.add_variable(decl_stmt, "STR", self.stack_item_sizes[-1])
+            self.add_variable(decl_stmt, "STR", sum(self.stack_item_sizes[-1]))
+        elif decl_stmt.type_.type == tt.ARRAY_TYPE:
+            self.output.append("    ;; --- array var declaration ---\n")
+            self.gen_expression(decl_stmt.expr)
+            self.add_variable(decl_stmt, "STR", sum(self.stack_item_sizes[-1]))
         else:
             raise ValueError("Unreachable")
         
@@ -617,15 +647,17 @@ class Generator(ErrorHandler):
                 self.pop_stack(ra)
                 self.output.append(f"    mov [rcx + {offset}], {ra}\n")
             else:
+                # Normal reassign
                 self.gen_expression(reassign_stmt.var.rvalue)
-                if self.stack_item_sizes[-1] not in (1,2,4,8):
+                if self.stack_item_sizes[-1] not in ([1], [2], [4], [8]):
+                    # only runs for non primitive types
                     self.output.append(
                         f"    mov eax, [rbp - {self.stack_size}]\n"
                         f"    mov [rbp - {var_ctx.loc}], eax\n"
                         f"    mov rax, [rbp - {self.stack_size - 4}]\n"
                         f"    mov [rbp - {var_ctx.loc - 4}], rax\n"
                     )
-                    self.stack_size -= self.stack_item_sizes.pop()
+                    self.stack_size -= sum(self.stack_item_sizes.pop())
                 else:
                     ra = self.get_reg(0)
                     self.pop_stack(ra)
@@ -754,7 +786,8 @@ class Generator(ErrorHandler):
             f"    jmp {reset_label}\n"
             f"{end_label}:\n"
         )
-        self.stack_size -= self.stack_item_sizes.pop() # does this to remove the variable after the i loop ends
+        assert len(self.stack_item_sizes[-1]) == 1, "index should be an integer" 
+        self.stack_size -= self.stack_item_sizes.pop()[0] # does this to remove the variable after the i loop ends
         self.variables.pop()
         self.loop_end_labels.pop()
 
@@ -769,7 +802,7 @@ class Generator(ErrorHandler):
             self.output.append(f"    lea rsi, [rbp - {self.stack_size}]\n")
             self.call_func("print_char")
             # it removes the printed expression because it causes a mess in the stack when looping
-            self.stack_size -= self.stack_item_sizes.pop() + self.stack_padding.pop()
+            self.stack_size -= sum(self.stack_item_sizes.pop() + self.stack_padding.pop())
         elif print_stmt.cont_type == STR_DEF:
             self.output.append("    ;; --- print str ---\n")
             self.gen_expression(print_stmt.content)
@@ -781,7 +814,7 @@ class Generator(ErrorHandler):
 
             self.call_func("print_str")
             # it removes the printed expression because it causes a mess in the stack when looping
-            self.stack_size -= self.stack_item_sizes.pop() + self.stack_padding.pop()
+            self.stack_size -= sum(self.stack_item_sizes.pop() + self.stack_padding.pop())
 
     def gen_break(self, break_stmt: NodeStmtBreak) -> None:
         """

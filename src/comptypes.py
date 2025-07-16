@@ -109,8 +109,8 @@ class NodeStmtExit:
 
 @dataclass(slots=True)
 class NodeType:
-    type_tok: Token
-    is_array: bool = False
+    type: token_type
+    subtype: token_type | None = None
 
 @dataclass(slots=True)
 class NodeStmtDeclare:
@@ -261,8 +261,9 @@ size_words = str
 class VariableContext:
     name: str
     loc: int
+    type: NodeType
     size_w: size_words
     size_b: size_bytes
     
     def __repr__(self) -> str:
-        return f"VC('{self.name}' loc={self.loc} size={self.size_b})"
+        return f"VC('{self.name}' loc={self.loc} type={self.type.type, self.type.subtype} size={self.size_b})"

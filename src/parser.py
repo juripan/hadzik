@@ -216,15 +216,16 @@ class Parser(ErrorHandler):
             is_const = True
             self.next_token()
         
-        type_def = NodeType(self.current_token)
-        if type_def.type_tok.type == tt.IDENT and is_const:
+        type_def = NodeType(self.current_token.type)
+        if type_def.type == tt.IDENT and is_const:
             # allows for type inference without `naj` just with `furt`
-            type_def.type_tok = Token(tt.INFER_DEF, self.current_token.line, self.current_token.col)
+            type_def.type = tt.INFER_DEF
         else:
             self.next_token() # removes type def
         
         if self.current_token.type == tt.LEFT_BRACKET:
-            type_def.is_array = True
+            type_def.subtype = type_def.type
+            type_def.type = tt.ARRAY_TYPE
             self.next_token()
             self.try_compiler_error(tt.RIGHT_BRACKET, "Syntax", "expected `]`")
             self.next_token()
