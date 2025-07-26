@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Union, Optional
-from tokentypes import *
+from tokentypes import token_type
 
 
 #################

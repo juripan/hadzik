@@ -18,6 +18,48 @@ word_to_byte: dict[size_words, size_bytes] = {
     "QWORD" : 8,
 }
 
+registers_64bit: tuple[str, ...] = (
+    "rax", "rbx", "rcx", "rdx",  
+    "rsi", "rdi", "rsp", "rbp", 
+    "r8", "r9", "r10", "r11", 
+    "r12", "r13", "r14", "r15"
+)
+
+registers_32bit: tuple[str, ...] = (
+    "eax", "ebx", "ecx", "edx",  
+    "esi", "edi", "esp", "ebp", 
+    "r8d", "r9d", "r10d", "r11d", 
+    "r12d", "r13d", "r14d", "r15d"
+)
+
+registers_16bit: tuple[str, ...] = (
+    "ax", "bx", "cx", "dx", 
+    "si", "di", "sp", "bp", 
+    "r8w", "r9w", "r10w", "r11w", 
+    "r12w", "r13w", "r14w", "r15w"
+)
+
+registers_8bit: tuple[str, ...] = (
+    "al", "bl", "cl", "dl", 
+    "sil", "dil", "spl", "bpl", 
+    "r8b", "r9b", "r10b", "r11b", 
+    "r12b", "r13b", "r14b", "r15b"
+)
+
+reg_lookup_table: dict[int, tuple[str, ...]] = {
+    1: registers_8bit,
+    2: registers_16bit,
+    4: registers_32bit,
+    8: registers_64bit,
+}
+
+get_type_size: dict[token_type, int] = {
+    tt.BOOL_DEF: 1,
+    tt.CHAR_DEF: 1,
+    tt.INT_DEF: 4,
+    tt.STR_DEF: 6
+}
+
 class Generator(ErrorHandler):
     output: list[str] = []
     section_data: list[str] = []
@@ -35,48 +77,6 @@ class Generator(ErrorHandler):
     
     label_count: int = 0
     loop_end_labels: list[str] = []
-
-    registers_64bit: tuple[str, ...] = (
-        "rax", "rbx", "rcx", "rdx",  
-        "rsi", "rdi", "rsp", "rbp", 
-        "r8", "r9", "r10", "r11", 
-        "r12", "r13", "r14", "r15"
-    )
-
-    registers_32bit: tuple[str, ...] = (
-        "eax", "ebx", "ecx", "edx",  
-        "esi", "edi", "esp", "ebp", 
-        "r8d", "r9d", "r10d", "r11d", 
-        "r12d", "r13d", "r14d", "r15d"
-    )
-    
-    registers_16bit: tuple[str, ...] = (
-        "ax", "bx", "cx", "dx", 
-        "si", "di", "sp", "bp", 
-        "r8w", "r9w", "r10w", "r11w", 
-        "r12w", "r13w", "r14w", "r15w"
-    )
-
-    registers_8bit: tuple[str, ...] = (
-        "al", "bl", "cl", "dl", 
-        "sil", "dil", "spl", "bpl", 
-        "r8b", "r9b", "r10b", "r11b", 
-        "r12b", "r13b", "r14b", "r15b"
-    )
-    
-    reg_lookup_table: dict[int, tuple[str, ...]] = {
-        1: registers_8bit,
-        2: registers_16bit,
-        4: registers_32bit,
-        8: registers_64bit,
-    }
-
-    get_type_size: dict[token_type, int] = {
-        BOOL_DEF: 1,
-        CHAR_DEF: 1,
-        INT_DEF: 4,
-        STR_DEF: 8
-    }
     
     def __init__(self, program: NodeProgram, file_content: str) -> None:
         super().__init__(file_content)
@@ -149,16 +149,16 @@ class Generator(ErrorHandler):
         """
         adds a 'push' instruction to the output and updates the stack size 
         """
-        if src in self.registers_64bit or src.startswith("QWORD") or size_words == "QWORD":
+        if src in registers_64bit or src.startswith("QWORD") or size_words == "QWORD":
             size: size_bytes = 8
             reg = "rax"
-        elif src in self.registers_32bit or src.startswith("DWORD") or size_words == "DWORD":
+        elif src in registers_32bit or src.startswith("DWORD") or size_words == "DWORD":
             size: size_bytes = 4
             reg = "eax"
-        elif src in self.registers_16bit or src.startswith("WORD") or size_words == "WORD":
+        elif src in registers_16bit or src.startswith("WORD") or size_words == "WORD":
             size: size_bytes = 2
             reg = "ax"
-        elif src in self.registers_8bit or src.startswith("BYTE") or size_words == "BYTE":
+        elif src in registers_8bit or src.startswith("BYTE") or size_words == "BYTE":
             size: size_bytes = 1
             reg = "al"
         else:
@@ -205,7 +205,7 @@ class Generator(ErrorHandler):
             if not ignore_padding:
                 padding[i] = self.align_stack(byte_s)
             self.stack_size += byte_s
-            if word_s == "QWORD" and item not in self.registers_64bit:
+            if word_s == "QWORD" and item not in registers_64bit:
                 self.output.append(
                     f"    mov rbx, {item}\n"
                     f"    mov {word_s} [rbp - {self.stack_size}], rbx ;push\n"
@@ -227,7 +227,7 @@ class Generator(ErrorHandler):
         size = self.stack_item_sizes[-1]
         if len(size) != 1:
             raise ValueError(self.stack_item_sizes)
-        return self.reg_lookup_table[size[0]][idx]
+        return reg_lookup_table[size[0]][idx]
 
     def create_label(self, custom_lbl: str="") -> str:
         """
@@ -420,8 +420,8 @@ class Generator(ErrorHandler):
             else:
                 ra = self.get_reg(0)
             
-            ra_sized = self.reg_lookup_table[
-                self.get_type_size[term.var.type.type]
+            ra_sized = reg_lookup_table[
+                get_type_size[term.var.type.type]
             ][0]
             
             self.output.append(f"    xor {ra_sized}, {ra_sized}\n")
@@ -482,7 +482,7 @@ class Generator(ErrorHandler):
             self.output.append(f"    mov {rc_eq_rb}, {rb}\n")
             self.output.append(f"    sar {ra}, cl\n")
             self.push_stack(ra)
-        elif bin_expr.op.type in COMPARISONS:
+        elif bin_expr.op.type in tt.COMPARISONS:
             self.output.append(f"    cmp {ra}, {rb}\n")
             if bin_expr.op.type == tt.IS_EQUAL:
                 self.output.append("    sete al\n")
@@ -499,7 +499,7 @@ class Generator(ErrorHandler):
             else:
                 raise TypeError(f"Unreachable {bin_expr.op.type}")
             self.push_stack("al")
-        elif bin_expr.op.type in (OR, AND):
+        elif bin_expr.op.type in (tt.OR, tt.AND):
             rc = "cl"
             self.output.append(
                 f"    mov {rc}, {ra}\n"
@@ -795,7 +795,7 @@ class Generator(ErrorHandler):
         """
         generates a print syscall and cleaning up the stack
         """
-        if print_stmt.cont_type == CHAR_DEF:
+        if print_stmt.cont_type == tt.CHAR_DEF:
             self.output.append("    ;; --- print char ---\n")
             self.gen_expression(print_stmt.content)
 
@@ -803,7 +803,7 @@ class Generator(ErrorHandler):
             self.call_func("print_char")
             # it removes the printed expression because it causes a mess in the stack when looping
             self.stack_size -= sum(self.stack_item_sizes.pop() + self.stack_padding.pop())
-        elif print_stmt.cont_type == STR_DEF:
+        elif print_stmt.cont_type == tt.STR_DEF:
             self.output.append("    ;; --- print str ---\n")
             self.gen_expression(print_stmt.content)
             LEN_SIZE = 4

@@ -3,6 +3,25 @@ from comptypes import * # uh-oh a wildcard import
 import tokentypes as tt
 from errors import ErrorHandler
 
+def get_prec_level(tok_type: token_type) -> int | None:
+    """
+    returns the precedence level of the token, 
+    returns None if that token doesn't have a precedence level (token isn't a binary operator)
+    """
+    if tok_type == tt.AND or tok_type == tt.OR:
+        return 0
+    elif tok_type in tt.COMPARISONS:
+        return 1
+    elif tok_type in (tt.BAND, tt.BOR, tt.XOR):
+        return 2
+    elif tok_type in (tt.SHIFT_LEFT, tt.SHIFT_RIGHT):
+        return 3
+    elif tok_type == tt.PLUS or tok_type == tt.MINUS:
+        return 4
+    elif tok_type in (tt.STAR, tt.SLASH, tt.PERCENT):
+        return 5
+    else:
+        return None
 
 class Parser(ErrorHandler):
     index: int = -1
@@ -61,12 +80,12 @@ class Parser(ErrorHandler):
             self.next_token()
         elif self.current_token is not None and self.current_token.type == tt.CHAR_LIT:
             if is_negative:
-                self.compiler_error("Value", f"`{CHAR_DEF}` literal cannot be negative", self.get_token_at(-1))
+                self.compiler_error("Value", f"`{tt.CHAR_DEF}` literal cannot be negative", self.get_token_at(-1))
             ret_term = NodeTerm(NodeTermChar(self.current_token))
             self.next_token()
         elif self.current_token is not None and self.current_token.type == tt.STR_LIT:
             if is_negative:
-                self.compiler_error("Value", f"`{STR_DEF}` literal cannot be negative", self.get_token_at(-1))
+                self.compiler_error("Value", f"`{tt.STR_DEF}` literal cannot be negative", self.get_token_at(-1))
             assert self.current_token.value is not None, "string value shouldn't be None here, bug in lexing"
             length = len(self.current_token.value.split(","))
             ret_term = NodeTerm(NodeTermStr(self.current_token, str(length)))
@@ -96,13 +115,13 @@ class Parser(ErrorHandler):
             self.next_token()
         elif self.current_token is not None and self.current_token.type == tt.TRUE:
             if is_negative:
-                self.compiler_error("Value", f"`{BOOL_DEF}` literal cannot be negative", self.get_token_at(-1))
+                self.compiler_error("Value", f"`{tt.BOOL_DEF}` literal cannot be negative", self.get_token_at(-1))
             self.current_token.value = "1"
             ret_term = NodeTerm(NodeTermBool(bool=self.current_token))
             self.next_token()
         elif self.current_token is not None and self.current_token.type == tt.FALSE:
             if is_negative:
-                self.compiler_error("Value", f"`{BOOL_DEF}` literal cannot be negative", self.get_token_at(-1))
+                self.compiler_error("Value", f"`{tt.BOOL_DEF}` literal cannot be negative", self.get_token_at(-1))
             self.current_token.value = "0"
             ret_term = NodeTerm(NodeTermBool(bool=self.current_token))
             self.next_token()
@@ -430,7 +449,7 @@ class Parser(ErrorHandler):
         self.try_compiler_error(tt.RIGHT_PAREN, "Syntax", "expected `)`")
         self.next_token()
         
-        return NodeStmtPrint(cont, cont_type=INFER_DEF)
+        return NodeStmtPrint(cont, cont_type=tt.INFER_DEF)
     
     def parse_break(self):
         assert self.current_token is not None, "The token should be here because of the dict"

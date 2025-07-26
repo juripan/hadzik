@@ -108,23 +108,3 @@ COMPARISONS: tuple[token_type, ...] = (
 TYPE_KWS: tuple[token_type, ...] = (
     INT_DEF, STR_DEF, BOOL_DEF, CHAR_DEF
 )
-
-def get_prec_level(tt: token_type) -> int | None:
-    """
-    returns the precedence level of the token, 
-    returns None if that token doesn't have a precedence level (token isn't a binary operator)
-    """
-    if tt == AND or tt == OR:
-        return 0
-    elif tt in COMPARISONS:
-        return 1
-    elif tt in (BAND, BOR, XOR):
-        return 2
-    elif tt in (SHIFT_LEFT, SHIFT_RIGHT):
-        return 3
-    elif tt == PLUS or tt == MINUS:
-        return 4
-    elif tt in (STAR, SLASH, PERCENT):
-        return 5
-    else:
-        return None

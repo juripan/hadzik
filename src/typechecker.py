@@ -1,6 +1,6 @@
 from errors import ErrorHandler
 from comptypes import *
-
+import tokentypes as tt
 
 class TypeChecker(ErrorHandler):
     stack: list[StackItem] = []
@@ -68,12 +68,12 @@ class TypeChecker(ErrorHandler):
                 res.sub_type = None
             
             self.check_expression(term.index)
-            if (idx := self.pop_stack()).type != INT_DEF:
-                self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{idx.type}`", idx.loc)
+            if (idx := self.pop_stack()).type != tt.INT_DEF:
+                self.compiler_error("Type", f"expected type `{tt.INT_DEF}`, got `{idx.type}`", idx.loc)
             self.push_stack(res)
         elif isinstance(term.var, NodeTermInt):
             assert term.var.int_lit.value is not None, "term.var.int_lit.value shouldn't be None, probably a parsing error"
-            self.push_stack(StackItem(INT_DEF, (term.var.int_lit.line, term.var.int_lit.col)))
+            self.push_stack(StackItem(tt.INT_DEF, (term.var.int_lit.line, term.var.int_lit.col)))
         elif isinstance(term.var, NodeTermIdent):
             vars: tuple[StackItem, ...] = tuple(filter(lambda x: x.name == term.var.ident.value, self.variables)) # type: ignore
             
@@ -83,31 +83,31 @@ class TypeChecker(ErrorHandler):
             self.push_stack(StackItem(vars[-1].type, (term.var.ident.line, term.var.ident.col), vars[-1].sub_type, vars[-1].name))
         elif isinstance(term.var, NodeTermBool):
             assert term.var.bool.value is not None, "shouldn't be None here"
-            self.push_stack(StackItem(BOOL_DEF, (term.var.bool.line, term.var.bool.col)))
+            self.push_stack(StackItem(tt.BOOL_DEF, (term.var.bool.line, term.var.bool.col)))
         elif isinstance(term.var, NodeTermParen):
             self.check_expression(term.var.expr)
-            if term.var.negative and self.stack[-1].type != INT_DEF:
+            if term.var.negative and self.stack[-1].type != tt.INT_DEF:
                 self.compiler_error("Type", f"`{self.stack[-1].type}` cannot be negative", self.stack[-1].loc)
         elif isinstance(term.var, NodeTermChar):
-            self.push_stack(StackItem(CHAR_DEF, (term.var.char.line, term.var.char.col)))
+            self.push_stack(StackItem(tt.CHAR_DEF, (term.var.char.line, term.var.char.col)))
         elif isinstance(term.var, NodeTermStr):
-            self.push_stack(StackItem(STR_DEF, sub_type=CHAR_DEF, loc=(term.var.string.line, term.var.string.col)))
+            self.push_stack(StackItem(tt.STR_DEF, sub_type=tt.CHAR_DEF, loc=(term.var.string.line, term.var.string.col)))
         elif isinstance(term.var, NodeTermNot):
             self.check_term(term.var.term) # type: ignore
-            if self.stack[-1].type != BOOL_DEF:
-                self.compiler_error("Type", f"expected type `{BOOL_DEF}`, got `{self.stack[-1].type}`", self.stack[-1].loc)
+            if self.stack[-1].type != tt.BOOL_DEF:
+                self.compiler_error("Type", f"expected type `{tt.BOOL_DEF}`, got `{self.stack[-1].type}`", self.stack[-1].loc)
         elif isinstance(term.var, NodeTermCast):
-            if term.var.type.type == STR_DEF:
+            if term.var.type.type == tt.STR_DEF:
                 #TODO: implement typecasting for strings
                 raise NotImplementedError("typecasting to a string is not implemented yet")
             self.check_expression(term.var.expr)
-            if self.stack[-1].type == STR_DEF and term.var.type.type == CHAR_DEF:
-                self.compiler_error("Type", f"cannot cast `{STR_DEF}` to `{CHAR_DEF}`", term.var.type)
+            if self.stack[-1].type == tt.STR_DEF and term.var.type.type == tt.CHAR_DEF:
+                self.compiler_error("Type", f"cannot cast `{tt.STR_DEF}` to `{tt.CHAR_DEF}`", term.var.type)
             self.stack[-1].type = term.var.type.type
         elif isinstance(term.var, NodeTermBNot):
             self.check_term(term.var.term) # type: ignore
-            if self.stack[-1].type != INT_DEF:
-                self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{self.stack[-1].type}`", self.stack[-1].loc)
+            if self.stack[-1].type != tt.INT_DEF:
+                self.compiler_error("Type", f"expected type `{tt.INT_DEF}`, got `{self.stack[-1].type}`", self.stack[-1].loc)
         elif isinstance(term.var, NodeTermArray):
             type_ = None
             for expr in term.var.exprs:
@@ -117,7 +117,7 @@ class TypeChecker(ErrorHandler):
                 elif type_.type != (type2 := self.stack.pop()).type:
                     self.compiler_error("Type", f"expected `{type_.type}`, got `{type2.type}`")
             assert type_ is not None, "should never get to None here"
-            self.push_stack(StackItem(ARRAY_TYPE, sub_type=type_.type, loc=type_.loc))
+            self.push_stack(StackItem(tt.ARRAY_TYPE, sub_type=type_.type, loc=type_.loc))
         else:
             raise ValueError("Unreachable")
 
@@ -126,23 +126,23 @@ class TypeChecker(ErrorHandler):
         self.check_expression(bin_expr.rhs)
         a = self.pop_stack()
         b = self.pop_stack()
-        if bin_expr.op.type in COMPARISONS:
-            if a.type not in (INT_DEF, CHAR_DEF):
-                self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{a.type}`", a.loc)
-            if b.type not in (INT_DEF, CHAR_DEF):
-                self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{b.type}`", b.loc)
-            self.push_stack(StackItem(BOOL_DEF, a.loc))
-        elif bin_expr.op.type in (OR, AND):
-            if a.type != BOOL_DEF:
-                self.compiler_error("Type", f"expected type `{BOOL_DEF}`, got `{a.type}`", a.loc)
-            if b.type != BOOL_DEF:
-                self.compiler_error("Type", f"expected type `{BOOL_DEF}`, got `{b.type}`", b.loc)
+        if bin_expr.op.type in tt.COMPARISONS:
+            if a.type not in (tt.INT_DEF, tt.CHAR_DEF):
+                self.compiler_error("Type", f"expected type `{tt.INT_DEF}`, got `{a.type}`", a.loc)
+            if b.type not in (tt.INT_DEF, tt.CHAR_DEF):
+                self.compiler_error("Type", f"expected type `{tt.INT_DEF}`, got `{b.type}`", b.loc)
+            self.push_stack(StackItem(tt.BOOL_DEF, a.loc))
+        elif bin_expr.op.type in (tt.OR, tt.AND):
+            if a.type != tt.BOOL_DEF:
+                self.compiler_error("Type", f"expected type `{tt.BOOL_DEF}`, got `{a.type}`", a.loc)
+            if b.type != tt.BOOL_DEF:
+                self.compiler_error("Type", f"expected type `{tt.BOOL_DEF}`, got `{b.type}`", b.loc)
             self.push_stack(a)
-        elif bin_expr.op.type in (SHIFT_LEFT, SHIFT_RIGHT, BOR, BAND, XOR, PLUS, MINUS, STAR, SLASH):
-            if a.type != INT_DEF:
-                self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{a.type}`", a.loc)
-            if b.type != INT_DEF:
-                self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{b.type}`", b.loc)
+        elif bin_expr.op.type in (tt.SHIFT_LEFT, tt.SHIFT_RIGHT, tt.BOR, tt.BAND, tt.XOR, tt.PLUS, tt.MINUS, tt.STAR, tt.SLASH):
+            if a.type != tt.INT_DEF:
+                self.compiler_error("Type", f"expected type `{tt.INT_DEF}`, got `{a.type}`", a.loc)
+            if b.type != tt.INT_DEF:
+                self.compiler_error("Type", f"expected type `{tt.INT_DEF}`, got `{b.type}`", b.loc)
             self.push_stack(a)
         else:
             raise ValueError("Unreachable")
@@ -158,8 +158,8 @@ class TypeChecker(ErrorHandler):
     def check_exit(self, exit_stmt: NodeStmtExit):
         self.check_expression(exit_stmt.expr)
 
-        if (item := self.stack.pop()).type != INT_DEF:
-            self.compiler_error("Type", f"expected type `{INT_DEF}`, got `{item.type}`", item.loc)
+        if (item := self.stack.pop()).type != tt.INT_DEF:
+            self.compiler_error("Type", f"expected type `{tt.INT_DEF}`, got `{item.type}`", item.loc)
     
     def check_decl(self, decl_stmt: NodeStmtDeclare):
         """
@@ -168,10 +168,10 @@ class TypeChecker(ErrorHandler):
         """
         self.check_expression(decl_stmt.expr)
 
-        if decl_stmt.type_.type == INFER_DEF:
+        if decl_stmt.type_.type == tt.INFER_DEF:
             decl_stmt.type_.type = self.stack[-1].type
-        if decl_stmt.type_.type == STR_DEF:
-            decl_stmt.type_.subtype = CHAR_DEF
+        if decl_stmt.type_.type == tt.STR_DEF:
+            decl_stmt.type_.subtype = tt.CHAR_DEF
         if self.stack[-1].type != decl_stmt.type_.type:
             self.compiler_error("Type", f"expected type `{decl_stmt.type_.type}`, got `{self.stack[-1].type}`", decl_stmt.ident)
         elif self.stack[-1].sub_type != decl_stmt.type_.subtype:
@@ -201,7 +201,7 @@ class TypeChecker(ErrorHandler):
             elif item.type != found_vars[-1].type:
                 self.compiler_error("Type", f"expected type `{found_vars[-1].type}`, got `{item.type}`", reassign_stmt.var.ident.var.ident)
         elif isinstance(reassign_stmt.var, (NodeStmtReassignInc, NodeStmtReassignDec)):
-            if found_vars[-1].type != INT_DEF:
+            if found_vars[-1].type != tt.INT_DEF:
                 self.compiler_error("Type", f"cannot increment or decrement a variable of `{found_vars[-1].type}` type", found_vars[-1].loc)
         else:
             raise ValueError("out of reach")
@@ -212,8 +212,8 @@ class TypeChecker(ErrorHandler):
     
     def check_if_statement(self, if_stmt: NodeStmtIf):
         self.check_expression(if_stmt.expr)
-        if (item := self.pop_stack()).type not in (BOOL_DEF, INT_DEF):
-            self.compiler_error("Type", f"expected type `{BOOL_DEF}` or `{INT_DEF}`, got `{item.type}`", item.loc)
+        if (item := self.pop_stack()).type not in (tt.BOOL_DEF, tt.INT_DEF):
+            self.compiler_error("Type", f"expected type `{tt.BOOL_DEF}` or `{tt.INT_DEF}`, got `{item.type}`", item.loc)
         
         self.check_scope(if_stmt.scope)
         
@@ -223,8 +223,8 @@ class TypeChecker(ErrorHandler):
     def check_if_predicate(self, ifpred: NodeIfPred):
         if isinstance(ifpred.var, NodeIfPredElif):
             self.check_expression(ifpred.var.expr)
-            if (item := self.pop_stack()).type not in (BOOL_DEF, INT_DEF):
-                self.compiler_error("Type", f"expected type `{BOOL_DEF}` or `{INT_DEF}`, got `{item.type}`", item.loc)
+            if (item := self.pop_stack()).type not in (tt.BOOL_DEF, tt.INT_DEF):
+                self.compiler_error("Type", f"expected type `{tt.BOOL_DEF}` or `{tt.INT_DEF}`, got `{item.type}`", item.loc)
             self.check_scope(ifpred.var.scope)
             if ifpred.var.pred is not None:
                 self.check_if_predicate(ifpred.var.pred)
@@ -235,22 +235,22 @@ class TypeChecker(ErrorHandler):
     
     def check_while(self, while_stmt: NodeStmtWhile):
         self.check_expression(while_stmt.expr)
-        if (item := self.pop_stack()).type not in (BOOL_DEF, INT_DEF):
-            self.compiler_error("Type", f"expected type `{BOOL_DEF}` or `{INT_DEF}`, got `{item.type}`", item.loc)
+        if (item := self.pop_stack()).type not in (tt.BOOL_DEF, tt.INT_DEF):
+            self.compiler_error("Type", f"expected type `{tt.BOOL_DEF}` or `{tt.INT_DEF}`, got `{item.type}`", item.loc)
         self.check_scope(while_stmt.scope)
     
     def check_do_while(self, do_while_stmt: NodeStmtDoWhile):
         self.check_scope(do_while_stmt.scope)
         self.check_expression(do_while_stmt.expr)
-        if (item := self.pop_stack()).type not in (BOOL_DEF, INT_DEF):
-            self.compiler_error("Type", f"expected type `{BOOL_DEF}` or `{INT_DEF}`, got `{item.type}`", item.loc)
+        if (item := self.pop_stack()).type not in (tt.BOOL_DEF, tt.INT_DEF):
+            self.compiler_error("Type", f"expected type `{tt.BOOL_DEF}` or `{tt.INT_DEF}`, got `{item.type}`", item.loc)
     
     def check_for(self, for_stmt: NodeStmtFor):
         self.check_decl(for_stmt.ident_def)
 
         self.check_expression(for_stmt.condition)
-        if (item := self.pop_stack()).type != BOOL_DEF:
-            self.compiler_error("Type", f"expected type `{BOOL_DEF}`, got `{item.type}`", item.loc)
+        if (item := self.pop_stack()).type != tt.BOOL_DEF:
+            self.compiler_error("Type", f"expected type `{tt.BOOL_DEF}`, got `{item.type}`", item.loc)
         
         self.check_scope(for_stmt.scope)
 
@@ -258,6 +258,6 @@ class TypeChecker(ErrorHandler):
     
     def check_print(self, print_stmt: NodeStmtPrint):
         self.check_expression(print_stmt.content)
-        if (item := self.pop_stack()).type not in (CHAR_DEF, STR_DEF):
-            self.compiler_error("Type", f"expected type `{CHAR_DEF}` or `{STR_DEF}`, got `{item.type}`", item.loc)
+        if (item := self.pop_stack()).type not in (tt.CHAR_DEF, tt.STR_DEF):
+            self.compiler_error("Type", f"expected type `{tt.CHAR_DEF}` or `{tt.STR_DEF}`, got `{item.type}`", item.loc)
         print_stmt.cont_type = item.type
