@@ -4,6 +4,19 @@ from errors import ErrorHandler
 from comptypes import *
 import tokentypes as tt
 
+byte_to_word: dict[size_bytes, size_words] = {
+    1: "BYTE",
+    2: "WORD",
+    4: "DWORD",
+    8: "QWORD"
+}
+
+word_to_byte: dict[size_words, size_bytes] = {
+    "BYTE" : 1,
+    "WORD" : 2,
+    "DWORD" : 4,
+    "QWORD" : 8,
+}
 
 class Generator(ErrorHandler):
     output: list[str] = []
@@ -182,17 +195,19 @@ class Generator(ErrorHandler):
         if ErrorHandler.debug_mode:
             print("pop", self.stack_size, self.stack_item_sizes, self.stack_padding, self.variables)
     
-    def push_stack_chunk(self, src: list[str], sizes_w: list[size_words], sizes_b: list[size_bytes]):
+    def push_stack_chunk(self, src: list[str], sizes_w: list[size_words], sizes_b: list[size_bytes], ignore_padding: bool = True):
         """
         pushes multiple items onto the stack but only saves it as a whole item onto the compiler stack
+        list must contain literals, for now
         """
-        padding = [0] *  len(src) #here just to fill out the list
-        for item, byte_s, word_s in zip(src, sizes_b, sizes_w):
-            #FIXME: if padding isn't ignored it breaks
-            # padding.append(self.align_stack(byte_s))
+        padding = [0] * len(src) # here just to fill out the list
+        for i, (item, byte_s, word_s) in enumerate(zip(src, sizes_b, sizes_w)):
+            if not ignore_padding:
+                padding[i] = self.align_stack(byte_s)
             self.stack_size += byte_s
             if word_s == "QWORD" and item not in self.registers_64bit:
-                self.output.append(f"    mov rbx, {item}\n"
+                self.output.append(
+                    f"    mov rbx, {item}\n"
                     f"    mov {word_s} [rbp - {self.stack_size}], rbx ;push\n"
                 )
             else:
@@ -257,30 +272,16 @@ class Generator(ErrorHandler):
         if not str_term.string.value:
             str_term.string.value = "0"
         
-        str_data = list(map(lambda x: hex(int(x))[2:], str_term.string.value.split(",")[::-1]))
+        str_data = list(map(lambda x: hex(int(x)), str_term.string.value.split(",")[::-1]))
         STR_LEN = len(str_data)
         
-        str_chunks: list[str] = []
-        str_data_sizeb: list[size_bytes] = []
-        str_data_sizew: list[size_words] = []
-        
-        start = 0
-        end = 0
-        count = STR_LEN
-
-        for sizeb, sizew in zip((8, 4, 2, 1), ("QWORD", "DWORD", "WORD", "BYTE")):
-            res = count // sizeb
-            count %= sizeb
-
-            for i in range(res):
-                end += sizeb
-                str_chunks.append("0x" + "".join(str_data[start:end]))
-                str_data_sizeb.append(sizeb)
-                str_data_sizew.append(sizew)
-                start += sizeb
+        str_chunks: list[str] = str_data
+        str_data_sizeb: list[size_bytes] = [1] * STR_LEN
+        str_data_sizew: list[size_words] = ["BYTE"] * STR_LEN
         
         self.output.append(f"    lea rax, [rbp - {self.stack_size + STR_LEN}]\n")
         str_chunks.append("rax")
+
         str_data_sizeb.append(8)
         str_data_sizew.append("QWORD")
         
@@ -306,10 +307,10 @@ class Generator(ErrorHandler):
         if term.index is not None:
             self.output.append("    ; --- indexing ---\n")
             old_stack_size = self.stack_size # solves the incorrect reads
+            item_size_b = self.stack_item_sizes[-2][0] # minus two because -1 is the index
+            item_size_w = byte_to_word[item_size_b]
             LEN_SIZE = 4
-            ITEM_SIZE_W = "BYTE"
-            ITEM_SIZE_B = 1
-            
+
             self.gen_expression(term.index)
 
             rb = self.get_reg(1)
@@ -322,7 +323,7 @@ class Generator(ErrorHandler):
             self.stack_size = old_stack_size
             self.stack_item_sizes.pop()
 
-            self.push_stack(f"{ITEM_SIZE_W} [rax + rbx * {ITEM_SIZE_B}]")
+            self.push_stack(f"{item_size_w} [rax + rbx * {item_size_b}]")
         elif isinstance(term.var, NodeTermInt):
             assert term.var.int_lit.value is not None, "term.var.int_lit.value shouldn't be None, probably a parsing error"
             
@@ -363,10 +364,9 @@ class Generator(ErrorHandler):
             assert term.var.string.value is not None, "shouldn't be None here"
             self.make_str(term.var)
         elif isinstance(term.var, NodeTermArray):
-            raise NotImplementedError("TODO: reimplement this")
-            size = 0
-            padding = 0
-            for expr in term.var.exprs:
+            size = []
+            padding = []
+            for expr in term.var.exprs[::-1]:
                 self.gen_expression(expr)
                 size += self.stack_item_sizes.pop()
                 self.stack_padding.pop()

@@ -170,11 +170,15 @@ class TypeChecker(ErrorHandler):
 
         if decl_stmt.type_.type == INFER_DEF:
             decl_stmt.type_.type = self.stack[-1].type
-        elif self.stack[-1].type != decl_stmt.type_.type:
-            self.compiler_error("Type", f"expected type `{decl_stmt.type_.type}`, got `{self.stack[-1].type}`", decl_stmt.ident)
         if decl_stmt.type_.type == STR_DEF:
             decl_stmt.type_.subtype = CHAR_DEF
+        if self.stack[-1].type != decl_stmt.type_.type:
+            self.compiler_error("Type", f"expected type `{decl_stmt.type_.type}`, got `{self.stack[-1].type}`", decl_stmt.ident)
+        elif self.stack[-1].sub_type != decl_stmt.type_.subtype:
+            self.compiler_error("Type", f"expected type `{decl_stmt.type_.subtype}`, got `{self.stack[-1].sub_type}`", decl_stmt.ident)
+        
         assert decl_stmt.ident.value is not None, "a variable has to have a name"
+        print(decl_stmt.type_.subtype)
         self.variables.append(StackItem(decl_stmt.type_.type, decl_stmt.ident, sub_type=decl_stmt.type_.subtype, name=decl_stmt.ident.value, is_const=decl_stmt.is_const))
     
     def check_reassign(self, reassign_stmt: NodeStmtReassign):
